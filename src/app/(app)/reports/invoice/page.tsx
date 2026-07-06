@@ -90,6 +90,7 @@ export default function InvoiceReportPage() {
             columns={columns}
             rows={rows}
             getRowKey={(r) => r.load.id}
+            defaultFilterKeys={["customer", "location"]}
             onExport={(filteredRows) =>
               downloadCsv(
                 "invoice-report.csv",

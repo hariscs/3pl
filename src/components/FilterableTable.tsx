@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useMemo, useState } from "react";
+import { AddFilterChip, FilterChip, type FilterableColumn } from "./FilterChip";
 import { Button } from "./ui/Button";
 
 export type Column<T> = {
@@ -13,46 +14,84 @@ export type Column<T> = {
   align?: "left" | "right";
 };
 
+type ActiveFilter = { id: string; key: string; openOnMount: boolean };
+
+let chipCounter = 0;
+
 export function FilterableTable<T>({
   columns,
   rows,
   getRowKey,
   onExport,
+  defaultFilterKeys,
 }: {
   columns: Column<T>[];
   rows: T[];
   getRowKey: (row: T) => string;
   onExport?: (rows: T[]) => void;
+  /** Columns whose filter chip should be shown by default, with no value set. */
+  defaultFilterKeys?: string[];
 }) {
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() =>
+    (defaultFilterKeys ?? []).map((key) => {
+      chipCounter += 1;
+      return { id: `chip-${chipCounter}`, key, openOnMount: false };
+    }),
+  );
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     null,
   );
 
+  const filterableColumns: FilterableColumn[] = columns.map((col) => ({
+    key: col.key,
+    label: col.header,
+    type: col.filter === "select" ? "select" : "text",
+    options: col.filterOptions,
+  }));
+
+  const availableColumns = filterableColumns.filter(
+    (col) => !activeFilters.some((f) => f.key === col.key),
+  );
+
   const filtered = useMemo(() => {
-    const result = rows.filter((row) =>
-      columns.every((col) => {
-        const filterValue = filters[col.key];
-        if (!filterValue) return true;
+    const query = search.trim().toLowerCase();
+    let result = rows;
+
+    if (query) {
+      result = result.filter((row) =>
+        columns.some((col) =>
+          String(col.accessor(row)).toLowerCase().includes(query),
+        ),
+      );
+    }
+
+    result = result.filter((row) =>
+      activeFilters.every((f) => {
+        const value = filterValues[f.id];
+        if (!value) return true;
+        const col = columns.find((c) => c.key === f.key);
+        if (!col) return true;
         const cell = String(col.accessor(row)).toLowerCase();
-        if (col.filter === "select") return cell === filterValue.toLowerCase();
-        return cell.includes(filterValue.toLowerCase());
+        if (col.filter === "select") return cell === value.toLowerCase();
+        return cell.includes(value.toLowerCase());
       }),
     );
+
     if (!sort) return result;
-    const col = columns.find((c) => c.key === sort.key);
-    if (!col) return result;
-    const sorted = [...result].sort((a, b) => {
-      const av = col.accessor(a);
-      const bv = col.accessor(b);
+    const sortCol = columns.find((c) => c.key === sort.key);
+    if (!sortCol) return result;
+    return [...result].sort((a, b) => {
+      const av = sortCol.accessor(a);
+      const bv = sortCol.accessor(b);
       const cmp =
         typeof av === "number" && typeof bv === "number"
           ? av - bv
           : String(av).localeCompare(String(bv));
       return sort.dir === "asc" ? cmp : -cmp;
     });
-    return sorted;
-  }, [rows, columns, filters, sort]);
+  }, [rows, columns, search, activeFilters, filterValues, sort]);
 
   function toggleSort(key: string) {
     setSort((prev) => {
@@ -62,35 +101,98 @@ export function FilterableTable<T>({
     });
   }
 
-  const anyFilterActive = Object.values(filters).some(Boolean);
+  function addFilter(col: FilterableColumn) {
+    chipCounter += 1;
+    const id = `chip-${chipCounter}`;
+    setActiveFilters((prev) => [...prev, { id, key: col.key, openOnMount: true }]);
+  }
+
+  function removeFilter(id: string) {
+    setActiveFilters((prev) => prev.filter((f) => f.id !== id));
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function resetFilters() {
+    setActiveFilters([]);
+    setFilterValues({});
+    setSearch("");
+  }
+
+  const anyFilterActive = activeFilters.some((f) => filterValues[f.id]) || !!search;
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs text-steel">
-          {anyFilterActive ? (
-            <>
-              Showing{" "}
-              <span className="font-medium text-ink">{filtered.length}</span> of{" "}
-              {rows.length} rows —{" "}
+      <div className="mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-steel-light">
+              ⌕
+            </span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search everything…"
+              className="w-56 rounded-full border border-manila-dark bg-cream py-1.5 pl-7 pr-3 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
+            />
+          </div>
+
+          <AddFilterChip columns={availableColumns} onAdd={addFilter} />
+
+          <div className="ml-auto flex items-center gap-3">
+            <p className="text-xs text-steel">
+              {anyFilterActive ? (
+                <>
+                  <span className="font-medium text-ink">{filtered.length}</span>{" "}
+                  of {rows.length} rows
+                </>
+              ) : (
+                <>{rows.length} rows</>
+              )}
+            </p>
+            {onExport && (
+              <Button variant="secondary" onClick={() => onExport(filtered)}>
+                Export to Excel
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {(activeFilters.length > 0 || anyFilterActive) && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {activeFilters.map((f) => {
+              const col = filterableColumns.find((c) => c.key === f.key);
+              if (!col) return null;
+              return (
+                <FilterChip
+                  key={f.id}
+                  column={col}
+                  value={filterValues[f.id] ?? ""}
+                  onChange={(value) =>
+                    setFilterValues((prev) => ({ ...prev, [f.id]: value }))
+                  }
+                  onRemove={() => removeFilter(f.id)}
+                  defaultOpen={f.openOnMount}
+                />
+              );
+            })}
+
+            {anyFilterActive && (
               <button
                 type="button"
-                onClick={() => setFilters({})}
-                className="underline hover:text-rust"
+                onClick={resetFilters}
+                className="text-xs text-steel underline hover:text-rust"
               >
-                clear filters
+                Reset filters
               </button>
-            </>
-          ) : (
-            <>{rows.length} rows — filter any column below, Excel-style</>
-          )}
-        </p>
-        {onExport && (
-          <Button variant="secondary" onClick={() => onExport(filtered)}>
-            Export to Excel
-          </Button>
+            )}
+          </div>
         )}
       </div>
+
       <div className="overflow-x-auto rounded-md border border-manila-dark">
         <table className="w-full min-w-max border-collapse text-sm">
           <thead>
@@ -116,37 +218,6 @@ export function FilterableTable<T>({
                         : "↕"}
                     </span>
                   </button>
-                </th>
-              ))}
-            </tr>
-            <tr className="bg-paper-dim">
-              {columns.map((col) => (
-                <th key={col.key} className="border-b border-manila-dark p-1.5">
-                  {col.filter === "select" ? (
-                    <select
-                      value={filters[col.key] ?? ""}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, [col.key]: e.target.value }))
-                      }
-                      className="w-full rounded-sm border border-manila-dark bg-cream px-1.5 py-1 text-xs text-ink focus:border-rust focus:outline-none"
-                    >
-                      <option value="">All</option>
-                      {col.filterOptions?.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      value={filters[col.key] ?? ""}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, [col.key]: e.target.value }))
-                      }
-                      placeholder="Filter…"
-                      className="w-full rounded-sm border border-manila-dark bg-cream px-1.5 py-1 text-xs text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
-                    />
-                  )}
                 </th>
               ))}
             </tr>

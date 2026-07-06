@@ -112,6 +112,7 @@ export default function LoadEntryReportPage() {
             columns={columns}
             rows={rows}
             getRowKey={(r) => r.load.id}
+            defaultFilterKeys={["customer", "status"]}
             onExport={(filteredRows) =>
               downloadCsv(
                 "load-entry-report.csv",

@@ -83,13 +83,11 @@ body {
   background-position: center;
 }
 
-/* Ink-stamp badge: rotated, slightly worn rubber-stamp look. */
 .ink-stamp {
   font-family: var(--font-display), sans-serif;
   border: 2.5px solid currentColor;
   border-radius: 3px;
   letter-spacing: 0.12em;
-  transform: rotate(-4deg);
   opacity: 0.92;
 }
 

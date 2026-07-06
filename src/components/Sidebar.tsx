@@ -31,9 +31,19 @@ const NAV = [
   },
 ];
 
+function matchesHref(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useAppData();
+
+  const allHrefs = NAV.flatMap((group) => group.items.map((item) => item.href));
+  const activeHref = allHrefs
+    .filter((href) => matchesHref(pathname, href))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <aside className="flex h-full w-60 flex-none flex-col bg-ink text-paper">
@@ -53,10 +63,7 @@ export function Sidebar() {
             </p>
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => {
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const active = item.href === activeHref;
                 return (
                   <li key={item.href}>
                     <Link
