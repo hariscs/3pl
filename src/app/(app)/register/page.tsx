@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -86,137 +87,141 @@ export default function RegisterUserPage() {
         title="Register User"
         description="Every login is tied to exactly one location — that location scopes everything the user can see."
       />
-      <main className="flex-1 space-y-6 p-6">
-        <Card title="New user">
-          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name" required>
-              <Input
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                placeholder="Jordan Casey"
-                required
-              />
-            </Field>
-            <Field label="Email address" required>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, email: e.target.value }))
-                }
-                placeholder="jordan@example.com"
-                required
-              />
-            </Field>
-            <Field label="Password" required>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
-                required
-              />
-            </Field>
-            <Field label="Role" required>
-              <Select
-                value={form.role}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, role: e.target.value as Role }))
-                }
-              >
-                <option value="admin">Admin — full access</option>
-                <option value="lead">Lead — load entry only</option>
-                <option value="customer">Customer — read-only reporting</option>
-              </Select>
-            </Field>
-
-            <div className="sm:col-span-2 rounded-md border border-manila-dark bg-manila/40 p-4">
-              <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
-                Location <span className="text-rust">*</span>
-              </p>
-              <p className="mb-3 text-xs text-steel-light">
-                This user will only see data from the location assigned here.
-              </p>
-              <div className="mb-3 flex gap-1.5 rounded-sm border border-manila-dark bg-cream p-1 w-fit">
-                {(
-                  [
-                    { key: "choose", label: "Choose from list" },
-                    { key: "detect", label: "Fetch current location" },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => setLocationMode(opt.key)}
-                    className={`rounded-sm px-2.5 py-1 text-xs font-medium transition-colors ${
-                      locationMode === opt.key
-                        ? "bg-ink text-cream"
-                        : "text-steel hover:text-ink"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              {locationMode === "choose" ? (
-                <Select
-                  value={form.locationId}
+      <AdminOnly>
+        <main className="flex-1 space-y-6 p-6">
+          <Card title="New user">
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+              <Field label="Name" required>
+                <Input
+                  value={form.name}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, locationId: e.target.value }))
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  placeholder="Jordan Casey"
+                  required
+                />
+              </Field>
+              <Field label="Email address" required>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, email: e.target.value }))
+                  }
+                  placeholder="jordan@example.com"
+                  required
+                />
+              </Field>
+              <Field label="Password" required>
+                <Input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, password: e.target.value }))
                   }
                   required
+                />
+              </Field>
+              <Field label="Role" required>
+                <Select
+                  value={form.role}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, role: e.target.value as Role }))
+                  }
                 >
-                  <option value="">Select a location…</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
-                  ))}
+                  <option value="admin">Admin — full access</option>
+                  <option value="lead">Lead — load entry only</option>
+                  <option value="customer">
+                    Customer — read-only reporting
+                  </option>
                 </Select>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={detectLocation}
-                    disabled={detecting}
-                  >
-                    {detecting ? "Detecting…" : "Detect my location"}
-                  </Button>
-                  {form.locationId && !detecting && (
-                    <span className="text-sm text-freight">
-                      Detected: {locationName(form.locationId)}
-                    </span>
-                  )}
+              </Field>
+
+              <div className="sm:col-span-2 rounded-md border border-manila-dark bg-manila/40 p-4">
+                <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
+                  Location <span className="text-rust">*</span>
+                </p>
+                <p className="mb-3 text-xs text-steel-light">
+                  This user will only see data from the location assigned here.
+                </p>
+                <div className="mb-3 flex gap-1.5 rounded-sm border border-manila-dark bg-cream p-1 w-fit">
+                  {(
+                    [
+                      { key: "choose", label: "Choose from list" },
+                      { key: "detect", label: "Fetch current location" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setLocationMode(opt.key)}
+                      className={`rounded-sm px-2.5 py-1 text-xs font-medium transition-colors ${
+                        locationMode === opt.key
+                          ? "bg-ink text-cream"
+                          : "text-steel hover:text-ink"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
 
-            <div className="sm:col-span-2">
-              <Button type="submit">Create user</Button>
-            </div>
-          </form>
-        </Card>
+                {locationMode === "choose" ? (
+                  <Select
+                    value={form.locationId}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, locationId: e.target.value }))
+                    }
+                    required
+                  >
+                    <option value="">Select a location…</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={detectLocation}
+                      disabled={detecting}
+                    >
+                      {detecting ? "Detecting…" : "Detect my location"}
+                    </Button>
+                    {form.locationId && !detecting && (
+                      <span className="text-sm text-freight">
+                        Detected: {locationName(form.locationId)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
-        {justCreated && (
-          <p className="text-sm text-freight">
-            {justCreated} was registered and can now log in.
-          </p>
-        )}
+              <div className="sm:col-span-2">
+                <Button type="submit">Create user</Button>
+              </div>
+            </form>
+          </Card>
 
-        <Card title="Existing users">
-          <FilterableTable
-            columns={userColumns}
-            rows={users}
-            getRowKey={(u) => u.id}
-            defaultFilterKeys={["role"]}
-          />
-        </Card>
-      </main>
+          {justCreated && (
+            <p className="text-sm text-freight">
+              {justCreated} was registered and can now log in.
+            </p>
+          )}
+
+          <Card title="Existing users">
+            <FilterableTable
+              columns={userColumns}
+              rows={users}
+              getRowKey={(u) => u.id}
+              defaultFilterKeys={["role"]}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
     </>
   );
 }

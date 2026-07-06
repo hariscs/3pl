@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { AdminOnly } from "@/components/AdminOnly";
 import { ProductTypeForm } from "@/components/forms/ProductTypeForm";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -16,17 +17,19 @@ export default function NewProductTypePage() {
         title="New product type"
         description="Choose the customer first, then the location — the product name only makes sense in that context."
       />
-      <main className="flex-1 p-6">
-        <Card title="Product type details">
-          <ProductTypeForm
-            submitLabel="Create product type"
-            onSubmit={(values) => {
-              addProductType(values);
-              router.push("/product-types");
-            }}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 p-6">
+          <Card title="Product type details">
+            <ProductTypeForm
+              submitLabel="Create product type"
+              onSubmit={(values) => {
+                addProductType(values);
+                router.push("/product-types");
+              }}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
     </>
   );
 }

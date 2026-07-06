@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -84,32 +85,34 @@ export default function InvoiceReportPage() {
         title="Invoice Report"
         description="Everything needed to bill a customer, sortable and filterable — no more exporting to Excel to regroup it yourself."
       />
-      <main className="flex-1 space-y-4 p-6">
-        <Card>
-          <FilterableTable
-            columns={columns}
-            rows={rows}
-            getRowKey={(r) => r.load.id}
-            defaultFilterKeys={["customer", "location"]}
-            onExport={(filteredRows) =>
-              downloadCsv(
-                "invoice-report.csv",
-                columns.map((c) => ({
-                  header: c.header,
-                  accessor: (r: Row) => c.accessor(r),
-                })),
-                filteredRows,
-              )
-            }
-          />
-        </Card>
-        <p className="text-sm text-steel">
-          Total billed across {rows.length} completed loads:{" "}
-          <span className="font-tick font-semibold text-ink">
-            ${totalBilled.toFixed(2)}
-          </span>
-        </p>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 space-y-4 p-6">
+          <Card>
+            <FilterableTable
+              columns={columns}
+              rows={rows}
+              getRowKey={(r) => r.load.id}
+              defaultFilterKeys={["customer", "location"]}
+              onExport={(filteredRows) =>
+                downloadCsv(
+                  "invoice-report.csv",
+                  columns.map((c) => ({
+                    header: c.header,
+                    accessor: (r: Row) => c.accessor(r),
+                  })),
+                  filteredRows,
+                )
+              }
+            />
+          </Card>
+          <p className="text-sm text-steel">
+            Total billed across {rows.length} completed loads:{" "}
+            <span className="font-tick font-semibold text-ink">
+              ${totalBilled.toFixed(2)}
+            </span>
+          </p>
+        </main>
+      </AdminOnly>
     </>
   );
 }

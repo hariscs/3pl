@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { CustomerForm } from "@/components/forms/CustomerForm";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -37,38 +38,42 @@ export default function EditCustomerPage() {
         title={`Edit ${customer.displayName}`}
         description="Update any field below — the same fields captured at registration."
       />
-      <main className="flex-1 space-y-6 p-6">
-        <Card
-          title="Customer details"
-          action={
-            <div className="flex items-center gap-3">
-              <StampBadge status={customer.status} />
-              <Button
-                variant={customer.status === "active" ? "danger" : "secondary"}
-                onClick={() => setConfirmArchive(true)}
-              >
-                {customer.status === "active" ? "Archive" : "Restore"}
-              </Button>
-            </div>
-          }
-        >
-          <CustomerForm
-            initial={{
-              contactName: customer.contactName,
-              email: customer.email,
-              phone: customer.phone,
-              displayName: customer.displayName,
-              legalCompanyName: customer.legalCompanyName,
-              locationIds: customer.locationIds,
-            }}
-            submitLabel="Save changes"
-            onSubmit={(values) => {
-              updateCustomer(customer.id, values);
-              router.push("/customers");
-            }}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 space-y-6 p-6">
+          <Card
+            title="Customer details"
+            action={
+              <div className="flex items-center gap-3">
+                <StampBadge status={customer.status} />
+                <Button
+                  variant={
+                    customer.status === "active" ? "danger" : "secondary"
+                  }
+                  onClick={() => setConfirmArchive(true)}
+                >
+                  {customer.status === "active" ? "Archive" : "Restore"}
+                </Button>
+              </div>
+            }
+          >
+            <CustomerForm
+              initial={{
+                contactName: customer.contactName,
+                email: customer.email,
+                phone: customer.phone,
+                displayName: customer.displayName,
+                legalCompanyName: customer.legalCompanyName,
+                locationIds: customer.locationIds,
+              }}
+              submitLabel="Save changes"
+              onSubmit={(values) => {
+                updateCustomer(customer.id, values);
+                router.push("/customers");
+              }}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={confirmArchive}

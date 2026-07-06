@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { EmployeeForm } from "@/components/forms/EmployeeForm";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -37,38 +38,42 @@ export default function EditEmployeePage() {
         title={`Edit ${employee.name}`}
         description="Update contact info, pay rate, or reassign their home location."
       />
-      <main className="flex-1 space-y-6 p-6">
-        <Card
-          title="Employee details"
-          action={
-            <div className="flex items-center gap-3">
-              <StampBadge status={employee.status} />
-              <Button
-                variant={employee.status === "active" ? "danger" : "secondary"}
-                onClick={() => setConfirmArchive(true)}
-              >
-                {employee.status === "active" ? "Archive" : "Restore"}
-              </Button>
-            </div>
-          }
-        >
-          <EmployeeForm
-            initial={{
-              name: employee.name,
-              email: employee.email,
-              phone: employee.phone,
-              address: employee.address,
-              hourlyRate: employee.hourlyRate,
-              locationId: employee.locationId,
-            }}
-            submitLabel="Save changes"
-            onSubmit={(values) => {
-              updateEmployee(employee.id, values);
-              router.push("/employees");
-            }}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 space-y-6 p-6">
+          <Card
+            title="Employee details"
+            action={
+              <div className="flex items-center gap-3">
+                <StampBadge status={employee.status} />
+                <Button
+                  variant={
+                    employee.status === "active" ? "danger" : "secondary"
+                  }
+                  onClick={() => setConfirmArchive(true)}
+                >
+                  {employee.status === "active" ? "Archive" : "Restore"}
+                </Button>
+              </div>
+            }
+          >
+            <EmployeeForm
+              initial={{
+                name: employee.name,
+                email: employee.email,
+                phone: employee.phone,
+                address: employee.address,
+                hourlyRate: employee.hourlyRate,
+                locationId: employee.locationId,
+              }}
+              submitLabel="Save changes"
+              onSubmit={(values) => {
+                updateEmployee(employee.id, values);
+                router.push("/employees");
+              }}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={confirmArchive}

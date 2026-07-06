@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { ProductTypeForm } from "@/components/forms/ProductTypeForm";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -38,38 +39,40 @@ export default function EditProductTypePage() {
         title={`Edit ${productType.name}`}
         description="Adjust the rate card without touching any past loads billed under it."
       />
-      <main className="flex-1 space-y-6 p-6">
-        <Card
-          title="Product type details"
-          action={
-            <div className="flex items-center gap-3">
-              <StampBadge status={productType.status} />
-              <Button
-                variant={
-                  productType.status === "active" ? "danger" : "secondary"
-                }
-                onClick={() => setConfirmArchive(true)}
-              >
-                {productType.status === "active" ? "Archive" : "Restore"}
-              </Button>
-            </div>
-          }
-        >
-          <ProductTypeForm
-            initial={{
-              customerId: productType.customerId,
-              locationId: productType.locationId,
-              name: productType.name,
-              rateLines: productType.rateLines,
-            }}
-            submitLabel="Save changes"
-            onSubmit={(values) => {
-              updateProductType(productType.id, values);
-              router.push("/product-types");
-            }}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 space-y-6 p-6">
+          <Card
+            title="Product type details"
+            action={
+              <div className="flex items-center gap-3">
+                <StampBadge status={productType.status} />
+                <Button
+                  variant={
+                    productType.status === "active" ? "danger" : "secondary"
+                  }
+                  onClick={() => setConfirmArchive(true)}
+                >
+                  {productType.status === "active" ? "Archive" : "Restore"}
+                </Button>
+              </div>
+            }
+          >
+            <ProductTypeForm
+              initial={{
+                customerId: productType.customerId,
+                locationId: productType.locationId,
+                name: productType.name,
+                rateLines: productType.rateLines,
+              }}
+              submitLabel="Save changes"
+              onSubmit={(values) => {
+                updateProductType(productType.id, values);
+                router.push("/product-types");
+              }}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={confirmArchive}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -89,21 +90,23 @@ export default function ProductTypesPage() {
         title="Product Types"
         description="Each product type belongs to one customer and one location, so load entry only shows what's relevant."
       />
-      <main className="flex-1 p-6">
-        <div className="mb-4 flex justify-end">
-          <Link href="/product-types/new">
-            <Button>New product type</Button>
-          </Link>
-        </div>
-        <Card>
-          <FilterableTable
-            columns={columns}
-            rows={productTypes}
-            getRowKey={(p) => p.id}
-            defaultFilterKeys={["customer"]}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 p-6">
+          <div className="mb-4 flex justify-end">
+            <Link href="/product-types/new">
+              <Button>New product type</Button>
+            </Link>
+          </div>
+          <Card>
+            <FilterableTable
+              columns={columns}
+              rows={productTypes}
+              getRowKey={(p) => p.id}
+              defaultFilterKeys={["customer"]}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={pending !== null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -106,30 +107,32 @@ export default function LoadEntryReportPage() {
         title="Load Entry Report"
         description="Filter any column below, Excel-style, instead of one generic search box."
       />
-      <main className="flex-1 p-6">
-        <Card>
-          <FilterableTable
-            columns={columns}
-            rows={rows}
-            getRowKey={(r) => r.load.id}
-            defaultFilterKeys={["customer", "status"]}
-            onExport={(filteredRows) =>
-              downloadCsv(
-                "load-entry-report.csv",
-                columns.map((c) => ({
-                  header: c.header,
-                  accessor: (r: Row) => c.accessor(r),
-                })),
-                filteredRows,
-              )
-            }
-          />
-        </Card>
-        <p className="mt-4 text-xs text-steel-light">
-          Employees count is shown separately from the {employees.length} total
-          registered employees to make thin staffing easy to spot.
-        </p>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 p-6">
+          <Card>
+            <FilterableTable
+              columns={columns}
+              rows={rows}
+              getRowKey={(r) => r.load.id}
+              defaultFilterKeys={["customer", "status"]}
+              onExport={(filteredRows) =>
+                downloadCsv(
+                  "load-entry-report.csv",
+                  columns.map((c) => ({
+                    header: c.header,
+                    accessor: (r: Row) => c.accessor(r),
+                  })),
+                  filteredRows,
+                )
+              }
+            />
+          </Card>
+          <p className="mt-4 text-xs text-steel-light">
+            Employees count is shown separately from the {employees.length}{" "}
+            total registered employees to make thin staffing easy to spot.
+          </p>
+        </main>
+      </AdminOnly>
     </>
   );
 }

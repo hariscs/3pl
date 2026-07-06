@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -26,7 +27,11 @@ export default function CustomersPage() {
       .join(", ");
 
   const columns: Column<Customer>[] = [
-    { key: "displayName", header: "Display Name", accessor: (c) => c.displayName },
+    {
+      key: "displayName",
+      header: "Display Name",
+      accessor: (c) => c.displayName,
+    },
     {
       key: "legalName",
       header: "Legal Name",
@@ -92,21 +97,23 @@ export default function CustomersPage() {
         title="Customers"
         description="Archive a customer instead of deleting it — their load and billing history stays in reports."
       />
-      <main className="flex-1 p-6">
-        <div className="mb-4 flex justify-end">
-          <Link href="/customers/new">
-            <Button>New customer</Button>
-          </Link>
-        </div>
-        <Card>
-          <FilterableTable
-            columns={columns}
-            rows={customers}
-            getRowKey={(c) => c.id}
-            defaultFilterKeys={["status"]}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 p-6">
+          <div className="mb-4 flex justify-end">
+            <Link href="/customers/new">
+              <Button>New customer</Button>
+            </Link>
+          </div>
+          <Card>
+            <FilterableTable
+              columns={columns}
+              rows={customers}
+              getRowKey={(c) => c.id}
+              defaultFilterKeys={["status"]}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={pending !== null}

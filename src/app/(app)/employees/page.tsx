@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
@@ -94,21 +95,23 @@ export default function EmployeesPage() {
         title="Employees"
         description="Archive an employee to remove them from load pickers without losing their payout history."
       />
-      <main className="flex-1 p-6">
-        <div className="mb-4 flex justify-end">
-          <Link href="/employees/new">
-            <Button>New employee</Button>
-          </Link>
-        </div>
-        <Card>
-          <FilterableTable
-            columns={columns}
-            rows={employees}
-            getRowKey={(e) => e.id}
-            defaultFilterKeys={["status"]}
-          />
-        </Card>
-      </main>
+      <AdminOnly>
+        <main className="flex-1 p-6">
+          <div className="mb-4 flex justify-end">
+            <Link href="/employees/new">
+              <Button>New employee</Button>
+            </Link>
+          </div>
+          <Card>
+            <FilterableTable
+              columns={columns}
+              rows={employees}
+              getRowKey={(e) => e.id}
+              defaultFilterKeys={["status"]}
+            />
+          </Card>
+        </main>
+      </AdminOnly>
 
       <ConfirmDialog
         open={pending !== null}
