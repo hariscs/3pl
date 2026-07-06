@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppData } from "@/lib/store";
+import type { Customer } from "@/lib/types";
 
 export default function CustomersPage() {
   const { customers, locations, toggleCustomerArchive } = useAppData();
@@ -23,6 +25,67 @@ export default function CustomersPage() {
       .filter(Boolean)
       .join(", ");
 
+  const columns: Column<Customer>[] = [
+    { key: "displayName", header: "Display Name", accessor: (c) => c.displayName },
+    {
+      key: "legalName",
+      header: "Legal Name",
+      accessor: (c) => c.legalCompanyName,
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      accessor: (c) => `${c.contactName} ${c.email}`,
+      render: (c) => (
+        <>
+          {c.contactName}
+          <br />
+          <span className="text-xs text-steel">{c.email}</span>
+        </>
+      ),
+    },
+    {
+      key: "locations",
+      header: "Locations",
+      accessor: (c) => locationNames(c.locationIds) || "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (c) => c.status,
+      filter: "select",
+      filterOptions: ["active", "archived"],
+      render: (c) => <StampBadge status={c.status} />,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      accessor: () => "",
+      filterable: false,
+      sortable: false,
+      align: "right",
+      render: (c) => (
+        <div className="flex justify-end gap-2">
+          <Link href={`/customers/${c.id}`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
+          <Button
+            variant={c.status === "active" ? "danger" : "secondary"}
+            onClick={() =>
+              setPending({
+                id: c.id,
+                name: c.displayName,
+                archiving: c.status === "active",
+              })
+            }
+          >
+            {c.status === "active" ? "Archive" : "Restore"}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <TopBar
@@ -30,72 +93,18 @@ export default function CustomersPage() {
         description="Archive a customer instead of deleting it — their load and billing history stays in reports."
       />
       <main className="flex-1 p-6">
-        <Card
-          title={`${customers.length} customers`}
-          action={
-            <Link href="/customers/new">
-              <Button>New customer</Button>
-            </Link>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max text-sm">
-              <thead>
-                <tr className="border-b border-manila-dark text-left font-display text-xs uppercase tracking-wide text-steel">
-                  <th className="py-2 pr-4">Display name</th>
-                  <th className="py-2 pr-4">Legal name</th>
-                  <th className="py-2 pr-4">Contact</th>
-                  <th className="py-2 pr-4">Locations</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2 pr-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map((c) => (
-                  <tr key={c.id} className="border-b border-manila-dark/60">
-                    <td className="py-2 pr-4 font-medium text-ink">
-                      {c.displayName}
-                    </td>
-                    <td className="py-2 pr-4 text-steel">
-                      {c.legalCompanyName}
-                    </td>
-                    <td className="py-2 pr-4 text-ink">
-                      {c.contactName}
-                      <br />
-                      <span className="text-xs text-steel">{c.email}</span>
-                    </td>
-                    <td className="py-2 pr-4 text-ink">
-                      {locationNames(c.locationIds) || "—"}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <StampBadge status={c.status} />
-                    </td>
-                    <td className="py-2 pr-4">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/customers/${c.id}`}>
-                          <Button variant="secondary">Edit</Button>
-                        </Link>
-                        <Button
-                          variant={
-                            c.status === "active" ? "danger" : "secondary"
-                          }
-                          onClick={() =>
-                            setPending({
-                              id: c.id,
-                              name: c.displayName,
-                              archiving: c.status === "active",
-                            })
-                          }
-                        >
-                          {c.status === "active" ? "Archive" : "Restore"}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="mb-4 flex justify-end">
+          <Link href="/customers/new">
+            <Button>New customer</Button>
+          </Link>
+        </div>
+        <Card>
+          <FilterableTable
+            columns={columns}
+            rows={customers}
+            getRowKey={(c) => c.id}
+            defaultFilterKeys={["status"]}
+          />
         </Card>
       </main>
 

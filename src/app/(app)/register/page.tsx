@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { useAppData } from "@/lib/store";
-import type { Role } from "@/lib/types";
+import type { Role, SystemUser } from "@/lib/types";
 
 const emptyForm = {
   name: "",
@@ -50,6 +51,34 @@ export default function RegisterUserPage() {
 
   const locationName = (id: string) =>
     locations.find((l) => l.id === id)?.name ?? "—";
+
+  const userColumns: Column<SystemUser>[] = [
+    { key: "name", header: "Name", accessor: (u) => u.name },
+    { key: "email", header: "Email", accessor: (u) => u.email },
+    {
+      key: "role",
+      header: "Role",
+      accessor: (u) => u.role,
+      filter: "select",
+      filterOptions: ["admin", "lead", "customer"],
+      render: (u) => <span className="capitalize">{u.role}</span>,
+    },
+    {
+      key: "location",
+      header: "Location",
+      accessor: (u) => locationName(u.locationId),
+      filter: "select",
+      filterOptions: locations.map((l) => l.name),
+    },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (u) => u.status,
+      filter: "select",
+      filterOptions: ["active", "archived"],
+      render: (u) => <StampBadge status={u.status} />,
+    },
+  ];
 
   return (
     <>
@@ -180,34 +209,12 @@ export default function RegisterUserPage() {
         )}
 
         <Card title="Existing users">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max text-sm">
-              <thead>
-                <tr className="border-b border-manila-dark text-left font-display text-xs uppercase tracking-wide text-steel">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Email</th>
-                  <th className="py-2 pr-4">Role</th>
-                  <th className="py-2 pr-4">Location</th>
-                  <th className="py-2 pr-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-manila-dark/60">
-                    <td className="py-2 pr-4 text-ink">{u.name}</td>
-                    <td className="py-2 pr-4 text-steel">{u.email}</td>
-                    <td className="py-2 pr-4 capitalize text-ink">{u.role}</td>
-                    <td className="py-2 pr-4 text-ink">
-                      {locationName(u.locationId)}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <StampBadge status={u.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <FilterableTable
+            columns={userColumns}
+            rows={users}
+            getRowKey={(u) => u.id}
+            defaultFilterKeys={["role"]}
+          />
         </Card>
       </main>
     </>

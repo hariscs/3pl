@@ -12,6 +12,10 @@ export type Column<T> = {
   filter?: "text" | "select";
   filterOptions?: string[];
   align?: "left" | "right";
+  /** Set false for columns with no meaningful text value, e.g. an Actions column. Defaults true. */
+  filterable?: boolean;
+  /** Set false for columns with no meaningful order, e.g. an Actions column. Defaults true. */
+  sortable?: boolean;
 };
 
 type ActiveFilter = { id: string; key: string; openOnMount: boolean };
@@ -44,12 +48,14 @@ export function FilterableTable<T>({
     null,
   );
 
-  const filterableColumns: FilterableColumn[] = columns.map((col) => ({
-    key: col.key,
-    label: col.header,
-    type: col.filter === "select" ? "select" : "text",
-    options: col.filterOptions,
-  }));
+  const filterableColumns: FilterableColumn[] = columns
+    .filter((col) => col.filterable !== false)
+    .map((col) => ({
+      key: col.key,
+      label: col.header,
+      type: col.filter === "select" ? "select" : "text",
+      options: col.filterOptions,
+    }));
 
   const availableColumns = filterableColumns.filter(
     (col) => !activeFilters.some((f) => f.key === col.key),
@@ -61,8 +67,10 @@ export function FilterableTable<T>({
 
     if (query) {
       result = result.filter((row) =>
-        columns.some((col) =>
-          String(col.accessor(row)).toLowerCase().includes(query),
+        columns.some(
+          (col) =>
+            col.filterable !== false &&
+            String(col.accessor(row)).toLowerCase().includes(query),
         ),
       );
     }
@@ -204,20 +212,24 @@ export function FilterableTable<T>({
                     col.align === "right" ? "text-right" : ""
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleSort(col.key)}
-                    className="inline-flex items-center gap-1 hover:text-rust"
-                  >
-                    {col.header}
-                    <span className="text-[10px] text-steel-light">
-                      {sort?.key === col.key
-                        ? sort.dir === "asc"
-                          ? "▲"
-                          : "▼"
-                        : "↕"}
-                    </span>
-                  </button>
+                  {col.sortable === false ? (
+                    col.header
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.key)}
+                      className="inline-flex items-center gap-1 hover:text-rust"
+                    >
+                      {col.header}
+                      <span className="text-[10px] text-steel-light">
+                        {sort?.key === col.key
+                          ? sort.dir === "asc"
+                            ? "▲"
+                            : "▼"
+                          : "↕"}
+                      </span>
+                    </button>
+                  )}
                 </th>
               ))}
             </tr>

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppData } from "@/lib/store";
+import type { ProductType } from "@/lib/types";
 
 export default function ProductTypesPage() {
   const { productTypes, customers, locations, toggleProductTypeArchive } =
@@ -23,6 +25,64 @@ export default function ProductTypesPage() {
   const locationName = (id: string) =>
     locations.find((l) => l.id === id)?.name ?? "—";
 
+  const columns: Column<ProductType>[] = [
+    { key: "name", header: "Name", accessor: (p) => p.name },
+    {
+      key: "customer",
+      header: "Customer",
+      accessor: (p) => customerName(p.customerId),
+      filter: "select",
+      filterOptions: customers.map((c) => c.displayName),
+    },
+    {
+      key: "location",
+      header: "Location",
+      accessor: (p) => locationName(p.locationId),
+      filter: "select",
+      filterOptions: locations.map((l) => l.name),
+    },
+    {
+      key: "units",
+      header: "Units Billed",
+      accessor: (p) => p.rateLines.map((l) => l.unit).join(", "),
+    },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (p) => p.status,
+      filter: "select",
+      filterOptions: ["active", "archived"],
+      render: (p) => <StampBadge status={p.status} />,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      accessor: () => "",
+      filterable: false,
+      sortable: false,
+      align: "right",
+      render: (p) => (
+        <div className="flex justify-end gap-2">
+          <Link href={`/product-types/${p.id}`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
+          <Button
+            variant={p.status === "active" ? "danger" : "secondary"}
+            onClick={() =>
+              setPending({
+                id: p.id,
+                name: p.name,
+                archiving: p.status === "active",
+              })
+            }
+          >
+            {p.status === "active" ? "Archive" : "Restore"}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <TopBar
@@ -30,68 +90,18 @@ export default function ProductTypesPage() {
         description="Each product type belongs to one customer and one location, so load entry only shows what's relevant."
       />
       <main className="flex-1 p-6">
-        <Card
-          title={`${productTypes.length} product types`}
-          action={
-            <Link href="/product-types/new">
-              <Button>New product type</Button>
-            </Link>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max text-sm">
-              <thead>
-                <tr className="border-b border-manila-dark text-left font-display text-xs uppercase tracking-wide text-steel">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Customer</th>
-                  <th className="py-2 pr-4">Location</th>
-                  <th className="py-2 pr-4">Units billed</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2 pr-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productTypes.map((p) => (
-                  <tr key={p.id} className="border-b border-manila-dark/60">
-                    <td className="py-2 pr-4 font-medium text-ink">{p.name}</td>
-                    <td className="py-2 pr-4 text-ink">
-                      {customerName(p.customerId)}
-                    </td>
-                    <td className="py-2 pr-4 text-ink">
-                      {locationName(p.locationId)}
-                    </td>
-                    <td className="py-2 pr-4 text-steel">
-                      {p.rateLines.map((l) => l.unit).join(", ")}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <StampBadge status={p.status} />
-                    </td>
-                    <td className="py-2 pr-4">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/product-types/${p.id}`}>
-                          <Button variant="secondary">Edit</Button>
-                        </Link>
-                        <Button
-                          variant={
-                            p.status === "active" ? "danger" : "secondary"
-                          }
-                          onClick={() =>
-                            setPending({
-                              id: p.id,
-                              name: p.name,
-                              archiving: p.status === "active",
-                            })
-                          }
-                        >
-                          {p.status === "active" ? "Archive" : "Restore"}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="mb-4 flex justify-end">
+          <Link href="/product-types/new">
+            <Button>New product type</Button>
+          </Link>
+        </div>
+        <Card>
+          <FilterableTable
+            columns={columns}
+            rows={productTypes}
+            getRowKey={(p) => p.id}
+            defaultFilterKeys={["customer"]}
+          />
         </Card>
       </main>
 
