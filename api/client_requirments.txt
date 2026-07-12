@@ -1,0 +1,442 @@
+Implement a temporary networking and location check-in architecture for the Lead mobile app.
+
+The app currently uses static data, but it should behave as if it is communicating with a real backend. Build the data layer in a way that dummy JSON files can later be replaced with real API endpoints without changing the screens or feature logic.
+
+Core objectives:
+
+1. Create a reusable networking module responsible for:
+   - GET requests
+   - POST requests
+   - PUT/PATCH requests
+   - DELETE requests
+   - Request loading states
+   - Typed responses
+   - Error handling
+   - Simulated network delay
+   - Optional simulated request failures
+   - Future authentication token support
+
+2. Create a repository/service layer between the networking module and the UI.
+
+The UI must never import JSON files directly.
+
+Correct flow:
+
+UI Screen
+→ Hook / View Model
+→ Repository
+→ API Client
+→ Mock JSON now, real server later
+
+3. Use strict TypeScript.
+
+Do not use `any`.
+
+Create reusable types for:
+   - API response
+   - API error
+   - Loading state
+   - Lead session
+   - Location
+   - Location bootstrap data
+   - Customer
+   - Product
+   - Employee
+   - Load
+   - Pay configuration
+
+4. Add a mock API adapter.
+
+The mock adapter should load data from local JSON files and return Promises so the application behaves like it is making real network requests.
+
+Simulate:
+   - 500 to 1,000 ms loading delay
+   - Successful requests by default
+   - Configurable failure mode for testing error states
+
+Suggested structure:
+
+src/
+  networking/
+    api-client.ts
+    api-types.ts
+    api-error.ts
+    endpoints.ts
+    mock-api-adapter.ts
+    request-config.ts
+
+  repositories/
+    auth-repository.ts
+    location-repository.ts
+    load-repository.ts
+    employee-repository.ts
+
+  services/
+    session-service.ts
+    location-bootstrap-service.ts
+
+  store/
+    session-store.ts
+    location-store.ts
+
+  hooks/
+    use-session.ts
+    use-location-check-in.ts
+    use-location-data.ts
+
+  mocks/
+    locations.json
+    location-dallas-warehouse-4.json
+    location-dallas-warehouse-6.json
+    location-fort-worth.json
+
+  types/
+    session.ts
+    location.ts
+    customer.ts
+    employee.ts
+    product.ts
+    load.ts
+    payroll.ts
+
+5. Implement persistent login behavior.
+
+The user should not be required to log in every day.
+
+Persist the authenticated Lead session securely.
+
+On app launch:
+
+- If no authenticated session exists, show Login.
+- If the Lead is authenticated but has not checked into a location for the current shift, show Location Check-In.
+- If the Lead has an active location check-in, load the saved location dataset and open the Dashboard.
+- If a previous active load exists, restore it.
+
+6. Location check-in must be compulsory.
+
+A Lead cannot use Dashboard, Loads, Crew or other operational screens until a location is selected and check-in is completed.
+
+App launch flow:
+
+Splash
+→ Restore authenticated session
+→ Check active location session
+→ Location Check-In if required
+→ Download location bootstrap dataset
+→ Save dataset locally
+→ Dashboard
+
+7. Build the Location Check-In flow.
+
+Screen title:
+“Where are you working today?”
+
+Subtitle:
+“Select a location to start your shift and load the correct customers, crew and work setup.”
+
+Show assigned location cards with:
+
+- Location name
+- Customer or warehouse group
+- Full address
+- Distance, if available
+- Assigned badge
+- Last visited date, if available
+
+Example locations:
+
+- Dallas Warehouse 4
+  1234 Logistics Parkway, Dallas, TX
+  Assigned
+
+- Dallas Warehouse 6
+  8600 Industrial Drive, Dallas, TX
+
+- Fort Worth Warehouse
+  450 Commerce Street, Fort Worth, TX
+
+Selecting a card should highlight it with:
+- Blue border
+- Light blue background
+- Checkmark
+
+Sticky bottom button:
+“Check In to Location”
+
+The button remains disabled until a location is selected.
+
+8. Add a check-in confirmation step.
+
+After tapping “Check In to Location”, display a bottom sheet or confirmation screen:
+
+“Start shift at Dallas Warehouse 4?”
+
+Show:
+- Current date
+- Current time
+- Selected location
+- Address
+
+Primary action:
+“Confirm Check-In”
+
+Secondary action:
+“Choose Another Location”
+
+9. Simulate a location check-in request.
+
+Example request:
+
+POST /lead/check-ins
+
+Payload:
+
+{
+  "leadId": "lead-001",
+  "locationId": "loc-dallas-04",
+  "checkedInAt": "current ISO timestamp",
+  "deviceId": "mock-device-id"
+}
+
+Example response:
+
+{
+  "checkInId": "checkin-2026-001",
+  "leadId": "lead-001",
+  "locationId": "loc-dallas-04",
+  "checkedInAt": "2026-07-11T08:01:00-05:00",
+  "status": "active"
+}
+
+10. After successful check-in, request a complete location bootstrap dataset.
+
+Simulate this endpoint:
+
+GET /locations/{locationId}/bootstrap
+
+This should return all stable and operational data required for the Lead to use the app during the shift.
+
+The app should not repeatedly request the same static data on every screen.
+
+11. The location bootstrap response should include:
+
+- Selected location
+- Lead assignment
+- Customers available at this location
+- Customer products and work types
+- Employees assigned or available at the location
+- Pay rules
+- Customer billing rules
+- Active loads
+- Recent completed loads
+- Container input configuration
+- App permissions
+- Location-specific feature flags
+- Location contacts
+- Shift configuration
+- Last synchronization timestamp
+
+Example shape:
+
+{
+  "location": {
+    "id": "loc-dallas-04",
+    "name": "Dallas Warehouse 4",
+    "code": "DAL-WH-04",
+    "address": {
+      "line1": "1234 Logistics Parkway",
+      "city": "Dallas",
+      "state": "TX",
+      "postalCode": "75201"
+    },
+    "timezone": "America/Chicago",
+    "status": "active"
+  },
+
+  "leadAssignment": {
+    "leadId": "lead-001",
+    "leadName": "Mike Johnson",
+    "role": "Lead Supervisor",
+    "shiftStart": "08:00",
+    "shiftEnd": "17:00"
+  },
+
+  "customers": [
+    {
+      "id": "customer-amazon-12",
+      "name": "Amazon DC12",
+      "status": "active",
+      "products": [
+        {
+          "id": "product-frozen-chicken",
+          "name": "Frozen Chicken",
+          "payRuleId": "pay-rule-001",
+          "billingRuleId": "billing-rule-001"
+        }
+      ]
+    }
+  ],
+
+  "employees": [
+    {
+      "id": "employee-001",
+      "name": "John Smith",
+      "employeeCode": "EMP-001",
+      "status": "available",
+      "assignedLocationId": "loc-dallas-04"
+    }
+  ],
+
+  "payRules": [
+    {
+      "id": "pay-rule-001",
+      "type": "per_case",
+      "rate": 0.06,
+      "currency": "USD"
+    }
+  ],
+
+  "billingRules": [
+    {
+      "id": "billing-rule-001",
+      "type": "per_case",
+      "rate": 0.11,
+      "currency": "USD"
+    }
+  ],
+
+  "activeLoads": [],
+
+  "recentLoads": [],
+
+  "containerFields": {
+    "containerNumberRequired": true,
+    "casesRequired": true,
+    "weightRequired": true,
+    "sortsRequired": true,
+    "notesEnabled": true,
+    "photosEnabled": true
+  },
+
+  "permissions": {
+    "canStartLoad": true,
+    "canCloseLoad": true,
+    "canEditLoad": true,
+    "canClockEmployees": true,
+    "canViewPayRates": false,
+    "canViewBillingRates": false
+  },
+
+  "featureFlags": {
+    "photoCapture": true,
+    "breakTracking": false,
+    "offlineMode": true
+  },
+
+  "locationContacts": [
+    {
+      "name": "Sarah Williams",
+      "role": "Warehouse Manager",
+      "phone": "+1 555 010 2200"
+    }
+  ],
+
+  "lastSyncedAt": "2026-07-11T08:01:10-05:00"
+}
+
+12. Cache the location bootstrap data locally.
+
+After the bootstrap request succeeds:
+
+- Save the data in application state.
+- Persist it locally.
+- Make it available across the app.
+- Dashboard, Loads, Crew and Start Load should read from this shared location store.
+- Do not reload JSON files independently from each screen.
+
+13. Support refresh and synchronization.
+
+Add a `refreshLocationData()` action that requests the bootstrap dataset again and replaces the cached location data.
+
+Display:
+- Last updated time
+- Refreshing state
+- Error state
+- Retry action
+
+14. Support offline-style behavior.
+
+If cached location data exists and the mock request fails:
+- Continue using cached data.
+- Show a non-blocking banner:
+  “Using saved location data. Some information may be outdated.”
+
+If no cached data exists and the request fails:
+- Show a blocking error state with Retry and Change Location actions.
+
+15. Add a checked-in location indicator to the Dashboard.
+
+Display:
+
+“Checked in at”
+Dallas Warehouse 4
+
+Show:
+- Green active indicator
+- Check-in time
+- “Change” action
+
+Changing the location must show a warning:
+
+“Changing location will end your current location session. Active loads must be closed or transferred first.”
+
+16. Add an End Shift action inside More.
+
+End Shift flow:
+- Confirm that there are no active loads.
+- Show shift summary.
+- Send simulated check-out request.
+- Clear active location check-in.
+- Keep the user authenticated.
+- Return to the Location Check-In screen.
+
+Example:
+
+POST /lead/check-ins/{checkInId}/checkout
+
+17. Create realistic mock JSON datasets for at least three locations.
+
+Each location must have different:
+- Customers
+- Products
+- Available employees
+- Pay rules
+- Billing rules
+- Recent loads
+- Contact people
+
+This should demonstrate that selecting a different location changes the entire app dataset.
+
+18. Preserve the existing visual language.
+
+Use:
+- White and very light gray backgrounds
+- Blue #2563EB as primary color
+- Green for active and checked-in states
+- SF Pro style typography
+- 16px rounded cards
+- Large touch targets
+- Minimal one-handed interactions
+- Existing bottom navigation
+
+19. Do not redesign unrelated screens.
+
+Integrate this architecture into the current application while preserving the existing Dashboard design.
+
+20. Before implementation:
+- Inspect the current project structure.
+- Identify the existing state management and routing approach.
+- Present a concise implementation plan.
+- Then implement incrementally.
+- Run type checking, linting and tests.
+- Fix all errors before finishing.
