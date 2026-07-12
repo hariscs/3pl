@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+  Warehouse Ledger theme — a single, deliberate look (no light/dark toggle).
+  Dark ink chrome (nav) + warm manila paper (content), like folders on a
+  dispatcher's desk. Rust/freight-green/stamp-red map directly to the
+  ticket-stamp language used throughout the app (ACTIVE / VOID / ARCHIVED).
+*/
+:root {
+  --color-ink: #1c1b18;
+  --color-ink-soft: #262420;
+  --color-ink-line: #3a362e;
+
+  --color-paper: #f3eee4;
+  --color-paper-dim: #ebe4d5;
+  --color-cream: #fbf8f1;
+
+  --color-manila: #e8dcc3;
+  --color-manila-dark: #d3c19b;
+
+  --color-rust: #c8531f;
+  --color-rust-dark: #a8431a;
+  --color-rust-soft: #f0d9c8;
+
+  --color-freight: #2f5d50;
+  --color-freight-dark: #24473d;
+  --color-freight-soft: #d9e6e1;
+
+  --color-stamp: #9e2b25;
+  --color-stamp-soft: #f1d7d3;
+
+  --color-steel: #6b6558;
+  --color-steel-light: #9a9384;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-line: var(--color-ink-line);
+
+  --color-paper: var(--color-paper);
+  --color-paper-dim: var(--color-paper-dim);
+  --color-cream: var(--color-cream);
+
+  --color-manila: var(--color-manila);
+  --color-manila-dark: var(--color-manila-dark);
+
+  --color-rust: var(--color-rust);
+  --color-rust-dark: var(--color-rust-dark);
+  --color-rust-soft: var(--color-rust-soft);
+
+  --color-freight: var(--color-freight);
+  --color-freight-dark: var(--color-freight-dark);
+  --color-freight-soft: var(--color-freight-soft);
+
+  --color-stamp: var(--color-stamp);
+  --color-stamp-soft: var(--color-stamp-soft);
+
+  --color-steel: var(--color-steel);
+  --color-steel-light: var(--color-steel-light);
+
+  --font-display: var(--font-oswald);
+  --font-body: var(--font-inter);
+  --font-tick: var(--font-plex-mono);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Perforated ticket-stub edge, used by <TicketStub>. */
+.stub-perforation {
+  background-image: radial-gradient(
+    circle at center,
+    var(--color-paper) 0,
+    var(--color-paper) 2.5px,
+    transparent 2.5px
+  );
+  background-size: 14px 14px;
+  background-repeat: repeat-y;
+  background-position: center;
+}
+
+.ink-stamp {
+  font-family: var(--font-display), sans-serif;
+  border: 2.5px solid currentColor;
+  border-radius: 3px;
+  letter-spacing: 0.12em;
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

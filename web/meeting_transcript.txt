@@ -1,0 +1,429 @@
+(Transcribed by TurboScribe. Go Unlimited to remove this message.)
+
+Okay, so the screen is now recording. Okay, so we got the dashboard is, you know, it just basically tells you what's good, the basic information that's on here. That could be whatever, I don't really care too much about the dashboard.
+
+So when you're, I guess I should walk you through this here first. So, under registering a user. Okay, all I have for me is I can put their name, their email address, their password and define what role they are.
+
+And defining the roles depends upon what they're able to see and how they're able to log in. That's great. But what I need really here in this register section is I also need to be able to allocate them towards a location.
+
+That way I can have a specific location that they can only see the information from that location. There are two ways to get the location, either they put it manually or we can fetch from their current location. It'll be a fetch from a drop down list that I create.
+
+So, and that's the only way to set up a customer and I'm okay with that. That's fine. I can create customers that way and give them their user ID and password.
+
+Under the customer information here, the one thing that's kind of crazy is, let's see here, let me go ahead and do one that no one's using right now. So, I have no way of, first of all, just archiving them. I need to be able to archive a customer so if a customer goes away, I want their reporting information to still be available.
+
+Here I only have the option to delete them. If I delete them, all their information is out of the reporting section. So I need to be able to archive.
+
+We have this soft delete option in our databases. So the customer is not actually deleted. We just disable that.
+
+So as you're saying that we can archive that. So that's not a problem. That works.
+
+That can be worked. And I mean as far as the information, under customer you can see it has customer name, their email address, what the company name is. This is what I'm calling them, whatever.
+
+And then what the actual company is, their phone address. I need a location section in here as well. Because I need to tie them to a specific location.
+
+Yeah, whatever information you can put while registering a user, you can update that as well in the edit customer section. So yeah, that can be done. And then under employees, it would be the same thing again.
+
+I have the capability. I don't even have the capability to delete an employee here because all these are fake employees that we did during the test. And they're just not available to delete.
+
+I want to be able to archive them like we talked about. And you can see creating it, it's just giving me their name, email address, phone number, and hourly rate. I'd like to have the capability of putting some more information in there in the employee master, address, location that they're tied to, all that kind of good stuff.
+
+But as of right now, all I can do is edit them. So every time, and I'll show you that, but you'll see when you're creating a new loader and you need to drop and choose an employee. All of these fake employees come up before my real employees for them to actually choose.
+
+So they're just they're having to scroll down past all that stuff just to pick their name. Under product types. Okay.
+
+Yeah, this is kind of a subcategory. One second. Sorry.
+
+So for the previous screen, we can have a kind of favourite section or recently used employees section separately. Then you can, you know, reuse them again. Yeah, I mean, we'll be as long as I have the active employees in there and they're tied to a location.
+
+You don't need to have like a recently used or favourite or anything like that. As long as it's just active and tied to a specific location. That location, the employees that can be chosen will be solely based upon when they choose a customer.
+
+For a load entry and the product, it'll tie it to a location. And then the only employees that will pull up are employees available for that location. Got it.
+
+Okay. So under product types, this is where I break down specifics. For each customer.
+
+So, for example. Well, first, I'll leave that there for a second so you can look at it. But you got like Giotis, Rick and do cow.
+
+Giotis, Rick, it is a customer. But this one's specific for one project that they have. As you can see, what crane Savannah crane is a customer location.
+
+Savannah, I'm having to put that in there. And then this is solar banding. And another thing we do for them is solar scanning.
+
+So I create specific things because each thing's a different price range. Under the fields, you know, creating. I would prefer here to have where you choose a customer first.
+
+And then then you can create a specific thing. So I would choose crane here location. I would choose Savannah.
+
+And then I would type in solar banding. And that would create where they're going to. Because there's multiple cranes throughout the U.S. that we're probably going to be picking up.
+
+Same with Giotis. Multiple locations. So I'd like to have it choose the main customer.
+
+That'll allocate exactly. You know, most of the billing goes to the corporate offices anyway. So this would be able to buy the customer specifically.
+
+Compile all the billing for one customer. And then it's broken down. The billing will be broken down by location and by product type.
+
+Base rate in this load field. This is if it's just kind of a. What's the minimum payout that I'm going to be doing? So, for example. Giotis, Rick and Duke out.
+
+The minimum payout I pay is $200. And that is base cases. That's up to 2700 cases.
+
+The amount over is billing 10 cents per case over. Base sorts is five. And I'm billing.
+
+Ten cents a case over a billing $10 per sort over. So your base cases is 2700. Anything over that number of cases.
+
+I built 10 cents a case. Base sorts is tens is five sorts. Anything over.
+
+I'm billing $10 a sort. The weight. Some customers.
+
+I have a weight threshold built into our contract. So 50 pounds. Or whatever.
+
+And then there's an up charge over that way. I do not use this pallet base and this pallet bonus as of right now. But there are some customers that I may have to charge that for.
+
+So number of pallets that what's the base. Number of pallets that we do and what's the bonus that's associated with that. So that load ideally.
+
+Yep. Sorry, go ahead. Yep.
+
+That load. You're talking about one big container where you have. Yeah.
+
+And over then. If you have to sort them and the weight threshold. Or if you have some overweight.
+
+Cases and then the pallet and base and then bonus for a few customers. Yes. Now, ideally.
+
+This is not something that you need to do immediately or whatever, but. Ideally, what would be beneficial for when we go to sell this thing or have. Other customers be able to use it.
+
+Would be. The base rate is fine. And then you'd want to have a box in here.
+
+Saying unit. And they could choose cases, pallets, whatever. You know, we can create the different units of measurement.
+
+Pounds, whatever the case is going to be. And they would do the base rate and they would choose pounds. And then they can add a sub field.
+
+For base unit. Would be sorts. And then.
+
+How many is the base sorts? They could choose another unit. So they can add layers. To it.
+
+Instead of just having all the fields. You make it as simple as possible for people. Yeah.
+
+And then. In a perfect world. The way that this would be designed and I can send you a spreadsheet with it.
+
+But. You'd basically have the columns. Side by side.
+
+To where when it shows the base rate. For the billing. And the base case.
+
+And what would be the base rate? Payout for the employee. So you basically have two columns, one that says. Bill and one that says pay.
+
+And this way, every unit that you select, you're putting in a bill now. And a pay amount. For each one.
+
+Instead of having these employee fields down here separate. To where I got to put the minimum payout down here. And then how many cases am I. Up to before I pay them out because.
+
+There's some cases, some scenarios where. Customer I might their base case may be. Let's just say 1800.
+
+And over 1800, I charge them more money. But down here, I'm not paying the employees any more money. Until they reach over 2000 cases.
+
+Because I'm paying out more upfront for them. But that's the same scenario. How many, what's the up to cases? How much more am I paying per case? What's the up to number of sorts? How much am I paying more per sorts? What's the bonus amount? I'm going to pay them out.
+
+For whatever that project is for weight. And then this hourly rate, hourly bonus and flat bonus. They put them in there.
+
+They didn't listen to me, but. None of this really applies. I don't use it because it confuses the way the system is.
+
+When you enter the employee file, when you put the hourly rate there. That tracks it. This would be.
+
+This needs to be separately. When we do a timekeeping. This hourly timekeeping module for it.
+
+That's where there would be an hourly rate. Put into place. Where employees are just clocking in and clocking out.
+
+Get paid straight hourly. None of this production stuff. So.
+
+They do have that all set up, right? You know, again. Instead of having this delete button in here. I want a way to archive it.
+
+So that if I have. If we're no longer doing crane scanning, I could just archive that. And it gets off the list for people to choose.
+
+So that was on our product types. Bringing a load. So when you create a load.
+
+You'd select the customer, but in this. First thing we'd want to do is select what location you're at. And then that will allocate what customers can come from this drop down menu.
+
+And as you can see, without even choosing a customer. I can choose product type. I don't want it to be that way.
+
+I want it to be whatever products are specifically geared towards a particular customer. The door number is what door to containers at. That's something that pretty much I use nonstop.
+
+With the exception of if it's not something that's out of door. So it might be reboxing, might be picking orders, might be building pallets. So they just put something stupid in there.
+
+Same thing with trailer. We need to know what the container number is or trailer number is. And what the vendor is.
+
+All that's important. The date automatically defaults, which is good. The P.O. number.
+
+I kind of need them to be able to put multiple P.O. numbers in there. Right now they could do it. They just have to put a comma after each one.
+
+But. I would like a button down here to click on add additional P.O. And they can, you know, if it's just to put one P.O. in there and they can add additional ones. This is where they put in the number of sorts that they have.
+
+The number of cases and the weight. And that actually calculates towards. What is.
+
+What is actually going to happen as far as cost and calculations and all that good stuff. Once they click save load. Then they get the drop down list and I can't.
+
+Can't do it right now because I don't want to mess up employees. Lucy, maybe I can do this. So let's just do.
+
+I can leave it all zero. It should do it. So once it saves the load.
+
+And you can see they have to scroll through all these employees. To find the available ones to clock on a load. Let's go ahead and put myself on one.
+
+And then assign them. Now, what should happen. Is after all that this should just go blank.
+
+It shouldn't still all be up here. Once the load saved, it should just, you know, default to a clean one. Clear all the fields.
+
+Yeah. Now under loads. Here's all the active loads we got going on right now.
+
+But this is the one I just put in there. Okay. And it doesn't.
+
+It'll show. Down here. This is what I'm billing.
+
+And it's because this is lead pay. There's no bill for it. But it does automatically calculate what I'm billing.
+
+And the change here, the number of cases. Number of sorts, whatever. And just click save changes.
+
+So it allows them to do that, which is good. When they want to add an employee. They got to choose the employee's name.
+
+And click add. That's exactly what I want. I'm going to save changes.
+
+So they have the employees on here. And what they do is they just clock out an employee when they're ready. And it calculates it, which is perfect.
+
+The one thing I would like to have on here. Is. When I click edit load.
+
+I'd like to have the option for them to avoid the load. Just void the entire load. So they can click that and it'll avoid them.
+
+And sorry, what does that mean? Avoid the load. Okay. So that means if, for example.
+
+They put in the information incorrectly or they put in a truck that was supposed to be there. And they already clocked people into it. And for some reason, the truck didn't show up or they couldn't get the truck unloaded.
+
+There wasn't pallets. Whatever the case is going to be where I don't need to pay them for this. And I don't need to bill them for it because they're going to get off it right away.
+
+They put it in by accident. So then I need to delete that that ever happened. Oh.
+
+And it could be. It could be an archive. Simply archive that load and it pulls it out.
+
+So it doesn't generate on any reports. That's it to say void or and it can. It can also be set up to where I'm the only one who can avoid the load.
+
+Okay. We can set it up toward a custom. The employees cannot do it.
+
+They put it all in there and then I get an email saying, hey. I need you to avoid this. The one thing that's missing from this load list here.
+
+That I would really like to see. Is the number. So you don't know what number this is until I go to reports.
+
+And when I look at the report, I see that that's ticket number two one one. But if I'm looking under loads, I can't see that. So if they send me, if the lead sends me a text saying, I need you.
+
+They have to screenshot a load. Send it to me and say, this is the one I need you to delete. Or this is the one I need you to not.
+
+Bill or pay for. But if they could just say, like, we didn't do load two on one or ticket two on one. Then I need to be able to take that out.
+
+So whether we can delete it here after it's entered. Or like, and I'm the only one who has control over that under the admin feature. I just need some way to classify this load.
+
+Ticket numbers already being generated. It's just not on this report. When they when they see it.
+
+Because underneath. Under them. They don't get all this access.
+
+I'm logged in under admin right now. Just to show you everything that's available, but. They only have the capability of putting in loads, creating loads, putting in the loads.
+
+And that's it. Yeah. I didn't have a different view.
+
+The more controls. That's why I did this this way to show you. So under reports.
+
+They have the load entry report now. You choose the date range and it automatically populate, which is good. But.
+
+Here's what. I've asked them for. And.
+
+They didn't. They did a generic thing. So this search box.
+
+Is just kind of generic as to what I can. I could type in anything. And search for it.
+
+But I would rather. These boxes down here. Every one of these fields.
+
+I'd rather have underneath that. A search. Do you know what I'm saying? So if this box, if this search box was down here and I could search.
+
+Just for, just under the customer file. If I just wanted to see just geodes ML. I could just search underneath here.
+
+Kind of like. In Excel, when you do the filter. Yeah, you can add the filter.
+
+Perfectly fine. Yeah. That's all I'm looking for is a filter for this.
+
+And it's basically an Excel spreadsheet. I'm looking for the filter feature. That's it.
+
+So the load entry port just shows all the loads that are there. It does show. How many employees.
+
+What we're billing. The total payout for it. And the total payout will not.
+
+It's not calculated to load is complete. So all these with zeros right now, they're still currently working. So if I choose a different day, if I choose the 24th.
+
+And it has a total payouts. Okay. They have the capability of.
+
+Exporting it to Excel. Which is just a CSV file. And it gives me the basic stuff I need.
+
+And I just, you know, obviously I formulate all these. Update that. So that's the load entry report.
+
+The employee payout report. Is just basically the same information. The big difference.
+
+This is what remember when we talked about repo yesterday. Hold on. So that'll be a better indication.
+
+All right. So the percentages. That it calculates.
+
+Now they rounded them up. But. It's pretty close.
+
+And I'm fine with that. So you could see like this employee here, this, this truck. Ticket number 200.
+
+We had two employees work. Truck together. And they worked pretty much the exact same time.
+
+50 51 person made one 53 99. One person made one 54. Yeah.
+
+And that's simply because it took an extra second to clock the other person out. So they ended up making two cents more, which. That's fine.
+
+That's I it's pennies. No one's worried about that. I mean, that doesn't bother me at all.
+
+So that's just kind of. The way that that's all set up as the billable. What we're billing for it.
+
+The margins are totally inaccurate because there's not actually my. I don't even need to see the margin report. Larger information because.
+
+It's again, all based upon. I still have to put in my. Burden cost with it.
+
+They're just calculating margin based upon. We built two 60. We paid out 130.
+
+Profit was 130. Very basic math. Invoice report.
+
+Does give me more information. Again, I would love to have the filters for everything down there, but. The invoice report is where I need all this data.
+
+I need to know what the door is, who they're, what the. Carrier was the vendor. Customer cases or it's built all that stuff.
+
+I don't care about the margin. But. All that information needs to be on here.
+
+I need to be able to sort by it. So basically right now, what I have to do is at the end of the week. I run the report.
+
+Into Excel. And then I sort it manually. By customer.
+
+And then separate it to see how much I'm totally billing. And. I got to do all that kind of stuff manually versus if I did it in here.
+
+And just pulled up what I wanted to. I could just click Excel and. Shoot down there.
+
+Invoice basically. It's adding an extra step. That I don't need to do.
+
+All those things should be. You should be doing here. Not in the Excel.
+
+I know it's relatively easy. And that's why. It took long enough to get this to where I needed to be.
+
+And I figure you can. This is solely web-based. So I know you said you can make this.
+
+True app based. So that we'd be able to sell it and make it. Make it easier for people to do.
+
+And I've done some research on that. And. Just to give you an idea.
+
+When this is created. If we decide we're going to create this thing and go to market with it. Charging a. Nominal fee.
+
+Very small fee. Just to download. And.
+
+Have access to the app. For admin people. And customers.
+
+It would not hurt for admin primarily. Very nominal fee. But then you charge them for every single entry that they do.
+
+I don't know if it's. If we have to have them buy credits or. How that would work.
+
+But that's what a lot of people are doing. They're charging for every entry. It's usually.
+
+Being charged. What the standard is. Let me tell you.
+
+I was working for an European company. Norwegian company. So they have this kind of thing.
+
+So they usually charge. An organisation. They have to purchase a licence.
+
+And then that organisation can add. The employees. The account is not.
+
+The problem. The main issue is that. They need to purchase a licence.
+
+And then they are free to use the software. However they like. However they want.
+
+Yeah. I'm good with that too. So that's how things work.
+
+In this space. Not by every entry. Not by every employee.
+
+But you have to sell. The licence. To use your software.
+
+Right. The other thing. I forgot to mention on the employee.
+
+And the customer. The one thing you can't do on here. Is I can't.
+
+If an employee forgets their password. I can't change it. I basically have to recreate.
+
+An employee. Okay. Same thing with the customers.
+
+If they forget their password. They can't change it. There is no.
+
+When you try and log in. There is no forgot password. Yeah.
+
+That's a big flow. There is a reason. This is.
+
+Missing. Because. There's a. Big flow to forgot password.
+
+Where do you wanna. Send the. You know.
+
+Verification code. Email. Or to.
+
+Mobile. So. Yeah.
+
+That's. One thing. We need to decide the flow.
+
+On. What you wanna. Have on the.
+
+Forgot password. Right. I've seen.
+
+So that's what I got. Yeah. I've seen the product.
+
+I've seen. What we're doing. What we're trying to do.
+
+And what. Features are missing. And you are missing them badly.
+
+So. I can go. You know.
+
+Screen by screen. And make some changes. And then.
+
+You know. We can move forward from there. So.
+
+We will. Still be working on. This code base.
+
+Do you have the code base. I don't. And.
+
+There's a reason why. They wrote this. In such a weird way.
+
+Even they said. That it's. The person who originally.
+
+Wrote it. Is essentially. Not writing it.
+
+So. They have to. That's why.
+
+They want me to sign. A maintenance thing. So that they can go ahead.
+
+And update it. From beginning. What I need to know.
+
+From you. Is based upon that. That database.
+
+Exactly what I showed you. And the changes. That I would need to want.
+
+Or need to have. In there. Drop an agreement.
+
+With a pricing structure. On what I would need. To pay you for that.
+
+To build it from scratch. Because I don't even like. The look of it.
+
+I don't like the layout of it. That simple little one. That you showed me.
+
+Yeah. Just that sample. That you did.
+
+I like the look of it. And the layout of it. So using their same code.
+
+This is very basic stuff. This is very basic stuff. I am.
+
+You know. Pretty much confident. That you would like.
+
+What I will build for you. So. Right now.
+
+If you want to make. Any changes to your current system. So.
+
+We cannot do that. Because we don't have the code base. Nope.
+
+And that's why I have to. No. I mean.
+
+Either I'm going to pay them. To make all the changes. That I want.
+
+Or I'm gonna pay you. To build. One from scratch.
+
+I think we should build it from the scratch. If that's the case.
