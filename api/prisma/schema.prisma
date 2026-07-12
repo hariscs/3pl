@@ -1,5 +1,7 @@
-// 3plwork Lead API — Postgres schema
-// Domain derived from client_requirments.txt (location check-in + bootstrap dataset).
+// 3plwork unified schema.
+// Source of truth for the Dockmaster back-office domain (customers, employees,
+// product types + rate cards, loads, users) AND the Lead field app
+// (leads, assignments, check-ins) which projects from the same models.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,20 +11,163 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RecordStatus {
+  active
+  archived
+}
+
+enum Role {
+  admin
+  lead
+  customer
+}
+
+enum LoadStatus {
+  active
+  complete
+  void
+  archived
+}
+
 enum CheckInStatus {
   active
   completed
 }
 
-enum LoadStatus {
-  active
-  completed
+model Location {
+  id     String @id @default(cuid())
+  name   String
+  region String
+
+  // Lead field-app config. Optional: a location may or may not be lead-enabled.
+  code            String? @unique
+  group           String?
+  addressL1       String?
+  city            String?
+  state           String?
+  postalCode      String?
+  timezone        String  @default("America/New_York")
+  status          String  @default("active")
+  containerFields Json?
+  permissions     Json?
+  featureFlags    Json?
+  shiftStart      String  @default("08:00")
+  shiftEnd        String  @default("17:00")
+
+  customers    Customer[] // implicit many-to-many
+  employees    Employee[]
+  productTypes ProductType[]
+  loads        Load[]
+  assignments  LeadAssignment[]
+  checkIns     CheckIn[]
 }
 
-/// A Lead (supervisor) who logs into the mobile app.
+model Customer {
+  id               String       @id @default(cuid())
+  contactName      String
+  email            String
+  phone            String
+  displayName      String
+  legalCompanyName String
+  status           RecordStatus @default(active)
+
+  locations    Location[] // implicit many-to-many
+  productTypes ProductType[]
+  loads        Load[]
+}
+
+model Employee {
+  id         String       @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  address    String
+  hourlyRate Float
+  status     RecordStatus @default(active)
+
+  location    Location                 @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId  String
+  assignments LoadEmployeeAssignment[]
+}
+
+model ProductType {
+  id     String       @id @default(cuid())
+  name   String
+  status RecordStatus @default(active)
+
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String
+  location   Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  rateLines  RateLine[]
+  loads      Load[]
+}
+
+model RateLine {
+  id            String @id @default(cuid())
+  unit          String
+  billBase      Float
+  billThreshold Float
+  billOverRate  Float
+  payThreshold  Float
+  payOverRate   Float
+  payBonus      Float
+
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+  productTypeId String
+}
+
+model Load {
+  id              String     @id @default(cuid())
+  ticketNumber    Int        @unique
+  date            String // ISO date (YYYY-MM-DD)
+  doorNumber      String
+  containerNumber String
+  vendor          String
+  poNumbers       String[]
+  sorts           Int
+  cases           Int
+  weight          Int
+  status          LoadStatus @default(active)
+  billedAmount    Float      @default(0)
+  payoutAmount    Float      @default(0)
+
+  location      Location                 @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId    String
+  customer      Customer                 @relation(fields: [customerId], references: [id])
+  customerId    String
+  productType   ProductType              @relation(fields: [productTypeId], references: [id])
+  productTypeId String
+  assignments   LoadEmployeeAssignment[]
+}
+
+model LoadEmployeeAssignment {
+  id         String  @id @default(cuid())
+  clockIn    String
+  clockOut   String?
+  load       Load    @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  loadId     String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+}
+
+model SystemUser {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String?
+  role         Role         @default(lead)
+  locationId   String
+  status       RecordStatus @default(active)
+}
+
+// ---------------------------------------------------------------------------
+// Lead field app
+// ---------------------------------------------------------------------------
+
 model Lead {
   id           String   @id @default(cuid())
-  loginId      String   @unique // e.g. "lead-001" or an email
+  loginId      String   @unique
   name         String
   role         String   @default("Lead Supervisor")
   passwordHash String
@@ -33,123 +178,18 @@ model Lead {
   checkIns    CheckIn[]
 }
 
-/// Which locations a Lead is assigned to (drives the check-in list).
 model LeadAssignment {
-  id         String   @id @default(cuid())
-  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  leadId     String
-  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId String
-  role          String   @default("Lead Supervisor")
-  shiftStart    String   @default("08:00")
-  shiftEnd      String   @default("17:00")
-  distanceMiles Float? // optional mocked distance shown on the check-in card
+  id            String  @id @default(cuid())
+  lead          Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId        String
+  location      Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId    String
+  role          String  @default("Lead Supervisor")
+  shiftStart    String  @default("08:00")
+  shiftEnd      String  @default("17:00")
+  distanceMiles Float?
 
   @@unique([leadId, locationId])
-}
-
-model Location {
-  id         String  @id @default(cuid())
-  name       String
-  code       String  @unique
-  group      String? // customer or warehouse group shown on the check-in card
-  addressL1  String
-  city       String
-  state      String
-  postalCode String
-  timezone   String @default("America/Chicago")
-  status     String @default("active")
-
-  // Per-location operational config (structured JSON, validated at the API boundary).
-  containerFields Json
-  permissions     Json
-  featureFlags    Json
-  shiftStart      String @default("08:00")
-  shiftEnd        String @default("17:00")
-
-  customers    Customer[]
-  employees    Employee[]
-  payRules     PayRule[]
-  billingRules BillingRule[]
-  loads        Load[]
-  contacts     LocationContact[]
-  assignments  LeadAssignment[]
-  checkIns     CheckIn[]
-}
-
-model Customer {
-  id         String    @id @default(cuid())
-  name       String
-  status     String    @default("active")
-  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId String
-  products   Product[]
-  loads      Load[]
-}
-
-model Product {
-  id            String       @id @default(cuid())
-  name          String
-  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId    String
-  payRule       PayRule?     @relation(fields: [payRuleId], references: [id])
-  payRuleId     String?
-  billingRule   BillingRule? @relation(fields: [billingRuleId], references: [id])
-  billingRuleId String?
-}
-
-model PayRule {
-  id         String    @id @default(cuid())
-  type       String // e.g. "per_case", "hourly"
-  rate       Float
-  currency   String    @default("USD")
-  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId String
-  products   Product[]
-}
-
-model BillingRule {
-  id         String    @id @default(cuid())
-  type       String
-  rate       Float
-  currency   String    @default("USD")
-  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId String
-  products   Product[]
-}
-
-model Employee {
-  id           String   @id @default(cuid())
-  name         String
-  employeeCode String   @unique
-  status       String   @default("available")
-  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId   String
-}
-
-model Load {
-  id              String     @id @default(cuid())
-  location        Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId      String
-  customer        Customer?  @relation(fields: [customerId], references: [id])
-  customerId      String?
-  status          LoadStatus @default(active)
-  containerNumber String?
-  cases           Int?
-  weight          Float?
-  sorts           Int?
-  notes           String?
-  startedAt       DateTime   @default(now())
-  completedAt     DateTime?
-}
-
-model LocationContact {
-  id         String   @id @default(cuid())
-  name       String
-  role       String
-  phone      String
-  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locationId String
 }
 
 model CheckIn {

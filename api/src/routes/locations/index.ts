@@ -3,33 +3,103 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import type { Load as PrismaLoad } from '@prisma/client'
 import { LocationBootstrapSchema } from '../../schemas/bootstrap'
 import { ErrorResponseSchema } from '../../schemas/shared'
+import { LocationSchema } from '../../schemas/domain'
 import {
   asContainerFields,
   asFeatureFlags,
   asPermissions,
 } from '../../lib/serializers'
+import { toLocation } from '../../lib/domain-serializers'
 
 const BootstrapParamsSchema = Type.Object({
   locationId: Type.String(),
 })
 
-function toLoad(load: PrismaLoad) {
+// Defaults used when a location has no lead field-app config.
+const DEFAULT_CONTAINER_FIELDS = {
+  containerNumberRequired: true,
+  casesRequired: true,
+  weightRequired: true,
+  sortsRequired: true,
+  notesEnabled: true,
+  photosEnabled: true,
+}
+const DEFAULT_PERMISSIONS = {
+  canStartLoad: true,
+  canCloseLoad: true,
+  canEditLoad: true,
+  canClockEmployees: true,
+  canViewPayRates: false,
+  canViewBillingRates: false,
+}
+const DEFAULT_FEATURE_FLAGS = {
+  photoCapture: true,
+  breakTracking: false,
+  offlineMode: true,
+}
+
+// Projects a rich Load into the thin lead-app load shape.
+function toLeadLoad(load: PrismaLoad) {
+  const startedAt = new Date(load.date).toISOString()
   return {
     id: load.id,
-    customerId: load.customerId ?? null,
-    status: load.status,
-    containerNumber: load.containerNumber ?? null,
-    cases: load.cases ?? null,
-    weight: load.weight ?? null,
-    sorts: load.sorts ?? null,
-    notes: load.notes ?? null,
-    startedAt: load.startedAt.toISOString(),
-    completedAt: load.completedAt ? load.completedAt.toISOString() : null,
+    customerId: load.customerId,
+    status: (load.status === 'complete' ? 'completed' : 'active') as
+      | 'active'
+      | 'completed',
+    containerNumber: load.containerNumber,
+    cases: load.cases,
+    weight: load.weight,
+    sorts: load.sorts,
+    notes: null,
+    startedAt,
+    completedAt: load.status === 'complete' ? startedAt : null,
   }
 }
 
 const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
-  // GET /locations/:locationId/bootstrap — full dataset for the shift.
+  // GET /locations — list all locations (dashboard location switcher).
+  fastify.get(
+    '/',
+    {
+      schema: {
+        tags: ['locations'],
+        summary: 'List all locations',
+        response: { 200: Type.Array(LocationSchema) },
+      },
+    },
+    async () => {
+      const locations = await fastify.prisma.location.findMany({
+        orderBy: { name: 'asc' },
+      })
+      return locations.map(toLocation)
+    }
+  )
+
+  // GET /locations/:locationId — a single location.
+  fastify.get(
+    '/:locationId',
+    {
+      schema: {
+        tags: ['locations'],
+        summary: 'Get a location',
+        params: BootstrapParamsSchema,
+        response: { 200: LocationSchema, 404: ErrorResponseSchema },
+      },
+    },
+    async (request) => {
+      const location = await fastify.prisma.location.findUnique({
+        where: { id: request.params.locationId },
+      })
+      if (!location) {
+        throw fastify.httpErrors.notFound('Location not found.')
+      }
+      return toLocation(location)
+    }
+  )
+
+  // GET /locations/:locationId/bootstrap — full dataset for the shift,
+  // projected from the unified Dockmaster models.
   fastify.get(
     '/:locationId/bootstrap',
     {
@@ -53,11 +123,9 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       const location = await fastify.prisma.location.findUnique({
         where: { id: locationId },
         include: {
-          customers: { include: { products: true } },
-          employees: true,
-          payRules: true,
-          billingRules: true,
-          contacts: true,
+          customers: { where: { status: 'active' } },
+          employees: { where: { status: 'active' } },
+          productTypes: { where: { status: 'active' } },
         },
       })
       if (!location) {
@@ -77,11 +145,11 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       const [activeLoads, recentLoads] = await Promise.all([
         fastify.prisma.load.findMany({
           where: { locationId, status: 'active' },
-          orderBy: { startedAt: 'desc' },
+          orderBy: { date: 'desc' },
         }),
         fastify.prisma.load.findMany({
-          where: { locationId, status: 'completed' },
-          orderBy: { completedAt: 'desc' },
+          where: { locationId, status: 'complete' },
+          orderBy: { date: 'desc' },
           take: 10,
         }),
       ])
@@ -90,12 +158,12 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         location: {
           id: location.id,
           name: location.name,
-          code: location.code,
+          code: location.code ?? location.id,
           address: {
-            line1: location.addressL1,
-            city: location.city,
-            state: location.state,
-            postalCode: location.postalCode,
+            line1: location.addressL1 ?? '',
+            city: location.city ?? '',
+            state: location.state ?? '',
+            postalCode: location.postalCode ?? '',
           },
           timezone: location.timezone,
           status: location.status,
@@ -109,44 +177,36 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         },
         customers: location.customers.map((customer) => ({
           id: customer.id,
-          name: customer.name,
+          name: customer.displayName,
           status: customer.status,
-          products: customer.products.map((product) => ({
-            id: product.id,
-            name: product.name,
-            payRuleId: product.payRuleId ?? null,
-            billingRuleId: product.billingRuleId ?? null,
-          })),
+          products: location.productTypes
+            .filter((pt) => pt.customerId === customer.id)
+            .map((pt) => ({
+              id: pt.id,
+              name: pt.name,
+              payRuleId: null,
+              billingRuleId: null,
+            })),
         })),
         employees: location.employees.map((employee) => ({
           id: employee.id,
           name: employee.name,
-          employeeCode: employee.employeeCode,
+          employeeCode: employee.id,
           status: employee.status,
           assignedLocationId: employee.locationId,
         })),
-        payRules: location.payRules.map((rule) => ({
-          id: rule.id,
-          type: rule.type,
-          rate: rule.rate,
-          currency: rule.currency,
-        })),
-        billingRules: location.billingRules.map((rule) => ({
-          id: rule.id,
-          type: rule.type,
-          rate: rule.rate,
-          currency: rule.currency,
-        })),
-        activeLoads: activeLoads.map(toLoad),
-        recentLoads: recentLoads.map(toLoad),
-        containerFields: asContainerFields(location.containerFields),
-        permissions: asPermissions(location.permissions),
-        featureFlags: asFeatureFlags(location.featureFlags),
-        locationContacts: location.contacts.map((contact) => ({
-          name: contact.name,
-          role: contact.role,
-          phone: contact.phone,
-        })),
+        payRules: [],
+        billingRules: [],
+        activeLoads: activeLoads.map(toLeadLoad),
+        recentLoads: recentLoads.map(toLeadLoad),
+        containerFields: asContainerFields(
+          location.containerFields ?? DEFAULT_CONTAINER_FIELDS
+        ),
+        permissions: asPermissions(location.permissions ?? DEFAULT_PERMISSIONS),
+        featureFlags: asFeatureFlags(
+          location.featureFlags ?? DEFAULT_FEATURE_FLAGS
+        ),
+        locationContacts: [],
         shiftConfig: {
           start: location.shiftStart,
           end: location.shiftEnd,

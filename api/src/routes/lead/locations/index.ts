@@ -40,18 +40,19 @@ const locationsRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       const locations = assignments.map((assignment) => {
         const loc = assignment.location
         const lastVisited = lastVisitedByLocation.get(loc.id) ?? null
+        const line1 = loc.addressL1 ?? ''
+        const city = loc.city ?? ''
+        const state = loc.state ?? ''
+        const postalCode = loc.postalCode ?? ''
         return {
           id: loc.id,
           name: loc.name,
-          code: loc.code,
+          code: loc.code ?? loc.id,
           group: loc.group ?? null,
-          address: {
-            line1: loc.addressL1,
-            city: loc.city,
-            state: loc.state,
-            postalCode: loc.postalCode,
-          },
-          fullAddress: `${loc.addressL1}, ${loc.city}, ${loc.state} ${loc.postalCode}`,
+          address: { line1, city, state, postalCode },
+          fullAddress: [line1, [city, state].filter(Boolean).join(', '), postalCode]
+            .filter(Boolean)
+            .join(', '),
           distanceMiles: assignment.distanceMiles ?? null,
           assigned: true,
           lastVisitedAt: lastVisited ? lastVisited.toISOString() : null,

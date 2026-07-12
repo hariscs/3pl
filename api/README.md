@@ -61,6 +61,24 @@ infra probes.
 
 Authenticate protected routes with `Authorization: Bearer <token>`.
 
+### Dockmaster back-office (dashboard)
+
+CRUD over the unified domain. Loads compute `billedAmount`/`payoutAmount`
+server-side from the product type's rate card and auto-assign `ticketNumber`.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/v1/locations`, `/api/v1/locations/:id` | Locations (list / get) |
+| `GET`·`POST`·`PATCH` | `/api/v1/customers`(`/:id`) | Customers CRUD |
+| `POST` | `/api/v1/customers/:id/toggle-archive` | Archive / restore |
+| `GET`·`POST`·`PATCH` | `/api/v1/employees`(`/:id`) | Employees CRUD |
+| `POST` | `/api/v1/employees/:id/toggle-archive` | Archive / restore |
+| `GET`·`POST`·`PATCH` | `/api/v1/product-types`(`/:id`) | Product types + rate cards |
+| `POST` | `/api/v1/product-types/:id/toggle-archive` | Archive / restore |
+| `GET`·`POST`·`PATCH` | `/api/v1/loads`(`/:id`) | Loads (billing computed) |
+| `POST` | `/api/v1/loads/:id/void`, `/api/v1/loads/:id/archive` | Void / archive |
+| `GET`·`POST` | `/api/v1/users` | System users (list / create) |
+
 ## API docs (Swagger)
 
 Interactive Swagger UI is served at **`/docs`** and the raw OpenAPI 3.1 spec at

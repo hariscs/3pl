@@ -19,9 +19,14 @@ export async function registerSwagger(fastify: FastifyInstance): Promise<void> {
       },
       servers: [{ url: `http://localhost:${fastify.config.PORT}` }],
       tags: [
-        { name: 'auth', description: 'Login and session' },
-        { name: 'locations', description: 'Assigned locations and bootstrap data' },
-        { name: 'check-ins', description: 'Location check-in / check-out' },
+        { name: 'customers', description: 'Customer records' },
+        { name: 'employees', description: 'Employee records' },
+        { name: 'product-types', description: 'Product types and rate cards' },
+        { name: 'loads', description: 'Loads (billing computed server-side)' },
+        { name: 'users', description: 'System users' },
+        { name: 'locations', description: 'Locations and lead bootstrap data' },
+        { name: 'auth', description: 'Lead login and session' },
+        { name: 'check-ins', description: 'Lead location check-in / check-out' },
         { name: 'system', description: 'Health' },
       ],
       components: {
