@@ -1,0 +1,165 @@
+// 3plwork Lead API — Postgres schema
+// Domain derived from client_requirments.txt (location check-in + bootstrap dataset).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CheckInStatus {
+  active
+  completed
+}
+
+enum LoadStatus {
+  active
+  completed
+}
+
+/// A Lead (supervisor) who logs into the mobile app.
+model Lead {
+  id           String   @id @default(cuid())
+  loginId      String   @unique // e.g. "lead-001" or an email
+  name         String
+  role         String   @default("Lead Supervisor")
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignments LeadAssignment[]
+  checkIns    CheckIn[]
+}
+
+/// Which locations a Lead is assigned to (drives the check-in list).
+model LeadAssignment {
+  id         String   @id @default(cuid())
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId     String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  role          String   @default("Lead Supervisor")
+  shiftStart    String   @default("08:00")
+  shiftEnd      String   @default("17:00")
+  distanceMiles Float? // optional mocked distance shown on the check-in card
+
+  @@unique([leadId, locationId])
+}
+
+model Location {
+  id         String  @id @default(cuid())
+  name       String
+  code       String  @unique
+  group      String? // customer or warehouse group shown on the check-in card
+  addressL1  String
+  city       String
+  state      String
+  postalCode String
+  timezone   String @default("America/Chicago")
+  status     String @default("active")
+
+  // Per-location operational config (structured JSON, validated at the API boundary).
+  containerFields Json
+  permissions     Json
+  featureFlags    Json
+  shiftStart      String @default("08:00")
+  shiftEnd        String @default("17:00")
+
+  customers    Customer[]
+  employees    Employee[]
+  payRules     PayRule[]
+  billingRules BillingRule[]
+  loads        Load[]
+  contacts     LocationContact[]
+  assignments  LeadAssignment[]
+  checkIns     CheckIn[]
+}
+
+model Customer {
+  id         String    @id @default(cuid())
+  name       String
+  status     String    @default("active")
+  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  products   Product[]
+  loads      Load[]
+}
+
+model Product {
+  id            String       @id @default(cuid())
+  name          String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId    String
+  payRule       PayRule?     @relation(fields: [payRuleId], references: [id])
+  payRuleId     String?
+  billingRule   BillingRule? @relation(fields: [billingRuleId], references: [id])
+  billingRuleId String?
+}
+
+model PayRule {
+  id         String    @id @default(cuid())
+  type       String // e.g. "per_case", "hourly"
+  rate       Float
+  currency   String    @default("USD")
+  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  products   Product[]
+}
+
+model BillingRule {
+  id         String    @id @default(cuid())
+  type       String
+  rate       Float
+  currency   String    @default("USD")
+  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  products   Product[]
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  name         String
+  employeeCode String   @unique
+  status       String   @default("available")
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId   String
+}
+
+model Load {
+  id              String     @id @default(cuid())
+  location        Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId      String
+  customer        Customer?  @relation(fields: [customerId], references: [id])
+  customerId      String?
+  status          LoadStatus @default(active)
+  containerNumber String?
+  cases           Int?
+  weight          Float?
+  sorts           Int?
+  notes           String?
+  startedAt       DateTime   @default(now())
+  completedAt     DateTime?
+}
+
+model LocationContact {
+  id         String   @id @default(cuid())
+  name       String
+  role       String
+  phone      String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+}
+
+model CheckIn {
+  id           String        @id @default(cuid())
+  lead         Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId       String
+  location     Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId   String
+  status       CheckInStatus @default(active)
+  deviceId     String?
+  checkedInAt  DateTime      @default(now())
+  checkedOutAt DateTime?
+}

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: 3plwork-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: 3plwork
+      POSTGRES_PASSWORD: 3plwork
+      POSTGRES_DB: 3plwork
+    ports:
+      - "5433:5432"
+    volumes:
+      - 3plwork-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 3plwork -d 3plwork"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  3plwork-pgdata:

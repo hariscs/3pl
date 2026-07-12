@@ -63,3 +63,10 @@ test/types/index.js
 
 # compiled app
 dist
+
+# env (keep .env.example tracked)
+.env
+.env.local
+
+# prisma generated client
+src/generated
