@@ -37,7 +37,8 @@ export function FilterChip({
       }
     }
     document.addEventListener("mousedown", handleMouseDown, true);
-    return () => document.removeEventListener("mousedown", handleMouseDown, true);
+    return () =>
+      document.removeEventListener("mousedown", handleMouseDown, true);
   }, [open]);
 
   useEffect(() => {
@@ -153,7 +154,8 @@ export function AddFilterChip({
       }
     }
     document.addEventListener("mousedown", handleMouseDown, true);
-    return () => document.removeEventListener("mousedown", handleMouseDown, true);
+    return () =>
+      document.removeEventListener("mousedown", handleMouseDown, true);
   }, [open]);
 
   if (columns.length === 0) return null;

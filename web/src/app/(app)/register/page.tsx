@@ -36,7 +36,7 @@ export default function RegisterUserPage() {
     }, 700);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.name || !form.email || !form.password || !form.locationId) return;
     addUser({

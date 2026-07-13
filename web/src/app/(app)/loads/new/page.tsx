@@ -83,10 +83,10 @@ export default function LoadEntryPage() {
     }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.customerId || !form.productTypeId) return;
-    const created = addLoad({
+    const created = await addLoad({
       date: today(),
       locationId: currentLocationId,
       customerId: form.customerId,
@@ -100,6 +100,7 @@ export default function LoadEntryPage() {
       weight: form.weight,
       assignments: [],
     });
+    if (!created) return; // error already surfaced as a toast
     setSavedLoad(created);
     setForm(blankFields);
   }

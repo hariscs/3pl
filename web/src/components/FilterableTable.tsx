@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useMemo, useState } from "react";
-import { AddFilterChip, FilterChip, type FilterableColumn } from "./FilterChip";
+import { AddFilterChip, type FilterableColumn, FilterChip } from "./FilterChip";
 import { Button } from "./ui/Button";
 
 export type Column<T> = {
@@ -112,7 +112,10 @@ export function FilterableTable<T>({
   function addFilter(col: FilterableColumn) {
     chipCounter += 1;
     const id = `chip-${chipCounter}`;
-    setActiveFilters((prev) => [...prev, { id, key: col.key, openOnMount: true }]);
+    setActiveFilters((prev) => [
+      ...prev,
+      { id, key: col.key, openOnMount: true },
+    ]);
   }
 
   function removeFilter(id: string) {
@@ -130,7 +133,8 @@ export function FilterableTable<T>({
     setSearch("");
   }
 
-  const anyFilterActive = activeFilters.some((f) => filterValues[f.id]) || !!search;
+  const anyFilterActive =
+    activeFilters.some((f) => filterValues[f.id]) || !!search;
 
   return (
     <div>
@@ -154,7 +158,9 @@ export function FilterableTable<T>({
             <p className="text-xs text-steel">
               {anyFilterActive ? (
                 <>
-                  <span className="font-medium text-ink">{filtered.length}</span>{" "}
+                  <span className="font-medium text-ink">
+                    {filtered.length}
+                  </span>{" "}
                   of {rows.length} rows
                 </>
               ) : (

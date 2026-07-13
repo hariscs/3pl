@@ -1,26 +1,23 @@
 "use client";
 
+import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
-import {
-  CUSTOMERS,
-  EMPLOYEES,
-  LOADS,
-  LOCATIONS,
-  PRODUCT_TYPES,
-  SYSTEM_USERS,
-} from "./mock-data";
+import { toast } from "sonner";
+import { ApiError, api } from "./api/client";
 import type {
   Customer,
   Employee,
   Load,
   Location,
   ProductType,
+  RateLine,
   Role,
   SystemUser,
 } from "./types";
@@ -42,169 +39,325 @@ type AppData = {
   loads: Load[];
   users: SystemUser[];
 
+  /** True until the initial datasets have loaded. */
+  isLoading: boolean;
+
   currentLocationId: string;
   setCurrentLocationId: (id: string) => void;
   role: Role;
   setRole: (role: Role) => void;
 
-  addUser: (input: NewUser) => void;
+  addUser: (input: NewUser) => Promise<void>;
 
-  addCustomer: (input: NewCustomer) => void;
-  updateCustomer: (id: string, input: Partial<Customer>) => void;
-  toggleCustomerArchive: (id: string) => void;
+  addCustomer: (input: NewCustomer) => Promise<void>;
+  updateCustomer: (id: string, input: Partial<Customer>) => Promise<void>;
+  toggleCustomerArchive: (id: string) => Promise<void>;
 
-  addEmployee: (input: NewEmployee) => void;
-  updateEmployee: (id: string, input: Partial<Employee>) => void;
-  toggleEmployeeArchive: (id: string) => void;
+  addEmployee: (input: NewEmployee) => Promise<void>;
+  updateEmployee: (id: string, input: Partial<Employee>) => Promise<void>;
+  toggleEmployeeArchive: (id: string) => Promise<void>;
 
-  addProductType: (input: NewProductType) => void;
-  updateProductType: (id: string, input: Partial<ProductType>) => void;
-  toggleProductTypeArchive: (id: string) => void;
+  addProductType: (input: NewProductType) => Promise<void>;
+  updateProductType: (id: string, input: Partial<ProductType>) => Promise<void>;
+  toggleProductTypeArchive: (id: string) => Promise<void>;
 
-  addLoad: (input: NewLoad) => Load;
-  updateLoad: (id: string, input: Partial<Load>) => void;
-  voidLoad: (id: string) => void;
-  archiveLoad: (id: string) => void;
+  addLoad: (input: NewLoad) => Promise<Load | undefined>;
+  updateLoad: (id: string, input: Partial<Load>) => Promise<void>;
+  voidLoad: (id: string) => Promise<void>;
+  archiveLoad: (id: string) => Promise<void>;
 };
 
 const AppDataContext = createContext<AppData | null>(null);
 
-let idCounter = 1000;
-function nextId(prefix: string) {
-  idCounter += 1;
-  return `${prefix}-${idCounter}`;
+const keys = {
+  locations: ["locations"] as const,
+  customers: ["customers"] as const,
+  employees: ["employees"] as const,
+  productTypes: ["productTypes"] as const,
+  loads: ["loads"] as const,
+  users: ["users"] as const,
+} satisfies Record<string, QueryKey>;
+
+// --- request body shaping (only send fields the API accepts) ---
+
+function stripRateLineIds(rateLines: RateLine[]): Omit<RateLine, "id">[] {
+  return rateLines.map(({ id: _id, ...rest }) => rest);
+}
+
+function customerBody(input: Partial<Customer>) {
+  const {
+    contactName,
+    email,
+    phone,
+    displayName,
+    legalCompanyName,
+    locationIds,
+  } = input;
+  return {
+    contactName,
+    email,
+    phone,
+    displayName,
+    legalCompanyName,
+    locationIds,
+  };
+}
+
+function employeeBody(input: Partial<Employee>) {
+  const { name, email, phone, address, hourlyRate, locationId } = input;
+  return { name, email, phone, address, hourlyRate, locationId };
+}
+
+function productTypeBody(input: Partial<ProductType>) {
+  const { customerId, locationId, name, rateLines } = input;
+  return {
+    customerId,
+    locationId,
+    name,
+    rateLines: rateLines ? stripRateLineIds(rateLines) : undefined,
+  };
+}
+
+// Runs a mutation, showing a success/error toast. On failure it surfaces the
+// error as a toast and resolves to `undefined` (rather than rejecting) so
+// fire-and-forget call sites don't produce unhandled promise rejections.
+async function withToast<T>(
+  action: () => Promise<T>,
+  successMessage: string,
+): Promise<T | undefined> {
+  try {
+    const result = await action();
+    toast.success(successMessage);
+    return result;
+  } catch (error) {
+    const message =
+      error instanceof ApiError ? error.message : "Something went wrong.";
+    toast.error(message);
+    return undefined;
+  }
+}
+
+function loadBody(input: Partial<Load>) {
+  const {
+    date,
+    locationId,
+    customerId,
+    productTypeId,
+    doorNumber,
+    containerNumber,
+    vendor,
+    poNumbers,
+    sorts,
+    cases,
+    weight,
+    assignments,
+    status,
+  } = input;
+  // billedAmount / payoutAmount / ticketNumber are computed server-side.
+  return {
+    date,
+    locationId,
+    customerId,
+    productTypeId,
+    doorNumber,
+    containerNumber,
+    vendor,
+    poNumbers,
+    sorts,
+    cases,
+    weight,
+    assignments,
+    status,
+  };
 }
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
-  const [locations] = useState<Location[]>(LOCATIONS);
-  const [customers, setCustomers] = useState<Customer[]>(CUSTOMERS);
-  const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES);
-  const [productTypes, setProductTypes] =
-    useState<ProductType[]>(PRODUCT_TYPES);
-  const [loads, setLoads] = useState<Load[]>(LOADS);
-  const [users, setUsers] = useState<SystemUser[]>(SYSTEM_USERS);
+  const queryClient = useQueryClient();
 
-  const addUser = useCallback((input: NewUser) => {
-    setUsers((prev) => [
-      ...prev,
-      { ...input, id: nextId("user"), status: "active" },
-    ]);
-  }, []);
+  const locationsQuery = useQuery({
+    queryKey: keys.locations,
+    queryFn: () => api.get<Location[]>("/locations"),
+  });
+  const customersQuery = useQuery({
+    queryKey: keys.customers,
+    queryFn: () => api.get<Customer[]>("/customers"),
+  });
+  const employeesQuery = useQuery({
+    queryKey: keys.employees,
+    queryFn: () => api.get<Employee[]>("/employees"),
+  });
+  const productTypesQuery = useQuery({
+    queryKey: keys.productTypes,
+    queryFn: () => api.get<ProductType[]>("/product-types"),
+  });
+  const loadsQuery = useQuery({
+    queryKey: keys.loads,
+    queryFn: () => api.get<Load[]>("/loads"),
+  });
+  const usersQuery = useQuery({
+    queryKey: keys.users,
+    queryFn: () => api.get<SystemUser[]>("/users"),
+  });
 
-  const [currentLocationId, setCurrentLocationId] = useState<string>(
-    LOCATIONS[0].id,
+  const locations = useMemo(
+    () => locationsQuery.data ?? [],
+    [locationsQuery.data],
   );
+  const customers = useMemo(
+    () => customersQuery.data ?? [],
+    [customersQuery.data],
+  );
+  const employees = useMemo(
+    () => employeesQuery.data ?? [],
+    [employeesQuery.data],
+  );
+  const productTypes = useMemo(
+    () => productTypesQuery.data ?? [],
+    [productTypesQuery.data],
+  );
+  const loads = useMemo(() => loadsQuery.data ?? [], [loadsQuery.data]);
+  const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+
+  const [currentLocationId, setCurrentLocationId] = useState<string>("");
   const [role, setRole] = useState<Role>("admin");
 
-  const addCustomer = useCallback((input: NewCustomer) => {
-    setCustomers((prev) => [
-      ...prev,
-      { ...input, id: nextId("cust"), status: "active" },
-    ]);
-  }, []);
+  // Default the active location to the first one once locations load.
+  useEffect(() => {
+    if (!currentLocationId && locations.length > 0) {
+      setCurrentLocationId(locations[0].id);
+    }
+  }, [locations, currentLocationId]);
 
-  const updateCustomer = useCallback((id: string, input: Partial<Customer>) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...input } : c)),
-    );
-  }, []);
-
-  const toggleCustomerArchive = useCallback((id: string) => {
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "active" ? "archived" : "active" }
-          : c,
-      ),
-    );
-  }, []);
-
-  const addEmployee = useCallback((input: NewEmployee) => {
-    setEmployees((prev) => [
-      ...prev,
-      { ...input, id: nextId("emp"), status: "active" },
-    ]);
-  }, []);
-
-  const updateEmployee = useCallback((id: string, input: Partial<Employee>) => {
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...input } : e)),
-    );
-  }, []);
-
-  const toggleEmployeeArchive = useCallback((id: string) => {
-    setEmployees((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? { ...e, status: e.status === "active" ? "archived" : "active" }
-          : e,
-      ),
-    );
-  }, []);
-
-  const addProductType = useCallback((input: NewProductType) => {
-    setProductTypes((prev) => [
-      ...prev,
-      { ...input, id: nextId("pt"), status: "active" },
-    ]);
-  }, []);
-
-  const updateProductType = useCallback(
-    (id: string, input: Partial<ProductType>) => {
-      setProductTypes((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...input } : p)),
-      );
-    },
-    [],
+  const invalidate = useCallback(
+    (key: QueryKey) => queryClient.invalidateQueries({ queryKey: key }),
+    [queryClient],
   );
 
-  const toggleProductTypeArchive = useCallback((id: string) => {
-    setProductTypes((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "active" ? "archived" : "active" }
-          : p,
-      ),
-    );
-  }, []);
+  const addUser = useCallback(
+    (input: NewUser) =>
+      withToast(async () => {
+        await api.post("/users", input);
+        await invalidate(keys.users);
+      }, "User created."),
+    [invalidate],
+  );
+
+  const addCustomer = useCallback(
+    (input: NewCustomer) =>
+      withToast(async () => {
+        await api.post("/customers", customerBody(input));
+        await invalidate(keys.customers);
+      }, "Customer created."),
+    [invalidate],
+  );
+  const updateCustomer = useCallback(
+    (id: string, input: Partial<Customer>) =>
+      withToast(async () => {
+        await api.patch(`/customers/${id}`, customerBody(input));
+        await invalidate(keys.customers);
+      }, "Customer saved."),
+    [invalidate],
+  );
+  const toggleCustomerArchive = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/customers/${id}/toggle-archive`);
+        await invalidate(keys.customers);
+      }, "Customer updated."),
+    [invalidate],
+  );
+
+  const addEmployee = useCallback(
+    (input: NewEmployee) =>
+      withToast(async () => {
+        await api.post("/employees", employeeBody(input));
+        await invalidate(keys.employees);
+      }, "Employee created."),
+    [invalidate],
+  );
+  const updateEmployee = useCallback(
+    (id: string, input: Partial<Employee>) =>
+      withToast(async () => {
+        await api.patch(`/employees/${id}`, employeeBody(input));
+        await invalidate(keys.employees);
+      }, "Employee saved."),
+    [invalidate],
+  );
+  const toggleEmployeeArchive = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/employees/${id}/toggle-archive`);
+        await invalidate(keys.employees);
+      }, "Employee updated."),
+    [invalidate],
+  );
+
+  const addProductType = useCallback(
+    (input: NewProductType) =>
+      withToast(async () => {
+        await api.post("/product-types", productTypeBody(input));
+        await invalidate(keys.productTypes);
+      }, "Product type created."),
+    [invalidate],
+  );
+  const updateProductType = useCallback(
+    (id: string, input: Partial<ProductType>) =>
+      withToast(async () => {
+        await api.patch(`/product-types/${id}`, productTypeBody(input));
+        await invalidate(keys.productTypes);
+      }, "Product type saved."),
+    [invalidate],
+  );
+  const toggleProductTypeArchive = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/product-types/${id}/toggle-archive`);
+        await invalidate(keys.productTypes);
+      }, "Product type updated."),
+    [invalidate],
+  );
 
   const addLoad = useCallback(
-    (input: NewLoad) => {
-      const nextTicket =
-        loads.reduce((max, l) => Math.max(max, l.ticketNumber), 0) + 1;
-      const created: Load = {
-        ...input,
-        id: nextId("load"),
-        ticketNumber: nextTicket,
-        status: "active",
-        billedAmount: 0,
-        payoutAmount: 0,
-      };
-      setLoads((prev) => [...prev, created]);
-      return created;
-    },
-    [loads],
+    (input: NewLoad) =>
+      withToast(async () => {
+        const created = await api.post<Load>("/loads", loadBody(input));
+        await invalidate(keys.loads);
+        return created;
+      }, "Load saved."),
+    [invalidate],
+  );
+  const updateLoad = useCallback(
+    (id: string, input: Partial<Load>) =>
+      withToast(async () => {
+        await api.patch(`/loads/${id}`, loadBody(input));
+        await invalidate(keys.loads);
+      }, "Load saved."),
+    [invalidate],
+  );
+  const voidLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/void`);
+        await invalidate(keys.loads);
+      }, "Load voided."),
+    [invalidate],
+  );
+  const archiveLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/archive`);
+        await invalidate(keys.loads);
+      }, "Load archived."),
+    [invalidate],
   );
 
-  const updateLoad = useCallback((id: string, input: Partial<Load>) => {
-    setLoads((prev) => prev.map((l) => (l.id === id ? { ...l, ...input } : l)));
-  }, []);
-
-  const voidLoad = useCallback((id: string) => {
-    setLoads((prev) =>
-      prev.map((l) =>
-        l.id === id
-          ? { ...l, status: "void", billedAmount: 0, payoutAmount: 0 }
-          : l,
-      ),
-    );
-  }, []);
-
-  const archiveLoad = useCallback((id: string) => {
-    setLoads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: "archived" } : l)),
-    );
-  }, []);
+  const isLoading =
+    locationsQuery.isLoading ||
+    customersQuery.isLoading ||
+    employeesQuery.isLoading ||
+    productTypesQuery.isLoading ||
+    loadsQuery.isLoading ||
+    usersQuery.isLoading;
 
   const value = useMemo<AppData>(
     () => ({
@@ -214,6 +367,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       productTypes,
       loads,
       users,
+      isLoading,
       currentLocationId,
       setCurrentLocationId,
       role,
@@ -240,6 +394,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       productTypes,
       loads,
       users,
+      isLoading,
       currentLocationId,
       role,
       addUser,
