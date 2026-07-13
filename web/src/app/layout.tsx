@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Oswald } from "next/font/google";
+import { Geist, Geist_Mono, Lexend } from "next/font/google";
 import { Providers } from "@/lib/providers";
 import "./globals.css";
 
-const oswald = Oswald({
-  variable: "--font-oswald",
+const lexend = Lexend({
+  variable: "--font-lexend",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${oswald.variable} ${inter.variable} ${plexMono.variable} h-full`}
+      className={`${lexend.variable} ${geist.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full">
         <Providers>{children}</Providers>
