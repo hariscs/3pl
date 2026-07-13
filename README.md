@@ -42,12 +42,21 @@ pnpm dev                      # http://localhost:3000
 
 ### Seeded logins
 
-| Surface | Credentials |
-| --- | --- |
-| Dashboard (`web/`) | `rick@dockmaster3pl.com` / `1234` (admin) |
-| Lead mobile app (API) | login id `lead-001` / `1234` |
+Every seeded account uses the password **`1234`**.
 
-All three seeded dashboard users share the password `1234`.
+**Dashboard (`web/`)** — sign in at `/login` with an email:
+
+| Role | Email | What they see |
+| --- | --- | --- |
+| Admin | `rick@dockmaster3pl.com` | Full access — setup, reports, load entry |
+| Lead | `josie.turner@example.com` | Load entry + dashboard |
+| Customer | `j.reyes@geodis.com` | Read-only reporting |
+
+**Lead mobile app (API)** — `POST /api/v1/lead/auth/login`:
+
+| Login ID | Password |
+| --- | --- |
+| `lead-001` | `1234` |
 
 ## Structure
 
