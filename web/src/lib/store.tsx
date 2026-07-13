@@ -45,8 +45,8 @@ type AppData = {
 
   currentLocationId: string;
   setCurrentLocationId: (id: string) => void;
+  /** The authenticated user's role (read-only — derived from login). */
   role: Role;
-  setRole: (role: Role) => void;
 
   addUser: (input: NewUser) => Promise<void>;
 
@@ -221,7 +221,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
 
   const [currentLocationId, setCurrentLocationId] = useState<string>("");
-  const [role, setRole] = useState<Role>(user?.role ?? "admin");
+  // Role follows whoever is logged in — no manual switching.
+  const role: Role = user?.role ?? "admin";
 
   // Default the active location to the logged-in user's assigned location,
   // falling back to the first one once locations load.
@@ -378,7 +379,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       currentLocationId,
       setCurrentLocationId,
       role,
-      setRole,
       addUser,
       addCustomer,
       updateCustomer,

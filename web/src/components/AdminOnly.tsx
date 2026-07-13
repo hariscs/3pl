@@ -14,8 +14,8 @@ export function AdminOnly({ children }: { children: ReactNode }) {
             Admin only
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-steel">
-            Leads only have access to Load Entry and Loads. Switch to Admin at
-            the top right to see this screen.
+            Leads only have access to Load Entry and Loads. Sign in with an
+            admin account to see this screen.
           </p>
         </div>
       </main>
