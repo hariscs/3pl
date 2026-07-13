@@ -7,8 +7,8 @@
 databases:
   - name: 3plwork-db
     plan: free
-    databaseName: 3plwork
-    user: 3plwork
+    databaseName: dockmaster # must be a valid SQL identifier (can't start with a digit)
+    user: dockmaster
 
 services:
   # ---------------------------------------------------------------------------
