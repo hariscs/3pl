@@ -5,9 +5,44 @@ import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAppData } from "@/lib/store";
+import type { Role } from "@/lib/types";
+
+// Quick actions are filtered to the roles that can actually use the target page,
+// so nobody sees a button that just leads to an "Admin only" wall.
+const QUICK_ACTIONS: Array<{
+  href: string;
+  label: string;
+  variant: "primary" | "secondary";
+  roles: Role[];
+}> = [
+  {
+    href: "/loads/new",
+    label: "Enter a load",
+    variant: "primary",
+    roles: ["admin", "lead"],
+  },
+  {
+    href: "/loads",
+    label: "View loads",
+    variant: "secondary",
+    roles: ["admin", "lead", "customer"],
+  },
+  {
+    href: "/reports/invoice",
+    label: "Run invoice report",
+    variant: "secondary",
+    roles: ["admin"],
+  },
+  {
+    href: "/customers",
+    label: "Manage customers",
+    variant: "secondary",
+    roles: ["admin"],
+  },
+];
 
 export default function DashboardPage() {
-  const { loads, customers, employees, currentLocationId, locations } =
+  const { loads, customers, employees, currentLocationId, locations, role } =
     useAppData();
 
   const locationLoads = loads.filter((l) => l.locationId === currentLocationId);
@@ -51,18 +86,13 @@ export default function DashboardPage() {
 
         <Card title="Quick actions" className="mt-6">
           <div className="flex flex-wrap gap-3">
-            <Link href="/loads/new">
-              <Button>Enter a load</Button>
-            </Link>
-            <Link href="/loads">
-              <Button variant="secondary">View loads</Button>
-            </Link>
-            <Link href="/reports/invoice">
-              <Button variant="secondary">Run invoice report</Button>
-            </Link>
-            <Link href="/customers">
-              <Button variant="secondary">Manage customers</Button>
-            </Link>
+            {QUICK_ACTIONS.filter((action) => action.roles.includes(role)).map(
+              (action) => (
+                <Link key={action.href} href={action.href}>
+                  <Button variant={action.variant}>{action.label}</Button>
+                </Link>
+              ),
+            )}
           </div>
         </Card>
       </main>
