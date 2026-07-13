@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/lib/store";
 
 const NAV = [
@@ -43,9 +44,14 @@ function matchesHref(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useAppData();
+  const { user, logout } = useAuth();
 
   const allHrefs = NAV.flatMap((group) => group.items.map((item) => item.href));
   const activeHref = allHrefs
@@ -97,14 +103,15 @@ export function Sidebar() {
           Signed in as
         </p>
         <p className="text-sm text-cream">
-          {role === "admin" ? "Rick Alvarez · Admin" : "Josie Turner · Lead"}
+          {user ? `${user.name} · ${capitalize(user.role)}` : "—"}
         </p>
-        <Link
-          href="/forgot-password"
+        <button
+          type="button"
+          onClick={logout}
           className="mt-2 inline-block text-xs text-steel-light underline hover:text-rust"
         >
-          Preview forgot-password flow
-        </Link>
+          Sign out
+        </button>
       </div>
     </aside>
   );

@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "sonner";
-import { AppDataProvider } from "./store";
+import { AuthProvider } from "./auth";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // One QueryClient per browser session (created lazily in state so it is
@@ -22,9 +22,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
+  // AppDataProvider (which fetches the protected datasets) lives inside the
+  // authenticated app shell, so public pages like /login don't trigger it.
   return (
     <QueryClientProvider client={queryClient}>
-      <AppDataProvider>{children}</AppDataProvider>
+      <AuthProvider>{children}</AuthProvider>
       <Toaster position="bottom-right" />
     </QueryClientProvider>
   );

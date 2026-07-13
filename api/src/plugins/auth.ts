@@ -28,13 +28,29 @@ export default fp(
   { name: 'auth' }
 )
 
-/** Claims stored inside the Lead's JWT. */
+/** Claims stored inside the Lead's JWT (mobile field app). */
 export interface LeadTokenPayload {
   sub: string // leadId
   loginId: string
   name: string
   role: string
 }
+
+/** Claims stored inside a SystemUser's JWT (back-office dashboard). */
+export interface SystemUserTokenPayload {
+  sub: string // systemUserId
+  email: string
+  name: string
+  role: string
+  locationId: string
+}
+
+/**
+ * Either identity may present a JWT to `authenticate`. Both payloads carry
+ * `sub`/`name`/`role`; consumers that need identity-specific claims should
+ * narrow before reading them.
+ */
+export type TokenPayload = LeadTokenPayload | SystemUserTokenPayload
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -44,7 +60,7 @@ declare module 'fastify' {
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: LeadTokenPayload
-    user: LeadTokenPayload
+    payload: TokenPayload
+    user: TokenPayload
   }
 }

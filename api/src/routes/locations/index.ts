@@ -58,6 +58,11 @@ function toLeadLoad(load: PrismaLoad) {
 }
 
 const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
+  // Every route here requires an authenticated identity (dashboard system user
+  // or, for /bootstrap, a Lead). The bootstrap route additionally checks the
+  // Lead's location assignment.
+  fastify.addHook('onRequest', fastify.authenticate)
+
   // GET /locations — list all locations (dashboard location switcher).
   fastify.get(
     '/',
@@ -103,7 +108,6 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     '/:locationId/bootstrap',
     {
-      onRequest: [fastify.authenticate],
       schema: {
         tags: ['locations'],
         summary: 'Download the full shift dataset for a location',

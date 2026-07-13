@@ -42,6 +42,7 @@ export default function RegisterUserPage() {
     addUser({
       name: form.name,
       email: form.email,
+      password: form.password,
       role: form.role,
       locationId: form.locationId,
     });

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ApiError, api } from "./api/client";
+import { useAuth } from "./auth";
 import type {
   Customer,
   Employee,
@@ -22,7 +23,7 @@ import type {
   SystemUser,
 } from "./types";
 
-type NewUser = Omit<SystemUser, "id" | "status">;
+type NewUser = Omit<SystemUser, "id" | "status"> & { password: string };
 type NewCustomer = Omit<Customer, "id" | "status">;
 type NewEmployee = Omit<Employee, "id" | "status">;
 type NewProductType = Omit<ProductType, "id" | "status">;
@@ -173,6 +174,7 @@ function loadBody(input: Partial<Load>) {
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const locationsQuery = useQuery({
     queryKey: keys.locations,
@@ -219,14 +221,19 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
 
   const [currentLocationId, setCurrentLocationId] = useState<string>("");
-  const [role, setRole] = useState<Role>("admin");
+  const [role, setRole] = useState<Role>(user?.role ?? "admin");
 
-  // Default the active location to the first one once locations load.
+  // Default the active location to the logged-in user's assigned location,
+  // falling back to the first one once locations load.
   useEffect(() => {
-    if (!currentLocationId && locations.length > 0) {
-      setCurrentLocationId(locations[0].id);
+    if (!currentLocationId) {
+      if (user?.locationId) {
+        setCurrentLocationId(user.locationId);
+      } else if (locations.length > 0) {
+        setCurrentLocationId(locations[0].id);
+      }
     }
-  }, [locations, currentLocationId]);
+  }, [locations, currentLocationId, user]);
 
   const invalidate = useCallback(
     (key: QueryKey) => queryClient.invalidateQueries({ queryKey: key }),

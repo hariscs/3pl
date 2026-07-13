@@ -9,6 +9,9 @@ import { ErrorResponseSchema } from '../../schemas/shared'
 import { toSystemUser } from '../../lib/domain-serializers'
 
 const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
+  // Back-office routes require an authenticated system user.
+  fastify.addHook('onRequest', fastify.authenticate)
+
   fastify.get(
     '/',
     {

@@ -270,8 +270,13 @@ async function main(): Promise<void> {
     })
   }
 
+  // All seeded dashboard users share the password "1234" so any of them can be
+  // used to log into the back-office during development.
+  const systemUserPasswordHash = await bcrypt.hash('1234', 10)
   for (const user of systemUsers) {
-    await prisma.systemUser.create({ data: { ...user } })
+    await prisma.systemUser.create({
+      data: { ...user, passwordHash: systemUserPasswordHash },
+    })
   }
 
   // Lead field app: one lead assigned to every location for check-in.
@@ -294,7 +299,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `Seeded ${locations.length} locations, ${customers.length} customers, ${employees.length} employees, ${productTypes.length} product types, ${loads.length} loads, ${systemUsers.length} users, and Lead "${lead.loginId}" (password: 1234).`
+    `Seeded ${locations.length} locations, ${customers.length} customers, ${employees.length} employees, ${productTypes.length} product types, ${loads.length} loads, ${systemUsers.length} users (dashboard login e.g. rick@dockmaster3pl.com / 1234), and Lead "${lead.loginId}" (password: 1234).`
   )
 }
 

@@ -35,6 +35,9 @@ async function computeBilling(
 }
 
 const loadRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
+  // Back-office routes require an authenticated system user.
+  fastify.addHook('onRequest', fastify.authenticate)
+
   fastify.get(
     '/',
     {
