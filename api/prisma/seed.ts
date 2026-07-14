@@ -15,7 +15,7 @@ const prisma = new PrismaClient({ adapter })
 
 type SeedStatus = 'active' | 'archived'
 type SeedLoadStatus = 'active' | 'complete' | 'void' | 'archived'
-type SeedRole = 'admin' | 'lead' | 'customer'
+type SeedRole = 'admin' | 'lead'
 
 // Shared lead field-app config applied to every location.
 const containerFields: Prisma.InputJsonValue = {
@@ -147,7 +147,6 @@ const systemUsers: Array<{
 }> = [
   { id: 'user-admin', name: 'Rick Alvarez', email: 'rick@dockmaster3pl.com', role: 'admin', locationId: 'loc-charlotte', status: 'active' },
   { id: 'user-lead-savannah', name: 'Josie Turner', email: 'josie.turner@example.com', role: 'lead', locationId: 'loc-savannah', status: 'active' },
-  { id: 'user-geodis-portal', name: 'John Reyes', email: 'j.reyes@geodis.com', role: 'customer', locationId: 'loc-charlotte', status: 'active' },
 ]
 
 async function clear(): Promise<void> {

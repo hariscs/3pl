@@ -9,7 +9,6 @@ export const RecordStatusSchema = Type.Union([
 export const RoleSchema = Type.Union([
   Type.Literal('admin'),
   Type.Literal('lead'),
-  Type.Literal('customer'),
 ])
 export const LoadStatusSchema = Type.Union([
   Type.Literal('active'),

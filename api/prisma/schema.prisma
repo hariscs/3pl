@@ -19,7 +19,6 @@ enum RecordStatus {
 enum Role {
   admin
   lead
-  customer
 }
 
 enum LoadStatus {
