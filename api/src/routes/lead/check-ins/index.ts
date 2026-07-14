@@ -16,7 +16,7 @@ const checkInRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     '/',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.requireLead],
       schema: {
         tags: ['check-ins'],
         summary: 'Start a shift by checking in to a location',
@@ -72,7 +72,7 @@ const checkInRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     '/:checkInId/checkout',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.requireLead],
       schema: {
         tags: ['check-ins'],
         summary: 'End the current shift (check out)',

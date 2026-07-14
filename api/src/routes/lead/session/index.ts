@@ -9,7 +9,7 @@ const sessionRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     '/',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.requireLead],
       schema: {
         tags: ['auth'],
         summary: 'Restore the authenticated session on app launch',

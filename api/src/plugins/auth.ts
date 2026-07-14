@@ -24,9 +24,33 @@ export default fp(
         }
       }
     )
+
+    const requireRealm = (realm: TokenRealm, message: string) =>
+      async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          await request.jwtVerify()
+        } catch {
+          return reply.unauthorized('Authentication required.')
+        }
+        if (request.user.realm !== realm) {
+          reply.forbidden(message)
+        }
+      }
+
+    fastify.decorate(
+      'requireSystemUser',
+      requireRealm('system', 'System user access required.')
+    )
+    fastify.decorate(
+      'requireLead',
+      requireRealm('lead', 'Lead access required.')
+    )
   },
   { name: 'auth' }
 )
+
+/** Identity type carried in every JWT, used by the realm guards. */
+export type TokenRealm = 'system' | 'lead'
 
 /** Claims stored inside the Lead's JWT (mobile field app). */
 export interface LeadTokenPayload {
@@ -34,6 +58,7 @@ export interface LeadTokenPayload {
   loginId: string
   name: string
   role: string
+  realm: 'lead'
 }
 
 /** Claims stored inside a SystemUser's JWT (back-office dashboard). */
@@ -43,6 +68,7 @@ export interface SystemUserTokenPayload {
   name: string
   role: string
   locationId: string
+  realm: 'system'
 }
 
 /**
@@ -55,6 +81,8 @@ export type TokenPayload = LeadTokenPayload | SystemUserTokenPayload
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+    requireSystemUser: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+    requireLead: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
   }
 }
 

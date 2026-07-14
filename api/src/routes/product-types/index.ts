@@ -11,7 +11,7 @@ import { productTypeInclude, toProductType } from '../../lib/domain-serializers'
 
 const productTypeRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   // Back-office routes require an authenticated system user.
-  fastify.addHook('onRequest', fastify.authenticate)
+  fastify.addHook('onRequest', fastify.requireSystemUser)
 
   fastify.get(
     '/',

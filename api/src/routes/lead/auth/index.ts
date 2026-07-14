@@ -32,6 +32,7 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         loginId: lead.loginId,
         name: lead.name,
         role: lead.role,
+        realm: 'lead',
       }
       const token = fastify.jwt.sign(payload)
 

@@ -7,7 +7,7 @@ const locationsRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     '/',
     {
-      onRequest: [fastify.authenticate],
+      onRequest: [fastify.requireLead],
       schema: {
         tags: ['locations'],
         summary: 'List the Lead\'s assigned locations (check-in cards)',
