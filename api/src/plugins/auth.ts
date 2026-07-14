@@ -55,7 +55,7 @@ export type TokenRealm = 'system' | 'lead'
 /** Claims stored inside the Lead's JWT (mobile field app). */
 export interface LeadTokenPayload {
   sub: string // leadId
-  loginId: string
+  email: string
   name: string
   role: string
   realm: 'lead'

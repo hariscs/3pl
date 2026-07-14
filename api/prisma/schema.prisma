@@ -166,7 +166,7 @@ model SystemUser {
 
 model Lead {
   id           String   @id @default(cuid())
-  loginId      String   @unique
+  email        String   @unique
   name         String
   role         String   @default("Lead Supervisor")
   passwordHash String

@@ -2,26 +2,26 @@ import { Type, type Static } from '@sinclair/typebox'
 import { CheckInSchema } from './checkin'
 import { SystemUserSchema } from './domain'
 
-/** Authenticated Lead identity. */
-export const LeadSchema = Type.Object({
+/** Authenticated Lead identity, shaped as the mobile app expects. */
+export const LeadUserSchema = Type.Object({
   id: Type.String(),
-  loginId: Type.String(),
-  name: Type.String(),
+  fullName: Type.String(),
+  email: Type.String(),
   role: Type.String(),
 })
-export type Lead = Static<typeof LeadSchema>
+export type LeadUser = Static<typeof LeadUserSchema>
 
 /** POST /lead/auth/login request body. */
 export const LoginBodySchema = Type.Object({
-  loginId: Type.String({ minLength: 1 }),
+  email: Type.String({ minLength: 1 }),
   password: Type.String({ minLength: 1 }),
 })
 export type LoginBody = Static<typeof LoginBodySchema>
 
 /** POST /lead/auth/login response. */
 export const LoginResponseSchema = Type.Object({
-  token: Type.String(),
-  lead: LeadSchema,
+  user: LeadUserSchema,
+  accessToken: Type.String(),
   activeCheckIn: Type.Union([CheckInSchema, Type.Null()]),
 })
 export type LoginResponse = Static<typeof LoginResponseSchema>
@@ -46,7 +46,7 @@ export type SystemUserLoginResponse = Static<typeof SystemUserLoginResponseSchem
 
 /** GET /lead/session response — used on app launch to restore state. */
 export const SessionResponseSchema = Type.Object({
-  lead: LeadSchema,
+  user: LeadUserSchema,
   activeCheckIn: Type.Union([CheckInSchema, Type.Null()]),
 })
 export type SessionResponse = Static<typeof SessionResponseSchema>

@@ -1,10 +1,21 @@
-import type { CheckIn as PrismaCheckIn } from '@prisma/client'
+import type { CheckIn as PrismaCheckIn, Lead as PrismaLead } from '@prisma/client'
 import type { CheckIn } from '../schemas/checkin'
+import type { LeadUser } from '../schemas/auth'
 import type {
   ContainerFields,
   FeatureFlags,
   Permissions,
 } from '../schemas/shared'
+
+/** Maps a Prisma Lead row to the authenticated-user response shape. */
+export function toLeadUser(row: PrismaLead): LeadUser {
+  return {
+    id: row.id,
+    fullName: row.name,
+    email: row.email,
+    role: row.role,
+  }
+}
 
 /** Maps a Prisma CheckIn row to the API response shape. */
 export function toCheckIn(row: PrismaCheckIn): CheckIn {

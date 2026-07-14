@@ -281,7 +281,7 @@ async function main(): Promise<void> {
   // Lead field app: one lead assigned to every location for check-in.
   const lead = await prisma.lead.create({
     data: {
-      loginId: 'lead-001',
+      email: 'lead@3plwork.com',
       name: 'Mike Johnson',
       role: 'Lead Supervisor',
       passwordHash: await bcrypt.hash('1234', 10),
@@ -298,7 +298,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `Seeded ${locations.length} locations, ${customers.length} customers, ${employees.length} employees, ${productTypes.length} product types, ${loads.length} loads, ${systemUsers.length} users (dashboard login e.g. rick@dockmaster3pl.com / 1234), and Lead "${lead.loginId}" (password: 1234).`
+    `Seeded ${locations.length} locations, ${customers.length} customers, ${employees.length} employees, ${productTypes.length} product types, ${loads.length} loads, ${systemUsers.length} users (dashboard login e.g. rick@dockmaster3pl.com / 1234), and Lead "${lead.email}" (password: 1234).`
   )
 }
 

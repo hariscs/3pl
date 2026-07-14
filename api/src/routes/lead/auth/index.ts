@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { LoginBodySchema, LoginResponseSchema } from '../../../schemas/auth'
 import { ErrorResponseSchema } from '../../../schemas/shared'
-import { toCheckIn } from '../../../lib/serializers'
+import { toCheckIn, toLeadUser } from '../../../lib/serializers'
 import type { LeadTokenPayload } from '../../../plugins/auth'
 
 const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
@@ -20,21 +20,21 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request) => {
-      const { loginId, password } = request.body
+      const { email, password } = request.body
 
-      const lead = await fastify.prisma.lead.findUnique({ where: { loginId } })
+      const lead = await fastify.prisma.lead.findUnique({ where: { email } })
       if (!lead || !(await bcrypt.compare(password, lead.passwordHash))) {
         throw fastify.httpErrors.unauthorized('Invalid credentials.')
       }
 
       const payload: LeadTokenPayload = {
         sub: lead.id,
-        loginId: lead.loginId,
+        email: lead.email,
         name: lead.name,
         role: lead.role,
         realm: 'lead',
       }
-      const token = fastify.jwt.sign(payload)
+      const accessToken = fastify.jwt.sign(payload)
 
       const activeCheckIn = await fastify.prisma.checkIn.findFirst({
         where: { leadId: lead.id, status: 'active' },
@@ -42,13 +42,8 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       })
 
       return {
-        token,
-        lead: {
-          id: lead.id,
-          loginId: lead.loginId,
-          name: lead.name,
-          role: lead.role,
-        },
+        user: toLeadUser(lead),
+        accessToken,
         activeCheckIn: activeCheckIn ? toCheckIn(activeCheckIn) : null,
       }
     }

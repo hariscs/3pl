@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { SessionResponseSchema } from '../../../schemas/auth'
 import { ErrorResponseSchema } from '../../../schemas/shared'
-import { toCheckIn } from '../../../lib/serializers'
+import { toCheckIn, toLeadUser } from '../../../lib/serializers'
 
 const sessionRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   // Used on app launch to restore the authenticated session and detect whether
@@ -34,12 +34,7 @@ const sessionRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       })
 
       return {
-        lead: {
-          id: lead.id,
-          loginId: lead.loginId,
-          name: lead.name,
-          role: lead.role,
-        },
+        user: toLeadUser(lead),
         activeCheckIn: activeCheckIn ? toCheckIn(activeCheckIn) : null,
       }
     }
