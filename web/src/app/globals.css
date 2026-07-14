@@ -1,42 +1,30 @@
 @import "tailwindcss";
 
-/*
-  Senastic-inspired theme — clean, modern SaaS.
-  Deep indigo chrome (nav) on white/light-slate surfaces, with a bright
-  sky-blue accent. The token names are inherited from the old warehouse
-  theme, but their values now map to the Senastic palette:
-    ink*    -> deep indigo navy chrome + primary text
-    paper/cream/manila -> white & light-slate surfaces/borders
-    steel*  -> muted slate text
-    rust*   -> sky-blue primary accent (CTAs, active state)
-    freight -> emerald status (active/complete)
-    stamp   -> red status (void/danger)
-*/
 :root {
-  --color-ink: #1a1f4a;
-  --color-ink-soft: #242a5e;
-  --color-ink-line: #33396f;
+  --color-ink: #0f172a;
+  --color-ink-soft: #1e293b;
+  --color-ink-line: #334155;
 
-  --color-paper: #f6f8fc;
-  --color-paper-dim: #eef2f8;
+  --color-paper: #f8fafc;
+  --color-paper-dim: #f1f5f9;
   --color-cream: #ffffff;
 
-  --color-manila: #eef2f8;
-  --color-manila-dark: #dce3ee;
+  --color-manila: #f1f5f9;
+  --color-manila-dark: #e2e8f0;
 
-  --color-rust: #0e76bc;
-  --color-rust-dark: #0b5f97;
-  --color-rust-soft: #e2f0fa;
+  --color-rust: #2563eb;
+  --color-rust-dark: #1d4ed8;
+  --color-rust-soft: #eff6ff;
 
-  --color-freight: #0f9d76;
-  --color-freight-dark: #0b7d5e;
-  --color-freight-soft: #d6f3e9;
+  --color-freight: #16a34a;
+  --color-freight-dark: #15803d;
+  --color-freight-soft: #f0fdf4;
 
-  --color-stamp: #d93a34;
-  --color-stamp-soft: #fde3e1;
+  --color-stamp: #dc2626;
+  --color-stamp-soft: #fef2f2;
 
-  --color-steel: #5a6a86;
-  --color-steel-light: #94a2bb;
+  --color-steel: #64748b;
+  --color-steel-light: #94a3b8;
 }
 
 @theme inline {
@@ -65,8 +53,8 @@
   --color-steel: var(--color-steel);
   --color-steel-light: var(--color-steel-light);
 
-  --font-display: var(--font-lexend);
-  --font-body: var(--font-geist);
+  --font-display: var(--font-inter);
+  --font-body: var(--font-inter);
   --font-tick: var(--font-geist-mono);
 }
 
