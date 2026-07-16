@@ -82,6 +82,7 @@ model Employee {
   phone      String
   address    String
   hourlyRate Float
+  category   String?
   status     RecordStatus @default(active)
 
   location    Location                 @relation(fields: [locationId], references: [id], onDelete: Cascade)

@@ -69,16 +69,17 @@ const employees: Array<{
   phone: string
   address: string
   hourlyRate: number
+  category: string
   locationId: string
   status: SeedStatus
 }> = [
-  { id: 'emp-1', name: 'Marcus Bell', email: 'marcus.bell@example.com', phone: '(704) 555-0111', address: '118 Freight Rd, Charlotte, NC', hourlyRate: 17.5, locationId: 'loc-charlotte', status: 'active' },
-  { id: 'emp-2', name: 'Ana Ortiz', email: 'ana.ortiz@example.com', phone: '(704) 555-0133', address: '42 Dock St, Charlotte, NC', hourlyRate: 18, locationId: 'loc-charlotte', status: 'active' },
-  { id: 'emp-3', name: 'Trevon Hicks', email: 'trevon.hicks@example.com', phone: '(912) 555-0177', address: '9 Port Blvd, Savannah, GA', hourlyRate: 19, locationId: 'loc-savannah', status: 'active' },
-  { id: 'emp-4', name: 'Grace Lin', email: 'grace.lin@example.com', phone: '(912) 555-0166', address: '230 Warehouse Way, Savannah, GA', hourlyRate: 18.5, locationId: 'loc-savannah', status: 'active' },
-  { id: 'emp-5', name: 'Devon Marsh', email: 'devon.marsh@example.com', phone: '(214) 555-0155', address: '77 Pallet Ln, Dallas, TX', hourlyRate: 17, locationId: 'loc-dallas', status: 'active' },
-  { id: 'emp-6', name: 'Priya Nair', email: 'priya.nair@example.com', phone: '(214) 555-0122', address: '310 Sortline Dr, Dallas, TX', hourlyRate: 17.75, locationId: 'loc-dallas', status: 'active' },
-  { id: 'emp-7', name: 'Walt Kessler', email: 'walt.kessler@example.com', phone: '(704) 555-0188', address: '5 Loading Ct, Charlotte, NC', hourlyRate: 16.5, locationId: 'loc-charlotte', status: 'archived' },
+  { id: 'emp-1', name: 'Marcus Bell', email: 'marcus.bell@example.com', phone: '(704) 555-0111', address: '118 Freight Rd, Charlotte, NC', hourlyRate: 17.5, category: 'lead', locationId: 'loc-charlotte', status: 'active' },
+  { id: 'emp-2', name: 'Ana Ortiz', email: 'ana.ortiz@example.com', phone: '(704) 555-0133', address: '42 Dock St, Charlotte, NC', hourlyRate: 18, category: 'operator', locationId: 'loc-charlotte', status: 'active' },
+  { id: 'emp-3', name: 'Trevon Hicks', email: 'trevon.hicks@example.com', phone: '(912) 555-0177', address: '9 Port Blvd, Savannah, GA', hourlyRate: 19, category: 'forklift', locationId: 'loc-savannah', status: 'active' },
+  { id: 'emp-4', name: 'Grace Lin', email: 'grace.lin@example.com', phone: '(912) 555-0166', address: '230 Warehouse Way, Savannah, GA', hourlyRate: 18.5, category: 'sorter', locationId: 'loc-savannah', status: 'active' },
+  { id: 'emp-5', name: 'Devon Marsh', email: 'devon.marsh@example.com', phone: '(214) 555-0155', address: '77 Pallet Ln, Dallas, TX', hourlyRate: 17, category: 'labour', locationId: 'loc-dallas', status: 'active' },
+  { id: 'emp-6', name: 'Priya Nair', email: 'priya.nair@example.com', phone: '(214) 555-0122', address: '310 Sortline Dr, Dallas, TX', hourlyRate: 17.75, category: 'checker', locationId: 'loc-dallas', status: 'active' },
+  { id: 'emp-7', name: 'Walt Kessler', email: 'walt.kessler@example.com', phone: '(704) 555-0188', address: '5 Loading Ct, Charlotte, NC', hourlyRate: 16.5, category: 'loader', locationId: 'loc-charlotte', status: 'archived' },
 ]
 
 const productTypes: Array<{

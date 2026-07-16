@@ -28,6 +28,23 @@ export type Customer = {
   status: RecordStatus;
 };
 
+// Crew (Employee) category — fixed set. Mirrors api/src/schemas/domain.ts
+// (CREW_CATEGORY_KEYS). Stored as the key; labelled here for the UI.
+export const CREW_CATEGORY_LABELS = {
+  labour: "Labour",
+  operator: "Operator",
+  forklift: "Forklift",
+  lead: "Crew Lead",
+  sorter: "Sorter",
+  loader: "Loader",
+  checker: "Checker",
+  clerk: "Clerk",
+} as const;
+export type CrewCategory = keyof typeof CREW_CATEGORY_LABELS;
+export const CREW_CATEGORY_KEYS = Object.keys(
+  CREW_CATEGORY_LABELS,
+) as CrewCategory[];
+
 export type Employee = {
   id: string;
   name: string;
@@ -35,6 +52,7 @@ export type Employee = {
   phone: string;
   address: string;
   hourlyRate: number;
+  category: CrewCategory | null;
   locationId: string;
   status: RecordStatus;
 };

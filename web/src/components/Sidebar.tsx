@@ -17,7 +17,7 @@ const NAV = [
     items: [
       { href: "/register", label: "Register" },
       { href: "/customers", label: "Customers" },
-      { href: "/employees", label: "Crew" },
+      { href: "/crew", label: "Crew" },
       { href: "/product-types", label: "Product Types" },
     ],
   },

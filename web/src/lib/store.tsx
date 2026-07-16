@@ -105,8 +105,18 @@ function customerBody(input: Partial<Customer>) {
 }
 
 function employeeBody(input: Partial<Employee>) {
-  const { name, email, phone, address, hourlyRate, locationId } = input;
-  return { name, email, phone, address, hourlyRate, locationId };
+  const { name, email, phone, address, hourlyRate, category, locationId } =
+    input;
+  // The API accepts a category key or omits it; it never accepts null.
+  return {
+    name,
+    email,
+    phone,
+    address,
+    hourlyRate,
+    category: category ?? undefined,
+    locationId,
+  };
 }
 
 function productTypeBody(input: Partial<ProductType>) {

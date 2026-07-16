@@ -57,6 +57,7 @@ export function toEmployee(employee: Employee) {
     phone: employee.phone,
     address: employee.address,
     hourlyRate: employee.hourlyRate,
+    category: employee.category ?? null,
     locationId: employee.locationId,
     status: employee.status,
   }

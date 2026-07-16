@@ -22,10 +22,10 @@ export default function EditEmployeePage() {
   if (!employee) {
     return (
       <>
-        <TopBar title="Employee not found" />
+        <TopBar title="Crew member not found" />
         <main className="flex-1 p-6">
           <p className="text-sm text-steel">
-            This employee doesn&apos;t exist or was removed.
+            This crew member doesn&apos;t exist or was removed.
           </p>
         </main>
       </>
@@ -41,7 +41,7 @@ export default function EditEmployeePage() {
       <AdminOnly>
         <main className="flex-1 space-y-6 p-6">
           <Card
-            title="Employee details"
+            title="Crew details"
             action={
               <div className="flex items-center gap-3">
                 <StampBadge status={employee.status} />
@@ -63,12 +63,13 @@ export default function EditEmployeePage() {
                 phone: employee.phone,
                 address: employee.address,
                 hourlyRate: employee.hourlyRate,
+                category: employee.category,
                 locationId: employee.locationId,
               }}
               submitLabel="Save changes"
               onSubmit={(values) => {
                 updateEmployee(employee.id, values);
-                router.push("/employees");
+                router.push("/crew");
               }}
             />
           </Card>
@@ -79,12 +80,14 @@ export default function EditEmployeePage() {
         open={confirmArchive}
         onClose={() => setConfirmArchive(false)}
         title={
-          employee.status === "active" ? "Archive employee" : "Restore employee"
+          employee.status === "active"
+            ? "Archive crew member"
+            : "Restore crew member"
         }
         body={
           employee.status === "active"
-            ? `${employee.name} will drop out of the load employee picker, but past payout records stay intact.`
-            : `${employee.name} will reappear in the load employee picker.`
+            ? `${employee.name} will drop out of the load crew picker, but past payout records stay intact.`
+            : `${employee.name} will reappear in the load crew picker.`
         }
         confirmLabel={employee.status === "active" ? "Archive" : "Restore"}
         variant={employee.status === "active" ? "danger" : "primary"}

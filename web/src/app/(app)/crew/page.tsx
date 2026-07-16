@@ -9,8 +9,13 @@ import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
-import type { Employee } from "@/lib/types";
+import {
+  CREW_CATEGORY_KEYS,
+  CREW_CATEGORY_LABELS,
+  type Employee,
+} from "@/lib/types";
 
 export default function EmployeesPage() {
   const { employees, locations, toggleEmployeeArchive } = useAppData();
@@ -37,7 +42,19 @@ export default function EmployeesPage() {
         </>
       ),
     },
-    { key: "address", header: "Address", accessor: (e) => e.address || "—" },
+    {
+      key: "category",
+      header: "Category",
+      accessor: (e) => (e.category ? CREW_CATEGORY_LABELS[e.category] : "—"),
+      filter: "select",
+      filterOptions: CREW_CATEGORY_KEYS.map((k) => CREW_CATEGORY_LABELS[k]),
+      render: (e) =>
+        e.category ? (
+          <StatusPill tone="muted">{CREW_CATEGORY_LABELS[e.category]}</StatusPill>
+        ) : (
+          <span className="text-steel-light">—</span>
+        ),
+    },
     {
       key: "location",
       header: "Location",
@@ -69,7 +86,7 @@ export default function EmployeesPage() {
       align: "right",
       render: (e) => (
         <div className="flex justify-end gap-2">
-          <Link href={`/employees/${e.id}`}>
+          <Link href={`/crew/${e.id}`}>
             <Button variant="secondary">Edit</Button>
           </Link>
           <Button
@@ -92,14 +109,14 @@ export default function EmployeesPage() {
   return (
     <>
       <TopBar
-        title="Employees"
-        description="Archive an employee to remove them from load pickers without losing their payout history."
+        title="Crew"
+        description="Archive a crew member to remove them from load pickers without losing their payout history."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
           <div className="mb-4 flex justify-end">
-            <Link href="/employees/new">
-              <Button>New employee</Button>
+            <Link href="/crew/new">
+              <Button>New crew member</Button>
             </Link>
           </div>
           <Card>
@@ -116,11 +133,13 @@ export default function EmployeesPage() {
       <ConfirmDialog
         open={pending !== null}
         onClose={() => setPending(null)}
-        title={pending?.archiving ? "Archive employee" : "Restore employee"}
+        title={
+          pending?.archiving ? "Archive crew member" : "Restore crew member"
+        }
         body={
           pending?.archiving
-            ? `${pending?.name} will drop out of the load employee picker, but past payout records stay intact.`
-            : `${pending?.name} will reappear in the load employee picker.`
+            ? `${pending?.name} will drop out of the load crew picker, but past payout records stay intact.`
+            : `${pending?.name} will reappear in the load crew picker.`
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}

@@ -4,7 +4,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { useAppData } from "@/lib/store";
-import type { Employee } from "@/lib/types";
+import {
+  CREW_CATEGORY_KEYS,
+  CREW_CATEGORY_LABELS,
+  type CrewCategory,
+  type Employee,
+} from "@/lib/types";
 
 export type EmployeeFormValues = Omit<Employee, "id" | "status">;
 
@@ -14,6 +19,7 @@ const empty: EmployeeFormValues = {
   phone: "",
   address: "",
   hourlyRate: 0,
+  category: null,
   locationId: "",
 };
 
@@ -73,6 +79,24 @@ export function EmployeeForm({
             setForm((f) => ({ ...f, hourlyRate: Number(e.target.value) }))
           }
         />
+      </Field>
+      <Field label="Crew category" hint="Job type on the floor">
+        <Select
+          value={form.category ?? ""}
+          onChange={(e) =>
+            setForm((f) => ({
+              ...f,
+              category: (e.target.value || null) as CrewCategory | null,
+            }))
+          }
+        >
+          <option value="">Uncategorized</option>
+          {CREW_CATEGORY_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {CREW_CATEGORY_LABELS[key]}
+            </option>
+          ))}
+        </Select>
       </Field>
       <Field label="Address" hint="Street, city, state">
         <Input

@@ -14,17 +14,17 @@ export default function NewEmployeePage() {
   return (
     <>
       <TopBar
-        title="New employee"
-        description="Employees only appear in load pickers for the location they're assigned to."
+        title="New crew member"
+        description="Crew members only appear in load pickers for the location they're assigned to."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
-          <Card title="Employee details">
+          <Card title="Crew details">
             <EmployeeForm
-              submitLabel="Create employee"
+              submitLabel="Create crew member"
               onSubmit={(values) => {
                 addEmployee(values);
-                router.push("/employees");
+                router.push("/crew");
               }}
             />
           </Card>

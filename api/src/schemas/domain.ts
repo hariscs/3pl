@@ -76,7 +76,31 @@ export const CustomerUpdateSchema = Type.Partial(CustomerCreateSchema)
 export type CustomerCreate = Static<typeof CustomerCreateSchema>
 export type CustomerUpdate = Static<typeof CustomerUpdateSchema>
 
-// --- Employee ---
+// --- Crew (Employee) ---
+// Fixed category set. Stored as the key; the web UI supplies the display label.
+export const CREW_CATEGORY_KEYS = [
+  "labour",
+  "operator",
+  "forklift",
+  "lead",
+  "sorter",
+  "loader",
+  "checker",
+  "clerk",
+] as const
+export type CrewCategory = (typeof CREW_CATEGORY_KEYS)[number]
+// Explicit literals (not a mapped array) so TypeBox infers the union statically.
+export const CrewCategorySchema = Type.Union([
+  Type.Literal("labour"),
+  Type.Literal("operator"),
+  Type.Literal("forklift"),
+  Type.Literal("lead"),
+  Type.Literal("sorter"),
+  Type.Literal("loader"),
+  Type.Literal("checker"),
+  Type.Literal("clerk"),
+])
+
 export const EmployeeSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -84,6 +108,9 @@ export const EmployeeSchema = Type.Object({
   phone: Type.String(),
   address: Type.String(),
   hourlyRate: Type.Number(),
+  // Loose on read — Prisma stores the key as a plain string. Create/update
+  // validate the value against CrewCategorySchema.
+  category: Type.Union([Type.String(), Type.Null()]),
   locationId: Type.String(),
   status: RecordStatusSchema,
 })
@@ -93,6 +120,7 @@ export const EmployeeCreateSchema = Type.Object({
   phone: Type.String(),
   address: Type.String(),
   hourlyRate: Type.Number(),
+  category: Type.Optional(CrewCategorySchema),
   locationId: Type.String(),
 })
 export const EmployeeUpdateSchema = Type.Partial(EmployeeCreateSchema)
