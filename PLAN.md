@@ -1,6 +1,8 @@
 # 3PL Platform — Cross-App Integration & Feature Plan
 
-> **Progress (2026-07-16):** Phase 0 ✅ done (realm gating + Role audit; 0a key rotation still TODO). Phase 1 partial — email login ✅ committed, refresh tokens 🔨 in progress (uncommitted, migration not run), all mobile work not started. Phases 2–5 ⬜ not started. **~1.5 of 6 phases.**
+> **Progress (2026-07-16):** Phase 0 ✅ (realm gating + Role audit; 0a key rotation still TODO). Phase 1 — email login ✅, refresh tokens ✅ (committed + `RefreshToken` migration created & applied; prod DB rebuilt + reseeded on Render); mobile wiring ⬜ not started. Phase 2 — **API ✅ DONE** (leads CRUD + assignments, locations create/update, lead self-assign — all tested via curl); **Web ⬜.** Phases 3–5 ⬜. **~2 of 6 phases.**
+>
+> **▶ Active workstream:** Web UI restyle to the mobile clean-card aesthetic (client round-3 pivot). See [§ Client meeting round 3](#client-meeting-round-3--2026-07-16-web-focus) and [§ Web UI restyle](#web-ui-restyle--current-workstream).
 
 Covers three codebases:
 
@@ -41,6 +43,69 @@ This guides prioritization: **Phase 3 (capture loads + crew hours) is the core**
 - **Details on load click / load summary** — load detail view (mobile Phase 3; web already has `loads/[id]`).
 - **Crew details** + **Lead details / signed-in user** (profile) — Phase 3 (crew) + Phase 4 (profile).
 - **Report an issue** — Phase 4 (locked in scope).
+
+---
+
+## Client meeting round 3 — 2026-07-16 (web focus)
+
+Raw notes: _"user can select a warehouse location, admin can create locations, register users/crews, show something in the dashboard + charts, crew category like labour/operator, add menu for actions, customers table, loads filter, loads details, stepper for load entry including crew."_
+
+**Locked decisions (round 3):**
+
+1. **Focus shifts to the Web dashboard UI now**, built **per the mobile app** (`/Users/mac/labs/threeplmobileapp`, a separate repo).
+2. **Full restyle of the web app** to the mobile clean-card aesthetic — retire the freight/ticket-stub theme (`TicketStub`, `StampBadge`, perforation, `font-tick`). Restyle every existing page, not just new ones.
+3. **Dashboard first** (mirror mobile `DashboardScreen`); charts via **Recharts** (added as a dep).
+4. **Crew category = fixed `as const` set on `Employee`** (`labour`, `operator`; extendable). ❗Data-model change — see below. Internal model stays `Employee`; "Crew" is the user-facing label.
+5. **Load-entry stepper on web only for now** (mirror the mobile load-flow); the mobile stepper stays Phase 3.
+
+**Where each note lands:**
+
+| Client note | Home |
+| --- | --- |
+| User selects a warehouse location | Phase 1 check-in gate (mobile) |
+| Admin can create locations | Phase 2 API ✅ + Web locations page |
+| Register users / crews | Phase 2 Web (users exist, leads API ✅, crew = Employee) |
+| Dashboard + charts | Web restyle §, increment 1 (moved earlier from Phase 5) |
+| Crew category (labour/operator) | **New `Employee.category` field** (API) + crew register UI |
+| Menu for actions | Web `ActionsMenu` primitive (kebab) |
+| Customers table | Web customers page (restyle) |
+| Loads filter / details | Web loads page (restyle + filters); mobile in Phase 3 |
+| Stepper for load entry incl. crew | Web load-entry stepper (new); mobile Phase 3 |
+
+**Shared design facts (mobile → web):** the web already shares the mobile palette + Inter font — `primary #2563EB`, bg `#F8FAFC`, ink `#0F172A`, muted `#64748B`, success `#16A34A`, error `#DC2626`. The difference is decorative: mobile = clean white cards (`rounded-2xl`, slate border, soft shadow), uppercase micro-labels, pill status badges (dot + label), and a progress-bar stepper with a full-width blue "Continue →" button.
+
+**New data-model change (needs a migration):** `Employee.category` — a fixed set defined `as const` (`labour`, `operator`; extendable). Ripples: `schema.prisma` + migration → `EmployeeSchema`/`EmployeeCreateSchema` (TypeBox) → `toEmployee` serializer → seed values → web type mirror → crew register/edit UI.
+
+---
+
+## Web UI restyle — current workstream
+
+Goal: convert the web dashboard to the mobile clean-card aesthetic, starting with the Dashboard, then restyling existing pages and adding the new pages from round 3.
+
+**Increment 1 — Foundation + Dashboard** ✅ done (2026-07-16)
+
+- [x] Design foundation: reworked `Card`, `Button`, `TopBar` to clean cards; new `StatCard`, `StatusPill`, `SectionHeader`, `ActionsMenu`; added amber + chart-series + `--shadow-card` tokens in `globals.css` (old token names retained so other pages keep compiling). **Sidebar kept dark with the blue active accent** (user preference — content goes light, sidebar stays dark); relabeled Employees→Crew, Register User→Register.
+- [x] Dashboard (`app/(app)/page.tsx`): current-location card, 4 stat tiles, active-loads list, 2 Recharts charts (loads/day, billed vs payout — colours run through the dataviz validator). Added `recharts`. `tsc --noEmit` clean.
+
+**Increment 2 — Crew category + crew register (API + Web)**
+
+- [ ] `Employee.category` (as const) — schema/migration/serializer/seed (API).
+- [ ] Web crew (Employee) list + register form with category selector.
+
+**Increment 3 — Locations + Leads admin pages (Web)**
+
+- [ ] Mirror `Lead` + richer `Location` into `web/src/lib/types.ts`; wire store + api client.
+- [ ] `/locations` (list/new/[id]) and `/leads` (list/new/[id] + assignment UI) pages.
+
+**Increment 4 — Restyle existing pages**
+
+- [ ] customers, employees, loads (+ filters + details), product-types, register, reports, login — retire ticket theme.
+
+**Increment 5 — Web load-entry stepper**
+
+- [ ] Multi-step load creation (Location → Product → Container → Assign crew → Review), mirroring the mobile load-flow.
+
+> Process per repo rules: load `frontend-design` + `dataviz` skills before UI/chart code; heed the Next.js 16 docs note (`web/node_modules/next/dist/docs/`); gate with `pnpm lint` + `npx tsc --noEmit` from `web/`. Mirror any cross-app shape by hand (API TypeBox ↔ `web/src/lib/types.ts`).
 
 ---
 
@@ -124,7 +189,9 @@ Goal: delete the mock adapter path for auth, session, locations, and check-in; d
 
 ---
 
-## Phase 2 — Leads & Locations administration (API + Web) — ⬜ NOT STARTED
+## Phase 2 — Leads & Locations administration (API + Web) — 🔨 API ✅ DONE / WEB ⬜
+
+> **Status (2026-07-16):** **API layer complete and tested via curl.** Built: `GET/POST/PATCH /leads`, `GET /leads/:id`, `PUT /leads/:id/assignments` (all `requireSystemUser`); `POST /locations` + `PATCH /locations/:locationId`; `POST /lead/locations` (lead self-assign, **auto-assign** v1, 404/409 handled). New `src/schemas/lead.ts`; `LocationSchema` upgraded additively + `LocationCreate/Update`; `toLead` + `leadInclude` serializers; `toLocation` enriched. `passwordHash` never leaked; realm gating verified (lead JWT → 403 on admin routes). Web pages are folded into the [Web UI restyle](#web-ui-restyle--current-workstream) workstream (increment 3), styled per mobile.
 
 The blocking product hole: **no way to create a Lead or assign locations** except the seed script. Mobile is unusable for a new hire until this exists.
 

@@ -25,6 +25,14 @@
 
   --color-steel: #64748b;
   --color-steel-light: #94a3b8;
+
+  /* Amber status (mobile "warning") — not previously defined. */
+  --color-amber: #d97706;
+  --color-amber-soft: #fffbeb;
+
+  /* Chart series — validated categorical pair (dataviz slots 1–2, light mode). */
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #008300;
 }
 
 @theme inline {
@@ -53,9 +61,17 @@
   --color-steel: var(--color-steel);
   --color-steel-light: var(--color-steel-light);
 
+  --color-amber: var(--color-amber);
+  --color-amber-soft: var(--color-amber-soft);
+  --color-chart-1: var(--color-chart-1);
+  --color-chart-2: var(--color-chart-2);
+
   --font-display: var(--font-inter);
   --font-body: var(--font-inter);
   --font-tick: var(--font-geist-mono);
+
+  /* Soft elevation for clean cards (mirrors the mobile card shadow). */
+  --shadow-card: 0 4px 14px rgb(15 23 42 / 0.04);
 }
 
 body {

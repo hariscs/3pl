@@ -15,9 +15,9 @@ const NAV = [
     section: "Setup",
     adminOnly: true,
     items: [
-      { href: "/register", label: "Register User" },
+      { href: "/register", label: "Register" },
       { href: "/customers", label: "Customers" },
-      { href: "/employees", label: "Employees" },
+      { href: "/employees", label: "Crew" },
       { href: "/product-types", label: "Product Types" },
     ],
   },
@@ -61,10 +61,10 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-60 flex-none flex-col bg-ink text-paper">
       <div className="border-b border-ink-line px-5 py-5">
-        <p className="font-display text-lg font-semibold tracking-wide text-cream">
+        <p className="text-lg font-semibold tracking-tight text-cream">
           Dockmaster
         </p>
-        <p className="text-[11px] uppercase tracking-widest text-steel-light">
+        <p className="text-[11px] font-medium uppercase tracking-widest text-steel-light">
           3PL Operations
         </p>
       </div>
@@ -72,7 +72,7 @@ export function Sidebar() {
         {NAV.filter((group) => !group.adminOnly || role === "admin").map(
           (group) => (
             <div key={group.section} className="mb-5">
-              <p className="mb-1.5 px-2 font-display text-[10px] font-semibold uppercase tracking-widest text-steel-light">
+              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-steel-light">
                 {group.section}
               </p>
               <ul className="flex flex-col gap-0.5">
@@ -84,7 +84,7 @@ export function Sidebar() {
                         href={item.href}
                         className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${
                           active
-                            ? "border-rust bg-ink-soft text-cream"
+                            ? "border-rust bg-ink-soft font-semibold text-cream"
                             : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
                         }`}
                       >
@@ -102,13 +102,13 @@ export function Sidebar() {
         <p className="text-[11px] uppercase tracking-widest text-steel-light">
           Signed in as
         </p>
-        <p className="text-sm text-cream">
+        <p className="text-sm font-medium text-cream">
           {user ? `${user.name} · ${capitalize(user.role)}` : "—"}
         </p>
         <button
           type="button"
           onClick={logout}
-          className="mt-2 inline-block text-xs text-steel-light underline hover:text-rust"
+          className="mt-2 inline-block text-xs text-steel-light transition-colors hover:text-rust"
         >
           Sign out
         </button>

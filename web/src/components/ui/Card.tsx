@@ -13,13 +13,11 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-md border border-manila-dark bg-paper-dim/60 ${className}`}
+      className={`rounded-2xl border border-manila-dark bg-cream shadow-card ${className}`}
     >
       {title && (
-        <div className="flex items-center justify-between border-b border-manila-dark px-5 py-3.5">
-          <h2 className="font-display text-sm font-semibold uppercase tracking-wider text-ink">
-            {title}
-          </h2>
+        <div className="flex items-center justify-between border-b border-manila-dark/70 px-5 py-4">
+          <h2 className="text-sm font-semibold text-ink">{title}</h2>
           {action}
         </div>
       )}
