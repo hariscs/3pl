@@ -1,5 +1,7 @@
 # 3PL Platform — Cross-App Integration & Feature Plan
 
+> **Progress (2026-07-16):** Phase 0 ✅ done (realm gating + Role audit; 0a key rotation still TODO). Phase 1 partial — email login ✅ committed, refresh tokens 🔨 in progress (uncommitted, migration not run), all mobile work not started. Phases 2–5 ⬜ not started. **~1.5 of 6 phases.**
+
 Covers three codebases:
 
 - **API** (`api/`) — Fastify backend with two auth realms: SystemUser (dashboard) and Lead (mobile field app).
@@ -74,9 +76,9 @@ This guides prioritization: **Phase 3 (capture loads + crew hours) is the core**
 
 ## Phase 0 — Foundations (secrets + role gating)
 
-**0a. Rotate & remove leaked keys.** `threeplmobileapp/.env` contains `ANTHROPIC_API_KEY` / `DEEPSEEK_API_KEY`. Confirm git-tracking, rotate the keys, purge from history, add to `.gitignore`. Replace with only what mobile needs (`API_BASE_URL`).
+**0a. Rotate & remove leaked keys.** ⬜ **TODO.** `threeplmobileapp/.env` contains `ANTHROPIC_API_KEY` / `DEEPSEEK_API_KEY`. Confirm git-tracking, rotate the keys, purge from history, add to `.gitignore`. Replace with only what mobile needs (`API_BASE_URL`).
 
-**0b. Realm gating in the API (security fix, unblocks everything).** Add two preHandlers alongside `authenticate`:
+**0b. Realm gating in the API (security fix, unblocks everything).** ✅ **DONE** (`3b39e9c`) — `realm: 'lead' | 'system'` claim on both payloads; `requireSystemUser` / `requireLead` decorators applied across all back-office routes and `/lead/*`. Also: `Role` enum reduced to `admin` + `lead` (`61de888`, migration). Add two preHandlers alongside `authenticate`:
 
 - `requireSystemUser` — 403 unless the JWT is a SystemUser payload.
 - `requireLead` — 403 unless it's a Lead payload.
@@ -89,13 +91,15 @@ Edge case: existing issued tokens lack `realm` — acceptable since tokens are d
 
 ## Phase 1 — Mobile → real API (prove the pipe end-to-end)
 
+> **Status:** API-side auth largely done — **1c email login ✅ committed**, **1f refresh tokens 🔨 in progress (uncommitted, migration not yet run)**. All mobile work (1a/1b/1d/1e) not started — `threeplmobileapp/` is still ~100% mock.
+
 Goal: delete the mock adapter path for auth, session, locations, and check-in; drive them against real `/lead/*` endpoints.
 
-**1a. Real HTTP adapter.** New `FetchNetworkAdapter implements NetworkAdapter` using `fetch`, reading base URL from `API_BASE_URL` (via `react-native-config` or a small `src/config.ts`). Map non-2xx into the existing `ApiClientError` / `NetworkError`. Switch `appDependencies.createNetworkAdapter()` to it (keep `MockNetworkAdapter` behind an env flag for offline dev).
+**1a. Real HTTP adapter.** ⬜ **TODO (mobile).** New `FetchNetworkAdapter implements NetworkAdapter` using `fetch`, reading base URL from `API_BASE_URL` (via `react-native-config` or a small `src/config.ts`). Map non-2xx into the existing `ApiClientError` / `NetworkError`. Switch `appDependencies.createNetworkAdapter()` to it (keep `MockNetworkAdapter` behind an env flag for offline dev).
 
-**1b. Bearer-token injection.** The adapter needs the current access token. Cleanest: give the adapter a `getToken: () => string | null` provided by the auth layer, and set `Authorization: Bearer <token>` when present. Requires exposing the token from `AuthContext` (today it's stored but private).
+**1b. Bearer-token injection.** ⬜ **TODO (mobile).** The adapter needs the current access token. Cleanest: give the adapter a `getToken: () => string | null` provided by the auth layer, and set `Authorization: Bearer <token>` when present. Requires exposing the token from `AuthContext` (today it's stored but private).
 
-**1c. Reconcile the auth contract.** Both sides move toward the locked decisions (email login + refresh tokens):
+**1c. Reconcile the auth contract.** ✅ **DONE (API side)** (`dd4aea4`) — `Lead` migrated to email login (migration `20260714134049_lead_email_login`); login endpoint reshaped to `{ user, accessToken, refreshToken, activeCheckIn }`. Mobile-side contract update still pending (part of 1a/1c mobile). Both sides move toward the locked decisions (email login + refresh tokens):
 
 | Concern     | Mobile assumes                                               | API today                          | Resolution                                                                                          |
 | ----------- | ------------------------------------------------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -106,11 +110,11 @@ Goal: delete the mock adapter path for auth, session, locations, and check-in; d
 
 `User.role` on mobile is the literal `'lead'`; API returns `'Lead Supervisor'`. Widen the mobile type to `string`.
 
-**1f. Refresh-token support (Lead realm).** Add a `RefreshToken` model (or store a hashed rotating token per session), `POST /lead/auth/refresh` (exchange refresh → new access + rotated refresh) and `POST /lead/auth/logout` (revoke). Short-lived access token, long-lived refresh. Mobile: adapter retries a 401 once via refresh, then hard-logs-out on failure. Persist both tokens in the existing session storage.
+**1f. Refresh-token support (Lead realm).** 🔨 **IN PROGRESS (API, uncommitted).** Added: `RefreshToken` model in `schema.prisma`, `JWT_ACCESS_EXPIRES_IN`/`JWT_REFRESH_EXPIRES_IN` in `env.ts`, `lib/leadAuth.ts` (`issueTokens`/`rotateRefreshToken` single-use rotation/`revokeRefreshToken`), and `POST /lead/auth/refresh` + `POST /lead/auth/logout` routes. **Remaining:** run the Prisma migration for `RefreshToken`, `pnpm typecheck`, commit; mobile retry-on-401 wiring still pending. Add a `RefreshToken` model (or store a hashed rotating token per session), `POST /lead/auth/refresh` (exchange refresh → new access + rotated refresh) and `POST /lead/auth/logout` (revoke). Short-lived access token, long-lived refresh. Mobile: adapter retries a 401 once via refresh, then hard-logs-out on failure. Persist both tokens in the existing session storage.
 
-**1d. Session restore.** Replace mobile's AsyncStorage-only restore with a call to `GET /lead/session` on launch (falls back to stored token for offline). This also returns `activeCheckIn`, unifying auth + check-in restore.
+**1d. Session restore.** ⬜ **TODO (mobile).** Replace mobile's AsyncStorage-only restore with a call to `GET /lead/session` on launch (falls back to stored token for offline). This also returns `activeCheckIn`, unifying auth + check-in restore.
 
-**1e. Wire check-in to the server.** `CheckInContext` becomes API-backed:
+**1e. Wire check-in to the server.** ⬜ **TODO (mobile).** `CheckInContext` becomes API-backed:
 
 - Load assigned locations from `GET /lead/locations` (replaces the hardcoded `locations` array in `CheckInScreen`). Reconcile `LocationData {id,name,customer,address}` with the API's location-card `{id,name,code,group,address{…},fullAddress,distanceMiles,lastVisitedAt,status}`.
 - Check-in → `POST /lead/check-ins`; check-out → `POST /lead/check-ins/:id/checkout`. Keep AsyncStorage as an offline cache, server as source of truth.
@@ -120,7 +124,7 @@ Goal: delete the mock adapter path for auth, session, locations, and check-in; d
 
 ---
 
-## Phase 2 — Leads & Locations administration (API + Web)
+## Phase 2 — Leads & Locations administration (API + Web) — ⬜ NOT STARTED
 
 The blocking product hole: **no way to create a Lead or assign locations** except the seed script. Mobile is unusable for a new hire until this exists.
 
@@ -141,7 +145,7 @@ The blocking product hole: **no way to create a Lead or assign locations** excep
 
 ---
 
-## Phase 3 — Lead load lifecycle (API + Mobile)
+## Phase 3 — Lead load lifecycle (API + Mobile) — ⬜ NOT STARTED
 
 Make the mobile new-load / active-load / history flow real. Largest phase.
 
@@ -163,7 +167,7 @@ Make the mobile new-load / active-load / history flow real. Largest phase.
 
 ---
 
-## Phase 4 — Secondary mobile features (Decision 4 — in scope)
+## Phase 4 — Secondary mobile features (Decision 4 — in scope) — ⬜ NOT STARTED
 
 - **Notifications**: `Notification` model + `GET /lead/notifications` + read-state (`POST /lead/notifications/:id/read`). Back `NotificationsScreen`.
 - **Report an issue**: `Issue` model + `POST /lead/issues`, plus a web triage page (`/(app)/issues`) for admins. Back `ReportIssueScreen`.
@@ -171,7 +175,7 @@ Make the mobile new-load / active-load / history flow real. Largest phase.
 
 ---
 
-## Phase 5 — Reporting & analytics (the vision payoff)
+## Phase 5 — Reporting & analytics (the vision payoff) — ⬜ NOT STARTED
 
 Each capture from Phase 3 fans out into an output. Most extend the existing `web/` reports; some are new endpoints reading the captured data.
 
@@ -187,12 +191,12 @@ All SystemUser-gated, mirror shapes into `web/src/lib/types.ts`.
 
 ## Recommended sequence & rationale
 
-1. **Phase 0** (secrets + realm gating + Role audit + Employee→Crew relabel) — small, unblocks safe multi-realm work.
-2. **Phase 1** (mobile→API auth/check-in, email login, refresh tokens) — proves the whole pipe; highest confidence-per-effort.
-3. **Phase 2** (Leads/Locations admin) — removes the "can't onboard a mobile user" blocker; pure extension of an existing web pattern.
-4. **Phase 3** (lead loads + crew clock, `Load.leadId`) — the core capture engine; depends on 0–2 and migrations.
-5. **Phase 4** (notifications, issues, profile/crew detail) — completes the mobile surface.
-6. **Phase 5** (reporting & analytics) — the vision payoff; depends on Phase 3 capture data.
+1. **Phase 0** ✅ (secrets + realm gating + Role audit + Employee→Crew relabel) — realm gating + Role audit done; 0a key rotation + Crew relabel still outstanding.
+2. **Phase 1** 🔨 (mobile→API auth/check-in, email login, refresh tokens) — email login done, refresh tokens in progress; mobile wiring not started.
+3. **Phase 2** ⬜ (Leads/Locations admin) — removes the "can't onboard a mobile user" blocker; pure extension of an existing web pattern.
+4. **Phase 3** ⬜ (lead loads + crew clock, `Load.leadId`) — the core capture engine; depends on 0–2 and migrations.
+5. **Phase 4** ⬜ (notifications, issues, profile/crew detail) — completes the mobile surface.
+6. **Phase 5** ⬜ (reporting & analytics) — the vision payoff; depends on Phase 3 capture data.
 
 ---
 

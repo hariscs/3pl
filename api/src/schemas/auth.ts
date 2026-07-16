@@ -22,9 +22,29 @@ export type LoginBody = Static<typeof LoginBodySchema>
 export const LoginResponseSchema = Type.Object({
   user: LeadUserSchema,
   accessToken: Type.String(),
+  refreshToken: Type.String(),
   activeCheckIn: Type.Union([CheckInSchema, Type.Null()]),
 })
 export type LoginResponse = Static<typeof LoginResponseSchema>
+
+/** POST /lead/auth/refresh request body. */
+export const RefreshBodySchema = Type.Object({
+  refreshToken: Type.String({ minLength: 1 }),
+})
+export type RefreshBody = Static<typeof RefreshBodySchema>
+
+/** POST /lead/auth/refresh response — a rotated access/refresh pair. */
+export const RefreshResponseSchema = Type.Object({
+  accessToken: Type.String(),
+  refreshToken: Type.String(),
+})
+export type RefreshResponse = Static<typeof RefreshResponseSchema>
+
+/** POST /lead/auth/logout request body. */
+export const LogoutBodySchema = Type.Object({
+  refreshToken: Type.String({ minLength: 1 }),
+})
+export type LogoutBody = Static<typeof LogoutBodySchema>
 
 // ---------------------------------------------------------------------------
 // Dockmaster back-office (SystemUser) auth

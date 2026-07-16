@@ -1,9 +1,20 @@
 import bcrypt from 'bcryptjs'
+import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
-import { LoginBodySchema, LoginResponseSchema } from '../../../schemas/auth'
+import {
+  LoginBodySchema,
+  LoginResponseSchema,
+  LogoutBodySchema,
+  RefreshBodySchema,
+  RefreshResponseSchema,
+} from '../../../schemas/auth'
 import { ErrorResponseSchema } from '../../../schemas/shared'
 import { toCheckIn, toLeadUser } from '../../../lib/serializers'
-import type { LeadTokenPayload } from '../../../plugins/auth'
+import {
+  issueTokens,
+  revokeRefreshToken,
+  rotateRefreshToken,
+} from '../../../lib/leadAuth'
 
 const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
@@ -11,7 +22,7 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         tags: ['auth'],
-        summary: 'Log in as a Lead and receive a JWT',
+        summary: 'Log in as a Lead and receive an access + refresh token',
         body: LoginBodySchema,
         response: {
           200: LoginResponseSchema,
@@ -27,14 +38,7 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         throw fastify.httpErrors.unauthorized('Invalid credentials.')
       }
 
-      const payload: LeadTokenPayload = {
-        sub: lead.id,
-        email: lead.email,
-        name: lead.name,
-        role: lead.role,
-        realm: 'lead',
-      }
-      const accessToken = fastify.jwt.sign(payload)
+      const { accessToken, refreshToken } = await issueTokens(fastify, lead)
 
       const activeCheckIn = await fastify.prisma.checkIn.findFirst({
         where: { leadId: lead.id, status: 'active' },
@@ -44,8 +48,48 @@ const authRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       return {
         user: toLeadUser(lead),
         accessToken,
+        refreshToken,
         activeCheckIn: activeCheckIn ? toCheckIn(activeCheckIn) : null,
       }
+    }
+  )
+
+  // Public: the refresh token itself is the credential, so no access-token guard.
+  fastify.post(
+    '/refresh',
+    {
+      schema: {
+        tags: ['auth'],
+        summary: 'Exchange a refresh token for a rotated access + refresh pair',
+        body: RefreshBodySchema,
+        response: {
+          200: RefreshResponseSchema,
+          401: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request) => rotateRefreshToken(fastify, request.body.refreshToken)
+  )
+
+  fastify.post(
+    '/logout',
+    {
+      onRequest: [fastify.requireLead],
+      schema: {
+        tags: ['auth'],
+        summary: 'Revoke a refresh token (log out)',
+        security: [{ bearerAuth: [] }],
+        body: LogoutBodySchema,
+        response: {
+          204: Type.Null(),
+          401: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      await revokeRefreshToken(fastify, request.body.refreshToken)
+      reply.code(204)
+      return null
     }
   )
 }

@@ -173,8 +173,21 @@ model Lead {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  assignments LeadAssignment[]
-  checkIns    CheckIn[]
+  assignments   LeadAssignment[]
+  checkIns      CheckIn[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([leadId])
 }
 
 model LeadAssignment {
