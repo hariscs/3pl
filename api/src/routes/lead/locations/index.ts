@@ -1,5 +1,9 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { LocationCardListSchema } from '../../../schemas/location'
+import {
+  LeadAssignmentSchema,
+  LeadSelfAssignSchema,
+} from '../../../schemas/lead'
 import { ErrorResponseSchema } from '../../../schemas/shared'
 
 const locationsRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
@@ -61,6 +65,54 @@ const locationsRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       })
 
       return { locations }
+    }
+  )
+
+  // POST /lead/locations — the Lead self-adds a location assignment.
+  // Auto-assign (v1): the assignment is active immediately, no admin approval.
+  fastify.post(
+    '/',
+    {
+      onRequest: [fastify.requireLead],
+      schema: {
+        tags: ['locations'],
+        summary: 'Self-assign the Lead to a location',
+        security: [{ bearerAuth: [] }],
+        body: LeadSelfAssignSchema,
+        response: {
+          201: LeadAssignmentSchema,
+          404: ErrorResponseSchema,
+          409: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const leadId = request.user.sub
+      const { locationId } = request.body
+
+      const location = await fastify.prisma.location.findUnique({
+        where: { id: locationId },
+      })
+      if (!location) throw fastify.httpErrors.notFound('Location not found.')
+
+      const existing = await fastify.prisma.leadAssignment.findUnique({
+        where: { leadId_locationId: { leadId, locationId } },
+      })
+      if (existing) {
+        throw fastify.httpErrors.conflict('You are already assigned to this location.')
+      }
+
+      const assignment = await fastify.prisma.leadAssignment.create({
+        data: { leadId, locationId },
+      })
+      reply.code(201)
+      return {
+        locationId: assignment.locationId,
+        role: assignment.role,
+        shiftStart: assignment.shiftStart,
+        shiftEnd: assignment.shiftEnd,
+        distanceMiles: assignment.distanceMiles ?? null,
+      }
     }
   )
 }

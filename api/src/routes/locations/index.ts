@@ -3,7 +3,11 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import type { Load as PrismaLoad } from '@prisma/client'
 import { LocationBootstrapSchema } from '../../schemas/bootstrap'
 import { ErrorResponseSchema } from '../../schemas/shared'
-import { LocationSchema } from '../../schemas/domain'
+import {
+  LocationCreateSchema,
+  LocationSchema,
+  LocationUpdateSchema,
+} from '../../schemas/domain'
 import {
   asContainerFields,
   asFeatureFlags,
@@ -99,6 +103,53 @@ const locationBootstrapRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!location) {
         throw fastify.httpErrors.notFound('Location not found.')
       }
+      return toLocation(location)
+    }
+  )
+
+  // POST /locations — create a location (dashboard admin only).
+  fastify.post(
+    '/',
+    {
+      onRequest: [fastify.requireSystemUser],
+      schema: {
+        tags: ['locations'],
+        summary: 'Create a location',
+        body: LocationCreateSchema,
+        response: { 201: LocationSchema },
+      },
+    },
+    async (request, reply) => {
+      const location = await fastify.prisma.location.create({
+        data: request.body,
+      })
+      reply.code(201)
+      return toLocation(location)
+    }
+  )
+
+  // PATCH /locations/:locationId — update a location (dashboard admin only).
+  fastify.patch(
+    '/:locationId',
+    {
+      onRequest: [fastify.requireSystemUser],
+      schema: {
+        tags: ['locations'],
+        summary: 'Update a location',
+        params: BootstrapParamsSchema,
+        body: LocationUpdateSchema,
+        response: { 200: LocationSchema, 404: ErrorResponseSchema },
+      },
+    },
+    async (request) => {
+      const exists = await fastify.prisma.location.findUnique({
+        where: { id: request.params.locationId },
+      })
+      if (!exists) throw fastify.httpErrors.notFound('Location not found.')
+      const location = await fastify.prisma.location.update({
+        where: { id: request.params.locationId },
+        data: request.body,
+      })
       return toLocation(location)
     }
   )

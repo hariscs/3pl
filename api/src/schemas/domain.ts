@@ -24,7 +24,34 @@ export const LocationSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
   region: Type.String(),
+  code: Type.Union([Type.String(), Type.Null()]),
+  group: Type.Union([Type.String(), Type.Null()]),
+  addressL1: Type.Union([Type.String(), Type.Null()]),
+  city: Type.Union([Type.String(), Type.Null()]),
+  state: Type.Union([Type.String(), Type.Null()]),
+  postalCode: Type.Union([Type.String(), Type.Null()]),
+  timezone: Type.String(),
+  status: Type.String(),
+  shiftStart: Type.String(),
+  shiftEnd: Type.String(),
 })
+export const LocationCreateSchema = Type.Object({
+  name: Type.String({ minLength: 1 }),
+  region: Type.String(),
+  code: Type.Optional(Type.String()),
+  group: Type.Optional(Type.String()),
+  addressL1: Type.Optional(Type.String()),
+  city: Type.Optional(Type.String()),
+  state: Type.Optional(Type.String()),
+  postalCode: Type.Optional(Type.String()),
+  timezone: Type.Optional(Type.String()),
+  status: Type.Optional(Type.String()),
+  shiftStart: Type.Optional(Type.String()),
+  shiftEnd: Type.Optional(Type.String()),
+})
+export const LocationUpdateSchema = Type.Partial(LocationCreateSchema)
+export type LocationCreate = Static<typeof LocationCreateSchema>
+export type LocationUpdate = Static<typeof LocationUpdateSchema>
 
 // --- Customer ---
 export const CustomerSchema = Type.Object({
