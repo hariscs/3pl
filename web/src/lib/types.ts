@@ -6,6 +6,16 @@ export type Location = {
   id: string;
   name: string;
   region: string;
+  code: string | null;
+  group: string | null;
+  addressL1: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  timezone: string;
+  status: string;
+  shiftStart: string;
+  shiftEnd: string;
 };
 
 export type SystemUser = {

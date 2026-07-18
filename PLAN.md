@@ -2,7 +2,7 @@
 
 > **Progress (2026-07-16):** Phase 0 ✅ (realm gating + Role audit; 0a key rotation still TODO). Phase 1 — email login ✅, refresh tokens ✅ (committed + `RefreshToken` migration created & applied; prod DB rebuilt + reseeded on Render); mobile wiring ⬜ not started. Phase 2 — **API ✅ DONE** (leads CRUD + assignments, locations create/update, lead self-assign — all tested via curl); **Web ⬜.** Phases 3–5 ⬜. **~2 of 6 phases.**
 >
-> **▶ Active workstream:** Web UI restyle to the mobile clean-card aesthetic (client round-3 pivot). See [§ Client meeting round 3](#client-meeting-round-3--2026-07-16-web-focus) and [§ Web UI restyle](#web-ui-restyle--current-workstream).
+> **▶ Active workstream:** Web UI restyle to the mobile clean-card aesthetic (client round-3 pivot). Increments 1 ✅ (foundation + dashboard) & 2 ✅ (crew category + register, `/employees`→`/crew`) done; **Increment 3 (Locations + Leads admin pages) next.** See [§ Client meeting round 3](#client-meeting-round-3--2026-07-16-web-focus) and [§ Web UI restyle](#web-ui-restyle--current-workstream).
 
 Covers three codebases:
 
@@ -87,10 +87,12 @@ Goal: convert the web dashboard to the mobile clean-card aesthetic, starting wit
 - [x] Design foundation: reworked `Card`, `Button`, `TopBar` to clean cards; new `StatCard`, `StatusPill`, `SectionHeader`, `ActionsMenu`; added amber + chart-series + `--shadow-card` tokens in `globals.css` (old token names retained so other pages keep compiling). **Sidebar kept dark with the blue active accent** (user preference — content goes light, sidebar stays dark); relabeled Employees→Crew, Register User→Register.
 - [x] Dashboard (`app/(app)/page.tsx`): current-location card, 4 stat tiles, active-loads list, 2 Recharts charts (loads/day, billed vs payout — colours run through the dataviz validator). Added `recharts`. `tsc --noEmit` clean.
 
-**Increment 2 — Crew category + crew register (API + Web)**
+**Increment 2 — Crew category + crew register (API + Web)** ✅ done (2026-07-16)
 
-- [ ] `Employee.category` (as const) — schema/migration/serializer/seed (API).
-- [ ] Web crew (Employee) list + register form with category selector.
+- [x] `Employee.category String?` (nullable) — migration `20260716140000_employee_category`; `CREW_CATEGORY_KEYS` + strict `CrewCategorySchema` for create/update input; **response field loose `string|null`** (Prisma stores a plain string, so a strict union can't match the serializer); `toEmployee` emits it; seed assigns a category to each crew member. No route change (create/update already flow `body → toEmployee`).
+- [x] Web: mirrored `CrewCategory`/labels into `types.ts`; `employeeBody` sends the key (never null); category selector in `EmployeeForm`; Category column (`StatusPill` + filter) on the crew list.
+- [x] Relabelled Employees→Crew across the UI **and renamed the web route `/employees` → `/crew`** (app router folder + nav links; API path, Prisma model, and `api.*("/employees")` calls stay `Employee` per the locked decision).
+- [ ] Deferred to Increment 4: swap the crew list's row buttons to the `ActionsMenu` dropdown (needs the table-overflow handling from the full table restyle).
 
 **Increment 3 — Locations + Leads admin pages (Web)**
 

@@ -16,6 +16,7 @@ const NAV = [
     adminOnly: true,
     items: [
       { href: "/register", label: "Register" },
+      { href: "/locations", label: "Locations" },
       { href: "/customers", label: "Customers" },
       { href: "/crew", label: "Crew" },
       { href: "/product-types", label: "Product Types" },

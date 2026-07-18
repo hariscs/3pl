@@ -31,6 +31,7 @@ type NewLoad = Omit<
   Load,
   "id" | "ticketNumber" | "status" | "billedAmount" | "payoutAmount"
 >;
+type NewLocation = Omit<Location, "id">;
 
 type AppData = {
   locations: Location[];
@@ -47,6 +48,9 @@ type AppData = {
   setCurrentLocationId: (id: string) => void;
   /** The authenticated user's role (read-only — derived from login). */
   role: Role;
+
+  addLocation: (input: NewLocation) => Promise<void>;
+  updateLocation: (id: string, input: Partial<Location>) => Promise<void>;
 
   addUser: (input: NewUser) => Promise<void>;
 
@@ -83,6 +87,26 @@ const keys = {
 
 function stripRateLineIds(rateLines: RateLine[]): Omit<RateLine, "id">[] {
   return rateLines.map(({ id: _id, ...rest }) => rest);
+}
+
+function locationBody(input: Partial<Location>) {
+  // Empty/blank optional fields are omitted (undefined) rather than sent as ""
+  // — the API's optional fields don't accept null, and code is unique.
+  const clean = (v: string | null | undefined) => v || undefined;
+  return {
+    name: input.name,
+    region: input.region,
+    code: clean(input.code),
+    group: clean(input.group),
+    addressL1: clean(input.addressL1),
+    city: clean(input.city),
+    state: clean(input.state),
+    postalCode: clean(input.postalCode),
+    timezone: clean(input.timezone),
+    status: clean(input.status),
+    shiftStart: clean(input.shiftStart),
+    shiftEnd: clean(input.shiftEnd),
+  };
 }
 
 function customerBody(input: Partial<Customer>) {
@@ -251,6 +275,23 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     [queryClient],
   );
 
+  const addLocation = useCallback(
+    (input: NewLocation) =>
+      withToast(async () => {
+        await api.post("/locations", locationBody(input));
+        await invalidate(keys.locations);
+      }, "Location created."),
+    [invalidate],
+  );
+  const updateLocation = useCallback(
+    (id: string, input: Partial<Location>) =>
+      withToast(async () => {
+        await api.patch(`/locations/${id}`, locationBody(input));
+        await invalidate(keys.locations);
+      }, "Location saved."),
+    [invalidate],
+  );
+
   const addUser = useCallback(
     (input: NewUser) =>
       withToast(async () => {
@@ -389,6 +430,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       currentLocationId,
       setCurrentLocationId,
       role,
+      addLocation,
+      updateLocation,
       addUser,
       addCustomer,
       updateCustomer,
@@ -414,6 +457,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       currentLocationId,
       role,
+      addLocation,
+      updateLocation,
       addUser,
       addCustomer,
       updateCustomer,
