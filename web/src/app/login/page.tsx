@@ -3,16 +3,42 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Brain,
+  ChartNoAxesCombined,
+  ClipboardList,
+  Clock,
+  DollarSign,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
+
+type InputType = "email" | "password" | "text";
+
+const FEATURES = [
+  { icon: ClipboardList, label: "Manage Loads" },
+  { icon: Users, label: "Track Crew" },
+  { icon: DollarSign, label: "Calculate Payroll" },
+  { icon: Clock, label: "Customer Billing" },
+  { icon: Brain, label: "AI Crew Matching" },
+  { icon: Sparkles, label: "Smart Forecasting" },
+  { icon: ChartNoAxesCombined, label: "Predictive Analytics" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const { status, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,59 +64,178 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <p className="font-display text-lg font-semibold tracking-wide text-cream">
-            Dockmaster
-          </p>
-          <p className="text-[11px] uppercase tracking-widest text-steel-light">
-            3PL Operations
-          </p>
-        </div>
+    <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
+      {/* ── Left Panel ── */}
+      <section className="relative overflow-hidden bg-slate-50 lg:block lg:w-[58%]">
+        {/* Warehouse image in bottom-right, masked to fade naturally */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url('/assets/warehouse.svg')",
+            backgroundSize: "cover",
+            backgroundPosition: "bottom right",
+            backgroundRepeat: "no-repeat",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 100% 100% at bottom right, black 40%, transparent 70%)",
+            maskImage:
+              "radial-gradient(ellipse 100% 100% at bottom right, black 40%, transparent 70%)",
+          }}
+        />
 
-        <div className="rounded-md border border-manila-dark bg-paper p-6 shadow-xl">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Content */}
+        <div className="relative z-20 flex h-full flex-col justify-start px-12 pb-8 pt-20 xl:px-16 xl:pt-24 2xl:px-20">
+          <div className="flex flex-col justify-center gap-6">
+            {/* Brand */}
             <div>
-              <h1 className="font-display text-lg font-semibold text-ink">
-                Sign in
-              </h1>
-              <p className="text-sm text-steel">
-                Use the email and password tied to your account.
+              <p className="font-display text-xl font-bold tracking-tight text-slate-900">
+                3PL Work
+              </p>
+              <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-blue-600">
+                Warehouse Operations Platform
               </p>
             </div>
-            <Field label="Email address" required>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-              />
-            </Field>
-            <Field label="Password" required>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </Field>
-            {error && <p className="text-xs text-stamp">{error}</p>}
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing in…" : "Sign in"}
-            </Button>
-            <Link
-              href="/forgot-password"
-              className="block text-center text-xs text-steel underline hover:text-rust"
-            >
-              Forgot your password?
-            </Link>
-          </form>
+
+            {/* Heading */}
+            <div className="max-w-130">
+              <h2 className="font-display text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-slate-900">
+                Built for{" "}
+                <span className="text-blue-600">warehouse staffing</span>{" "}
+                operations
+              </h2>
+            </div>
+
+            {/* Feature items — single column */}
+            <div className="flex flex-col gap-2.5">
+              {FEATURES.map((feat) => (
+                <div key={feat.label} className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50">
+                    <feat.icon className="h-3.5 w-3.5 text-blue-600" />
+                  </span>
+                  <span className="text-sm font-medium text-slate-900">
+                    {feat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── Right Panel: Login Card ── */}
+      <section className="flex min-h-0 flex-1 items-center justify-center bg-linear-to-br from-slate-50 to-blue-50/40 p-6 lg:w-[42%]">
+        <div className="w-full max-w-sm">
+          {/* Mobile banner */}
+          <div className="mb-8 overflow-hidden rounded-xl lg:hidden">
+            <div
+              className="relative flex h-32 items-end bg-cover bg-center"
+              style={{ backgroundImage: "url('/assets/warehouse.svg')" }}
+            >
+              <div className="absolute inset-0 bg-linear-to-t from-blue-950/70 to-blue-900/30" />
+              <div className="relative z-10 p-5">
+                <p className="font-display text-lg font-bold text-white">
+                  3PL Work
+                </p>
+                <p className="text-[11px] uppercase tracking-widest text-blue-200">
+                  Warehouse Operations Platform
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border border-slate-200/60 bg-white p-8 shadow-xl shadow-slate-200/50">
+            <div className="mb-6">
+              {/* Logo placeholder */}
+              <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
+                <span className="text-sm font-bold text-white">3W</span>
+              </div>
+
+              <h1 className="text-xl font-semibold text-slate-900">
+                Welcome back
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Sign in to your account to continue.
+              </p>
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <Field label="Email address" required>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                  className="border-slate-200 bg-white placeholder:text-slate-400"
+                />
+              </Field>
+
+              <Field label="Password" required>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : ("password" as InputType)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                    className="border-slate-200 bg-white pr-10 placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </Field>
+
+              <div className="flex items-center justify-between">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-600">Remember me</span>
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {error && (
+                <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                disabled={submitting}
+              >
+                {submitting ? "Signing in\u2026" : "Sign in"}
+                {!submitting && <ArrowRight className="h-4 w-4" />}
+              </Button>
+            </form>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-slate-400" suppressHydrationWarning>
+            &copy; {new Date().getFullYear()} 3PL Work. All rights reserved.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
