@@ -6,6 +6,10 @@ import type { SystemUser } from "./types";
 const TOKEN_KEY = "dockmaster.token";
 const USER_KEY = "dockmaster.user";
 
+/** Token stored in localStorage when the dev-mode login bypass is active.
+ *  `api/client.ts` recognises this value and skips the 401 → /login redirect. */
+export const DEV_BYPASS_TOKEN = "dev-bypass";
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(TOKEN_KEY);

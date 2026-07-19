@@ -37,3 +37,25 @@ export function calculateLoadAmounts(
     payout: Math.round(payout * 100) / 100,
   };
 }
+
+/** Gross margin = billed - payout. */
+export function calculateMargin(billed: number, payout: number): number {
+  return Math.round((billed - payout) * 100) / 100;
+}
+
+/** Margin percentage. Returns 0 when billed is 0 to avoid Infinity / NaN. */
+export function calculateMarginPercent(billed: number, payout: number): number {
+  if (billed <= 0) return 0;
+  return Math.round(((billed - payout) / billed) * 10000) / 100;
+}
+
+/** Format a dollar value consistently. */
+export function formatMoney(value: number): string {
+  return `$${value.toFixed(2)}`;
+}
+
+/** Format a time string like "06:02" from a HH:MM string. */
+export function formatTime(time: string | null | undefined): string {
+  if (!time) return "—";
+  return time;
+}

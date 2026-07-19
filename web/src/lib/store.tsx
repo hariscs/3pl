@@ -29,7 +29,7 @@ type NewEmployee = Omit<Employee, "id" | "status">;
 type NewProductType = Omit<ProductType, "id" | "status">;
 type NewLoad = Omit<
   Load,
-  "id" | "ticketNumber" | "status" | "billedAmount" | "payoutAmount"
+  "id" | "ticketNumber" | "status" | "billedAmount" | "payoutAmount" | "lastUpdatedAt" | "trailerNumber" | "sealNumber"
 >;
 type NewLocation = Omit<Location, "id">;
 

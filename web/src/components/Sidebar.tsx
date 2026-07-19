@@ -9,33 +9,37 @@ const NAV = [
   {
     section: "Operations",
     adminOnly: false,
-    items: [{ href: "/", label: "Dashboard" }],
-  },
-  {
-    section: "Setup",
-    adminOnly: true,
     items: [
-      { href: "/register", label: "Register" },
-      { href: "/locations", label: "Locations" },
-      { href: "/customers", label: "Customers" },
-      { href: "/crew", label: "Crew" },
-      { href: "/product-types", label: "Product Types" },
+      { href: "/", label: "Dashboard" },
+      { href: "/loads/new", label: "Load Entry" },
+      { href: "/loads", label: "Loads" },
     ],
   },
   {
-    section: "Loads",
-    adminOnly: false,
+    section: "Master Data",
+    adminOnly: true,
     items: [
-      { href: "/loads/new", label: "Load Entry" },
-      { href: "/loads", label: "Loads" },
+      { href: "/customers", label: "Customers" },
+      { href: "/locations", label: "Locations" },
+      { href: "/crew", label: "Crew" },
+      { href: "/product-types", label: "Product Types" },
+      { href: "/register", label: "Register" },
+    ],
+  },
+  {
+    section: "Finance",
+    adminOnly: true,
+    items: [
+      { href: "/finance/payroll", label: "Payroll" },
+      { href: "/finance/customer-billing", label: "Customer Billing" },
+      { href: "/finance/invoices", label: "Invoices" },
     ],
   },
   {
     section: "Reports",
     adminOnly: true,
     items: [
-      { href: "/reports/load-entry", label: "Load Entry Report" },
-      { href: "/reports/invoice", label: "Invoice Report" },
+      { href: "/reports/load-entry", label: "Load Report" },
     ],
   },
 ];
@@ -72,10 +76,12 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {NAV.filter((group) => !group.adminOnly || role === "admin").map(
           (group) => (
-            <div key={group.section} className="mb-5">
-              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-steel-light">
-                {group.section}
-              </p>
+            <div key={group.section} className="mb-6">
+              <div className="mb-3 border-t border-ink-line pt-4 first:border-t-0 first:pt-0">
+                <p className="mb-2.5 mt-1 px-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cream/80">
+                  {group.section}
+                </p>
+              </div>
               <ul className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
                   const active = item.href === activeHref;
@@ -83,11 +89,10 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${
-                          active
-                            ? "border-rust bg-ink-soft font-semibold text-cream"
-                            : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
-                        }`}
+                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${active
+                          ? "border-rust bg-ink-soft font-semibold text-cream"
+                          : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+                          }`}
                       >
                         {item.label}
                       </Link>

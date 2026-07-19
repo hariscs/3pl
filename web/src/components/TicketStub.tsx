@@ -23,8 +23,9 @@ export function TicketStub({
   actions?: ReactNode;
 }) {
   const Wrapper = href ? Link : "div";
-  return (
-    <div className="flex overflow-hidden rounded-md border border-manila-dark bg-paper-dim/50">
+
+  const card = (
+    <div className="flex overflow-hidden rounded-md border border-manila-dark bg-paper-dim/50 transition-colors hover:border-rust/40">
       <div className="stub-perforation flex w-20 flex-none flex-col items-center justify-center gap-1 border-r-2 border-dashed border-manila-dark bg-manila py-4">
         <span className="font-display text-[10px] uppercase tracking-widest text-steel">
           Ticket
@@ -41,18 +42,9 @@ export function TicketStub({
             </span>
             <span className="text-xs text-steel-light">{date}</span>
           </div>
-          {href ? (
-            <Wrapper
-              href={href}
-              className="font-display text-base font-semibold text-ink hover:text-rust"
-            >
-              {title}
-            </Wrapper>
-          ) : (
-            <p className="font-display text-base font-semibold text-ink">
-              {title}
-            </p>
-          )}
+          <p className="font-display text-base font-semibold text-ink">
+            {title}
+          </p>
           <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-4">
             {fields.map((f) => (
               <div key={f.label}>
@@ -64,11 +56,23 @@ export function TicketStub({
             ))}
           </dl>
         </div>
-        <div className="flex flex-none items-center gap-3">
+        <div
+          className="flex flex-none items-center gap-3"
+          onClick={href ? (e) => e.stopPropagation() : undefined}
+        >
           <StampBadge status={status} />
           {actions}
         </div>
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Wrapper href={href} className="block">
+        {card}
+      </Wrapper>
+    );
+  }
+  return card;
 }

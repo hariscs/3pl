@@ -105,6 +105,8 @@ export type Load = {
   productTypeId: string;
   doorNumber: string;
   containerNumber: string;
+  trailerNumber: string;
+  sealNumber: string;
   vendor: string;
   poNumbers: string[];
   sorts: number;
@@ -114,4 +116,6 @@ export type Load = {
   status: LoadStatus;
   billedAmount: number;
   payoutAmount: number;
+  /** ISO timestamp of the last update. Displayed on the load detail screen. */
+  lastUpdatedAt: string | null;
 };
