@@ -28,7 +28,44 @@ let productTypes = structuredClone(PRODUCT_TYPES);
 let loads = structuredClone(LOADS);
 let users = structuredClone(SYSTEM_USERS);
 
+import type { EmployeePayrollStatus, PayrollPayment, PayrollPaymentMethod } from "./payroll";
+
 let ticketCounter = Math.max(...loads.map((l) => l.ticketNumber)) + 1;
+
+type PayrollStatusOverride = {
+    status: EmployeePayrollStatus;
+    approvedAt?: string;
+    approvedByName?: string;
+    paidAt?: string;
+    paidByName?: string;
+    payment?: PayrollPayment | null;
+};
+
+// Per-employee payroll status overrides for the mock API.
+const payrollStatusOverrides: Record<string, PayrollStatusOverride> = {
+    "emp-1": {
+        status: "paid",
+        approvedAt: "2026-07-08T10:00:00Z",
+        approvedByName: "Rick Alvarez",
+        paidAt: "2026-07-09T14:30:00Z",
+        paidByName: "Rick Alvarez",
+        payment: {
+            amount: 134.00,
+            paidAt: "2026-07-09",
+            method: "direct_deposit",
+            reference: "DD-2026-0709-0012",
+            note: "Payroll for Jun 30 \u2013 Jul 6",
+            recordedAt: "2026-07-09T14:30:00Z",
+            recordedByName: "Rick Alvarez",
+        },
+    },
+    "emp-2": {
+        status: "approved",
+        approvedAt: "2026-07-08T11:00:00Z",
+        approvedByName: "Rick Alvarez",
+    },
+    "emp-3": { status: "pending_review" },
+};
 
 /** Reset all mutable stores back to the static seed (useful for testing). */
 export function resetMockData(): void {
@@ -305,7 +342,62 @@ const routes: { match: (method: string, path: string) => boolean; fn: (path: str
     // Users
     exact("GET", "/users", listUsers),
     exact("POST", "/users", createUser),
+
+    // Payroll status lifecycle
+    pattern("GET", /^\/payroll\/records\/[^/]+$/, getPayrollRecord),
+    pattern("POST", /^\/payroll\/records\/.+\/approve$/, approvePayrollRecord),
+    pattern("POST", /^\/payroll\/records\/.+\/mark-paid$/, markPaidPayrollRecord),
 ];
+
+async function getPayrollRecord(path: string) {
+    await delay();
+    const id = path.split("/")[3];
+    const override = payrollStatusOverrides[id];
+    if (!override) return jsonResponse({ status: "pending_review", approvedAt: null, approvedByName: null, paidAt: null, paidByName: null });
+    return jsonResponse(override);
+}
+
+async function approvePayrollRecord(path: string) {
+    await delay();
+    const id = path.split("/")[3];
+    const override = payrollStatusOverrides[id];
+    if (!override) return jsonResponse({ message: "Payroll record not found.", code: "PAYROLL_NOT_FOUND" }, 404);
+    if (override.status !== "pending_review") return jsonResponse({ message: "Only payroll records pending review can be approved.", code: "PAYROLL_NOT_PENDING_REVIEW" }, 400);
+    override.status = "approved";
+    override.approvedAt = new Date().toISOString();
+    override.approvedByName = "Rick Alvarez";
+    return jsonResponse(override);
+}
+
+async function markPaidPayrollRecord(path: string, body?: unknown) {
+    await delay();
+    const id = path.split("/")[3];
+    const override = payrollStatusOverrides[id];
+    if (!override) return jsonResponse({ message: "Payroll record not found.", code: "PAYROLL_NOT_FOUND" }, 404);
+    if (override.status === "paid") return jsonResponse({ message: "This payroll record has already been marked as paid.", code: "PAYROLL_ALREADY_PAID" }, 400);
+    if (override.status !== "approved") return jsonResponse({ message: "Only approved payroll records can be marked as paid.", code: "PAYROLL_NOT_APPROVED" }, 400);
+
+    const data = body as { paidAt?: string; method?: string; reference?: string; note?: string; amount?: number };
+    if (!data?.reference || !String(data.reference).trim()) return jsonResponse({ message: "Payment reference is required.", code: "PAYMENT_REFERENCE_REQUIRED" }, 400);
+    if (!data?.paidAt) return jsonResponse({ message: "Payment date is required.", code: "PAYMENT_DATE_REQUIRED" }, 400);
+
+    const payment: PayrollPayment = {
+        amount: data.amount ?? 0,
+        paidAt: data.paidAt,
+        method: (data.method as PayrollPaymentMethod) ?? "direct_deposit",
+        reference: String(data.reference).trim(),
+        note: data.note?.trim() || null,
+        recordedAt: new Date().toISOString(),
+        recordedByName: "Rick Alvarez",
+    };
+
+    override.status = "paid";
+    override.paidAt = new Date().toISOString();
+    override.paidByName = "Rick Alvarez";
+    override.payment = payment;
+
+    return jsonResponse(override);
+}
 
 export async function handleMockRequest(
     method: string,

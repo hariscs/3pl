@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AddFilterChip, type FilterableColumn, FilterChip } from "./FilterChip";
 import { Button } from "./ui/Button";
 
@@ -28,6 +28,8 @@ export function FilterableTable<T>({
   getRowKey,
   onExport,
   defaultFilterKeys,
+  onRowClick,
+  onFilteredRowsChange,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -35,6 +37,10 @@ export function FilterableTable<T>({
   onExport?: (rows: T[]) => void;
   /** Columns whose filter chip should be shown by default, with no value set. */
   defaultFilterKeys?: string[];
+  /** Called when a row is clicked. The row data is passed. */
+  onRowClick?: (row: T) => void;
+  /** Called with the currently filtered/sorted rows whenever they change. */
+  onFilteredRowsChange?: (rows: T[]) => void;
 }) {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() =>
@@ -136,6 +142,10 @@ export function FilterableTable<T>({
   const anyFilterActive =
     activeFilters.some((f) => filterValues[f.id]) || !!search;
 
+  useEffect(() => {
+    onFilteredRowsChange?.(filtered);
+  }, [filtered, onFilteredRowsChange]);
+
   return (
     <div>
       <div className="mb-3">
@@ -214,9 +224,8 @@ export function FilterableTable<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`border-b border-manila-dark px-3 py-2 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
-                    col.align === "right" ? "text-right" : ""
-                  }`}
+                  className={`border-b border-manila-dark px-3 py-2 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${col.align === "right" ? "text-right" : ""
+                    }`}
                 >
                   {col.sortable === false ? (
                     col.header
@@ -254,14 +263,14 @@ export function FilterableTable<T>({
               filtered.map((row) => (
                 <tr
                   key={getRowKey(row)}
-                  className="odd:bg-paper even:bg-paper-dim/40 hover:bg-manila/40"
+                  className={`odd:bg-paper even:bg-paper-dim/40 hover:bg-manila/40 ${onRowClick ? "cursor-pointer" : ""}`}
+                  onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`border-b border-manila-dark/60 px-3 py-2 text-ink ${
-                        col.align === "right" ? "text-right font-tick" : ""
-                      }`}
+                      className={`border-b border-manila-dark/60 px-3 py-2 text-ink ${col.align === "right" ? "text-right font-tick" : ""
+                        }`}
                     >
                       {col.render ? col.render(row) : col.accessor(row)}
                     </td>
