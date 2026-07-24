@@ -14,37 +14,43 @@ import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
 import type { Role } from "@/lib/types";
+import {
+  Box,
+  CheckCircle,
+  Truck,
+  Users,
+} from "lucide-react";
 const QUICK_ACTIONS: Array<{
   href: string;
   label: string;
   variant: "primary" | "secondary";
   roles: Role[];
 }> = [
-  {
-    href: "/loads/new",
-    label: "Enter a load",
-    variant: "primary",
-    roles: ["admin", "lead"],
-  },
-  {
-    href: "/loads",
-    label: "View loads",
-    variant: "secondary",
-    roles: ["admin", "lead"],
-  },
-  {
-    href: "/reports/invoice",
-    label: "Run invoice report",
-    variant: "secondary",
-    roles: ["admin"],
-  },
-  {
-    href: "/customers",
-    label: "Manage customers",
-    variant: "secondary",
-    roles: ["admin"],
-  },
-];
+    {
+      href: "/loads/new",
+      label: "Enter a load",
+      variant: "primary",
+      roles: ["admin", "lead"],
+    },
+    {
+      href: "/loads",
+      label: "View loads",
+      variant: "secondary",
+      roles: ["admin", "lead"],
+    },
+    {
+      href: "/reports/invoice",
+      label: "Run invoice report",
+      variant: "secondary",
+      roles: ["admin"],
+    },
+    {
+      href: "/customers",
+      label: "Manage customers",
+      variant: "secondary",
+      roles: ["admin"],
+    },
+  ];
 
 export default function DashboardPage() {
   const { loads, customers, employees, currentLocationId, locations, role } =
@@ -92,10 +98,10 @@ export default function DashboardPage() {
     customers.find((c) => c.id === id)?.displayName ?? "Customer";
 
   const stats = [
-    { label: "Active loads", value: activeLoads.length },
-    { label: "Completed", value: completed.length },
-    { label: "Crew on site", value: crew.length },
-    { label: "Customers", value: activeCustomers.length },
+    { label: "Active loads", value: activeLoads.length, icon: Truck },
+    { label: "Completed", value: completed.length, icon: CheckCircle },
+    { label: "Crew on site", value: crew.length, icon: Users },
+    { label: "Customers", value: activeCustomers.length, icon: Box },
   ];
 
   return (
@@ -128,7 +134,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} />
+            <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
           ))}
         </div>
 
@@ -204,7 +210,7 @@ export default function DashboardPage() {
 
 function EmptyChart() {
   return (
-    <div className="flex h-[220px] items-center justify-center text-sm text-steel-light">
+    <div className="flex h-55 items-center justify-center text-sm text-steel-light">
       No load data yet.
     </div>
   );

@@ -32,7 +32,7 @@ const DEV_MODE = process.env.NODE_ENV === "development";
 
 const DEV_USER: SystemUser = {
   id: "user-dev",
-  name: "Dev Admin",
+  name: "David Miller",
   email: "dev@localhost",
   role: "admin",
   locationId: "loc-charlotte",

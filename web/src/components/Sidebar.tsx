@@ -67,7 +67,7 @@ export function Sidebar() {
     <aside className="flex h-full w-60 flex-none flex-col bg-ink text-paper">
       <div className="border-b border-ink-line px-5 py-5">
         <p className="text-lg font-semibold tracking-tight text-cream">
-          Dockmaster
+          3PL Work
         </p>
         <p className="text-[11px] font-medium uppercase tracking-widest text-steel-light">
           3PL Operations
