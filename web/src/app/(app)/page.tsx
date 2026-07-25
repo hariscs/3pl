@@ -14,12 +14,6 @@ import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
 import type { Role } from "@/lib/types";
-import {
-  Box,
-  CheckCircle,
-  Truck,
-  Users,
-} from "lucide-react";
 const QUICK_ACTIONS: Array<{
   href: string;
   label: string;
@@ -98,10 +92,10 @@ export default function DashboardPage() {
     customers.find((c) => c.id === id)?.displayName ?? "Customer";
 
   const stats = [
-    { label: "Active loads", value: activeLoads.length, icon: Truck },
-    { label: "Completed", value: completed.length, icon: CheckCircle },
-    { label: "Crew on site", value: crew.length, icon: Users },
-    { label: "Customers", value: activeCustomers.length, icon: Box },
+    { label: "Active loads", value: activeLoads.length },
+    { label: "Completed", value: completed.length },
+    { label: "Crew on site", value: crew.length },
+    { label: "Customers", value: activeCustomers.length },
   ];
 
   return (
@@ -134,7 +128,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
+            <StatCard key={s.label} label={s.label} value={s.value} />
           ))}
         </div>
 
