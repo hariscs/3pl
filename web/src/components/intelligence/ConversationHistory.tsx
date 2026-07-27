@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, type KeyboardEvent } from "react";
-import { Search, Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Pencil } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { Search, Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Pencil, Sparkles, Library } from "lucide-react";
 import type { Conversation } from "@/lib/intelligence";
 
 function ConversationItem({ id, title, updatedAt, active, onClick, onRename }: { id: string; title: string; updatedAt: string; active?: boolean; onClick: () => void; onRename: (id: string, newTitle: string) => void }) {
@@ -85,7 +87,9 @@ type Props = {
 };
 
 export function ConversationHistory({ collapsed, onToggle, conversations, activeConversationId, onSelectConversation, onNewConversation, onRenameConversation }: Props) {
+    const pathname = usePathname();
     const [search, setSearch] = useState("");
+    const isKnowledge = pathname.includes("/knowledge");
 
     const filtered = search.trim()
         ? conversations.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
@@ -97,10 +101,22 @@ export function ConversationHistory({ collapsed, onToggle, conversations, active
 
     if (collapsed) {
         return (
-            <div className="flex h-full w-12 flex-none flex-col items-center border-r border-ink-line bg-ink py-4">
-                <button type="button" onClick={onToggle} className="rounded-lg p-2 text-steel-light transition-colors hover:bg-ink-soft hover:text-cream/70" title="Open conversations">
-                    <PanelLeftOpen size={18} />
-                </button>
+            <div className="flex h-full w-12 flex-none flex-col border-r border-ink-line bg-ink">
+                <div className="flex-1 py-4">
+                    <button type="button" onClick={onToggle} className="mx-auto flex justify-center rounded-lg p-2 text-steel-light transition-colors hover:bg-ink-soft hover:text-cream/70" title="Open conversations">
+                        <PanelLeftOpen size={18} />
+                    </button>
+                </div>
+                <div className="pb-4">
+                    <Link
+                        href="/intelligence/knowledge"
+                        title="AI Knowledge Hub"
+                        className={`mx-auto flex justify-center rounded-lg p-2 transition-colors ${isKnowledge ? "bg-ink-soft text-rust" : "text-steel-light hover:bg-ink-soft hover:text-cream/70"
+                            }`}
+                    >
+                        <Sparkles size={18} />
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -191,6 +207,20 @@ export function ConversationHistory({ collapsed, onToggle, conversations, active
                         </section>
                     )}
                 </div>
+            </div>
+
+            {/* AI Knowledge Hub — fixed at bottom, prominent */}
+            <div className="flex-none border-t border-ink-line px-3 py-3">
+                <Link
+                    href="/intelligence/knowledge"
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold transition-all duration-200 ${isKnowledge
+                            ? "bg-rust text-cream"
+                            : "text-steel-light hover:bg-ink-soft hover:text-cream/80"
+                        }`}
+                >
+                    <Sparkles size={17} className={isKnowledge ? "text-cream" : "text-rust/60"} />
+                    AI Knowledge Hub
+                </Link>
             </div>
         </div>
     );
