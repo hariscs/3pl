@@ -235,7 +235,7 @@ export default function InvoiceDetailPage() {
               Invoice Items
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+              <table className="w-full min-w-160 text-sm">
                 <thead>
                   <tr className="border-b border-manila-dark text-left text-xs font-medium uppercase tracking-wide text-steel-light">
                     <th className="py-2 pr-3">Load</th>

@@ -405,7 +405,7 @@ export default function InvoicesPage() {
             {/* Date-range filters (above FilterableTable, matching the
                 select-all checkbox placement in Customer Billing) */}
             <div className="flex flex-wrap items-end gap-3">
-              <div className="min-w-[140px]">
+              <div className="min-w-35">
                 <label
                   htmlFor="inv-date-from"
                   className="mb-1 block text-xs font-semibold uppercase tracking-wide text-steel-light"
@@ -420,7 +420,7 @@ export default function InvoicesPage() {
                   className="w-full rounded-xl border border-manila-dark bg-cream px-3 py-2 text-sm text-ink focus:border-rust focus:outline-none"
                 />
               </div>
-              <div className="min-w-[140px]">
+              <div className="min-w-35">
                 <label
                   htmlFor="inv-date-to"
                   className="mb-1 block text-xs font-semibold uppercase tracking-wide text-steel-light"
