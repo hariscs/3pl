@@ -4,6 +4,29 @@ export type Message = {
     role: "user" | "assistant";
     content: string;
     createdAt: number;
+    attachments?: SentAttachment[];
+};
+
+// ── Chat Attachments ─────────────────────────────────────
+export type ChatAttachment = {
+    id: string;
+    file: File;
+    name: string;
+    mimeType: string;
+    size: number;
+    category: "image" | "document";
+    previewUrl?: string;
+    status: "ready" | "invalid";
+    error?: string;
+};
+
+export type SentAttachment = {
+    id: string;
+    name: string;
+    mimeType: string;
+    size: number;
+    category: "image" | "document";
+    previewUrl?: string;
 };
 
 // ── Evidence ─────────────────────────────────────────────

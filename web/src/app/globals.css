@@ -84,12 +84,10 @@ body {
 
 /* Subtle perforated edge, used by <TicketStub>. */
 .stub-perforation {
-  background-image: radial-gradient(
-    circle at center,
-    var(--color-cream) 0,
-    var(--color-cream) 2.5px,
-    transparent 2.5px
-  );
+  background-image: radial-gradient(circle at center,
+      var(--color-cream) 0,
+      var(--color-cream) 2.5px,
+      transparent 2.5px);
   background-size: 14px 14px;
   background-repeat: repeat-y;
   background-position: center;
@@ -104,7 +102,24 @@ body {
   letter-spacing: 0.04em;
 }
 
+@keyframes global-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-global-drop-in {
+  animation: global-drop-in 200ms ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

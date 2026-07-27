@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Copy, RefreshCw, FileSearch, Check } from "lucide-react";
-import type { Message, Evidence } from "@/lib/intelligence";
+import { Sparkles, Copy, RefreshCw, FileSearch, Check, FileText } from "lucide-react";
+import type { Message, Evidence, SentAttachment } from "@/lib/intelligence";
 
 function FormattedContent({ content }: { content: string }) {
     const paragraphs = content.split("\n\n").filter(Boolean);
@@ -96,11 +96,45 @@ function AssistantMessage({
     );
 }
 
-function UserMessage({ content }: { content: string }) {
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function AttachmentCard({ attachment, onImagePreview }: { attachment: SentAttachment; onImagePreview?: (url: string, filename: string) => void }) {
+    const isImg = attachment.category === "image";
     return (
-        <div className="mb-5 flex justify-end">
+        <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+            {isImg && attachment.previewUrl ? (
+                <button type="button" onClick={() => onImagePreview?.(attachment.previewUrl!, attachment.name)} className="h-9 w-9 shrink-0 overflow-hidden rounded-lg">
+                    <img src={attachment.previewUrl} alt={attachment.name} className="h-full w-full object-cover" />
+                </button>
+            ) : (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                    <FileText size={15} className="text-cream/50" />
+                </div>
+            )}
+            <div className="min-w-0">
+                <p className="truncate text-[12px] font-medium text-cream/80 max-w-[160px]">{attachment.name}</p>
+                <p className="text-[10px] text-cream/40">{formatFileSize(attachment.size)}</p>
+            </div>
+        </div>
+    );
+}
+
+function UserMessage({ content, attachments, onImagePreview }: { content: string; attachments?: SentAttachment[]; onImagePreview?: (url: string, filename: string) => void }) {
+    return (
+        <div className="mb-5 flex flex-col items-end">
             <div className="max-w-[80%] rounded-2xl rounded-br-md bg-ink px-5 py-3.5">
-                <p className="text-[14px] leading-relaxed text-cream/90">{content}</p>
+                {content && <p className="text-[14px] leading-relaxed text-cream/90">{content}</p>}
+                {attachments && attachments.length > 0 && (
+                    <div className={`flex flex-wrap gap-2 ${content ? "mt-3" : ""}`}>
+                        {attachments.map((att) => (
+                            <AttachmentCard key={att.id} attachment={att} onImagePreview={onImagePreview} />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -122,16 +156,17 @@ type Props = {
     activeEvidenceId: string | null;
     activeEvidence: Evidence | null;
     onShowEvidence: (messageId: string) => void;
+    onImagePreview?: (url: string, filename: string) => void;
 };
 
-export function MessageList({ messages, thinking, activeEvidenceId, onShowEvidence }: Props) {
+export function MessageList({ messages, thinking, activeEvidenceId, onShowEvidence, onImagePreview }: Props) {
     const lastAssistantIndex = [...messages].reverse().findIndex((m) => m.role === "assistant");
 
     return (
         <div>
             {messages.map((msg, i) => {
                 if (msg.role === "user") {
-                    return <UserMessage key={msg.id} content={msg.content} />;
+                    return <UserMessage key={msg.id} content={msg.content} attachments={msg.attachments} onImagePreview={onImagePreview} />;
                 }
                 const isLastAssistant = lastAssistantIndex === messages.length - 1 - i;
                 const isStreaming = isLastAssistant && thinking;

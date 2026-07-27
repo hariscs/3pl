@@ -5,7 +5,7 @@ import { PanelRightOpen } from "lucide-react";
 import { ChatWorkspace } from "@/components/intelligence/ChatWorkspace";
 import { EvidencePanel } from "@/components/intelligence/EvidencePanel";
 import { mockIntelligenceStream } from "@/lib/mocks/intelligenceStream";
-import type { Message, Evidence, Conversation } from "@/lib/intelligence";
+import type { Message, Evidence, SentAttachment } from "@/lib/intelligence";
 
 let messageCounter = 0;
 function nextMessageId() {
@@ -22,11 +22,11 @@ export default function IntelligenceChatPage() {
 
     const hasMessages = messages.length > 0;
 
-    const handleSend = useCallback(async (content: string) => {
+    const handleSend = useCallback(async (content: string, attachments?: SentAttachment[]) => {
         if (streamingRef.current) return;
         streamingRef.current = true;
 
-        const userMsg: Message = { id: nextMessageId(), role: "user", content, createdAt: Date.now() };
+        const userMsg: Message = { id: nextMessageId(), role: "user", content, createdAt: Date.now(), attachments: attachments ?? [] };
         setMessages((prev) => [...prev, userMsg]);
         setThinking(true);
 
