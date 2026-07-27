@@ -38,9 +38,7 @@ const NAV = [
   {
     section: "Reports",
     adminOnly: true,
-    items: [
-      { href: "/reports/load-entry", label: "Load Report" },
-    ],
+    items: [{ href: "/reports/load-entry", label: "Load Report" }],
   },
 ];
 
@@ -89,10 +87,11 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${active
-                          ? "border-rust bg-ink-soft font-semibold text-cream"
-                          : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
-                          }`}
+                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${
+                          active
+                            ? "border-rust bg-ink-soft font-semibold text-cream"
+                            : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+                        }`}
                       >
                         {item.label}
                       </Link>

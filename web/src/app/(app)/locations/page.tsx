@@ -30,7 +30,11 @@ function WarehouseIcon() {
 }
 
 function addressLine(l: Location) {
-  return [l.addressL1, [l.city, l.state].filter(Boolean).join(", "), l.postalCode]
+  return [
+    l.addressL1,
+    [l.city, l.state].filter(Boolean).join(", "),
+    l.postalCode,
+  ]
     .filter(Boolean)
     .join(" · ");
 }
@@ -64,8 +68,12 @@ export default function LocationsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="truncate font-semibold text-ink">{l.name}</p>
-                      <StatusPill tone={l.status === "active" ? "success" : "muted"}>
+                      <p className="truncate font-semibold text-ink">
+                        {l.name}
+                      </p>
+                      <StatusPill
+                        tone={l.status === "active" ? "success" : "muted"}
+                      >
                         {l.status}
                       </StatusPill>
                     </div>

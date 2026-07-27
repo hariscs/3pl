@@ -50,7 +50,9 @@ export default function EmployeesPage() {
       filterOptions: CREW_CATEGORY_KEYS.map((k) => CREW_CATEGORY_LABELS[k]),
       render: (e) =>
         e.category ? (
-          <StatusPill tone="muted">{CREW_CATEGORY_LABELS[e.category]}</StatusPill>
+          <StatusPill tone="muted">
+            {CREW_CATEGORY_LABELS[e.category]}
+          </StatusPill>
         ) : (
           <span className="text-steel-light">—</span>
         ),

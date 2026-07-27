@@ -1,8 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Brain,
@@ -15,6 +12,9 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { ApiError } from "@/lib/api/client";
@@ -231,7 +231,10 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-400" suppressHydrationWarning>
+          <p
+            className="mt-6 text-center text-xs text-slate-400"
+            suppressHydrationWarning
+          >
             &copy; {new Date().getFullYear()} 3PL Work. All rights reserved.
           </p>
         </div>

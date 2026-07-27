@@ -11,7 +11,13 @@ import {
   useState,
 } from "react";
 import { api } from "./api/client";
-import { clearSession, DEV_BYPASS_TOKEN, getStoredUser, getToken, storeSession } from "./token";
+import {
+  clearSession,
+  DEV_BYPASS_TOKEN,
+  getStoredUser,
+  getToken,
+  storeSession,
+} from "./token";
 import type { SystemUser } from "./types";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";

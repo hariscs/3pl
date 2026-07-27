@@ -14,37 +14,38 @@ import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
 import type { Role } from "@/lib/types";
+
 const QUICK_ACTIONS: Array<{
   href: string;
   label: string;
   variant: "primary" | "secondary";
   roles: Role[];
 }> = [
-    {
-      href: "/loads/new",
-      label: "Enter a load",
-      variant: "primary",
-      roles: ["admin", "lead"],
-    },
-    {
-      href: "/loads",
-      label: "View loads",
-      variant: "secondary",
-      roles: ["admin", "lead"],
-    },
-    {
-      href: "/reports/invoice",
-      label: "Run invoice report",
-      variant: "secondary",
-      roles: ["admin"],
-    },
-    {
-      href: "/customers",
-      label: "Manage customers",
-      variant: "secondary",
-      roles: ["admin"],
-    },
-  ];
+  {
+    href: "/loads/new",
+    label: "Enter a load",
+    variant: "primary",
+    roles: ["admin", "lead"],
+  },
+  {
+    href: "/loads",
+    label: "View loads",
+    variant: "secondary",
+    roles: ["admin", "lead"],
+  },
+  {
+    href: "/reports/invoice",
+    label: "Run invoice report",
+    variant: "secondary",
+    roles: ["admin"],
+  },
+  {
+    href: "/customers",
+    label: "Manage customers",
+    variant: "secondary",
+    roles: ["admin"],
+  },
+];
 
 export default function DashboardPage() {
   const { loads, customers, employees, currentLocationId, locations, role } =

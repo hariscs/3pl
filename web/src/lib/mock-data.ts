@@ -754,9 +754,7 @@ export const LOADS: Load[] = [
     sorts: 3,
     cases: 1720,
     weight: 1850,
-    assignments: [
-      { employeeId: "emp-8", clockIn: "07:00", clockOut: "12:50" },
-    ],
+    assignments: [{ employeeId: "emp-8", clockIn: "07:00", clockOut: "12:50" }],
     status: "complete",
     billedAmount: 210,
     payoutAmount: 32.6,
@@ -879,9 +877,7 @@ export const LOADS: Load[] = [
     sorts: 4,
     cases: 1830,
     weight: 1990,
-    assignments: [
-      { employeeId: "emp-9", clockIn: "06:30", clockOut: "13:10" },
-    ],
+    assignments: [{ employeeId: "emp-9", clockIn: "06:30", clockOut: "13:10" }],
     status: "complete",
     billedAmount: 213.3,
     payoutAmount: 32.65,
@@ -930,9 +926,7 @@ export const LOADS: Load[] = [
     sorts: 2,
     cases: 950,
     weight: 1040,
-    assignments: [
-      { employeeId: "emp-2", clockIn: "07:15", clockOut: null },
-    ],
+    assignments: [{ employeeId: "emp-2", clockIn: "07:15", clockOut: null }],
     status: "active",
     billedAmount: 0,
     payoutAmount: 0,
@@ -1461,9 +1455,7 @@ export const LOADS: Load[] = [
     sorts: 0,
     cases: 0,
     weight: 0,
-    assignments: [
-      { employeeId: "emp-12", clockIn: "08:30", clockOut: null },
-    ],
+    assignments: [{ employeeId: "emp-12", clockIn: "08:30", clockOut: null }],
     status: "active",
     billedAmount: 0,
     payoutAmount: 0,

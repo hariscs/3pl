@@ -30,6 +30,8 @@ export function FilterableTable<T>({
   defaultFilterKeys,
   onRowClick,
   onFilteredRowsChange,
+  searchFn,
+  defaultSort,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -41,6 +43,10 @@ export function FilterableTable<T>({
   onRowClick?: (row: T) => void;
   /** Called with the currently filtered/sorted rows whenever they change. */
   onFilteredRowsChange?: (rows: T[]) => void;
+  /** Custom search predicate. When provided, replaces the default column-accessor search. */
+  searchFn?: (row: T, query: string) => boolean;
+  /** Initial sort configuration. */
+  defaultSort?: { key: string; dir: "asc" | "desc" };
 }) {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() =>
@@ -51,7 +57,7 @@ export function FilterableTable<T>({
   );
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
-    null,
+    defaultSort ?? null,
   );
 
   const filterableColumns: FilterableColumn[] = columns
@@ -72,13 +78,17 @@ export function FilterableTable<T>({
     let result = rows;
 
     if (query) {
-      result = result.filter((row) =>
-        columns.some(
-          (col) =>
-            col.filterable !== false &&
-            String(col.accessor(row)).toLowerCase().includes(query),
-        ),
-      );
+      if (searchFn) {
+        result = result.filter((row) => searchFn(row, query));
+      } else {
+        result = result.filter((row) =>
+          columns.some(
+            (col) =>
+              col.filterable !== false &&
+              String(col.accessor(row)).toLowerCase().includes(query),
+          ),
+        );
+      }
     }
 
     result = result.filter((row) =>
@@ -105,7 +115,7 @@ export function FilterableTable<T>({
           : String(av).localeCompare(String(bv));
       return sort.dir === "asc" ? cmp : -cmp;
     });
-  }, [rows, columns, search, activeFilters, filterValues, sort]);
+  }, [rows, columns, search, searchFn, activeFilters, filterValues, sort]);
 
   function toggleSort(key: string) {
     setSort((prev) => {
@@ -224,8 +234,9 @@ export function FilterableTable<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`border-b border-manila-dark px-3 py-2 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${col.align === "right" ? "text-right" : ""
-                    }`}
+                  className={`border-b border-manila-dark px-3 py-2 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
+                    col.align === "right" ? "text-right" : ""
+                  }`}
                 >
                   {col.sortable === false ? (
                     col.header
@@ -269,8 +280,9 @@ export function FilterableTable<T>({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`border-b border-manila-dark/60 px-3 py-2 text-ink ${col.align === "right" ? "text-right font-tick" : ""
-                        }`}
+                      className={`border-b border-manila-dark/60 px-3 py-2 text-ink ${
+                        col.align === "right" ? "text-right font-tick" : ""
+                      }`}
                     >
                       {col.render ? col.render(row) : col.accessor(row)}
                     </td>

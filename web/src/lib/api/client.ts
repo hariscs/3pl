@@ -1,8 +1,8 @@
 // Typed fetch wrapper for the Lead API (/api/v1). Kept framework-agnostic so
 // repository hooks and the store can share it.
 
-import { clearSession, DEV_BYPASS_TOKEN, getToken } from "../token";
 import { handleMockRequest } from "../mock-handlers";
+import { clearSession, DEV_BYPASS_TOKEN, getToken } from "../token";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const API_ROOT = `${BASE}/api/v1`;
