@@ -1,0 +1,60 @@
+import type { Conversation } from "@/lib/intelligence";
+
+export const MOCK_CONVERSATIONS: Conversation[] = [
+    {
+        id: "conv-1",
+        title: "Payroll increase analysis",
+        createdAt: Date.now() - 120_000,
+        updatedAt: Date.now() - 120_000,
+        group: "today",
+        preview: "Payroll increased this week primarily because more labor hours were recorded...",
+    },
+    {
+        id: "conv-2",
+        title: "Active loads overview",
+        createdAt: Date.now() - 3_600_000,
+        updatedAt: Date.now() - 3_600_000,
+        group: "today",
+        preview: "Showing today's active loads across all locations...",
+    },
+    {
+        id: "conv-3",
+        title: "Top revenue customers",
+        createdAt: Date.now() - 86_400_000,
+        updatedAt: Date.now() - 86_400_000,
+        group: "yesterday",
+        preview: "Westgate Logistics generated the highest revenue this quarter...",
+    },
+    {
+        id: "conv-4",
+        title: "Overtime employee report",
+        createdAt: Date.now() - 90_000_000,
+        updatedAt: Date.now() - 90_000_000,
+        group: "yesterday",
+        preview: "Three employees recorded overtime exceeding 6 hours...",
+    },
+    {
+        id: "conv-5",
+        title: "Weekly productivity comparison",
+        createdAt: Date.now() - 259_200_000,
+        updatedAt: Date.now() - 259_200_000,
+        group: "previous",
+        preview: "Comparing productivity metrics with the previous week...",
+    },
+    {
+        id: "conv-6",
+        title: "Load status breakdown",
+        createdAt: Date.now() - 432_000_000,
+        updatedAt: Date.now() - 432_000_000,
+        group: "previous",
+        preview: "Breakdown of load statuses across all active shipments...",
+    },
+    {
+        id: "conv-7",
+        title: "Employee check-in summary",
+        createdAt: Date.now() - 604_800_000,
+        updatedAt: Date.now() - 604_800_000,
+        group: "previous",
+        preview: "Summary of employee check-ins for the past month...",
+    },
+];

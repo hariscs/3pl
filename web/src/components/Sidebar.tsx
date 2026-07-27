@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/lib/store";
 
@@ -56,6 +57,9 @@ export function Sidebar() {
   const { role } = useAppData();
   const { user, logout } = useAuth();
 
+  // Intelligence workspace takes over the full screen — hide the app sidebar.
+  if (pathname.startsWith("/intelligence")) return null;
+
   const allHrefs = NAV.flatMap((group) => group.items.map((item) => item.href));
   const activeHref = allHrefs
     .filter((href) => matchesHref(pathname, href))
@@ -72,6 +76,29 @@ export function Sidebar() {
         </p>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
+        {/* 3PL Intelligence — flagship feature entry */}
+        <div className="mb-4 px-1">
+          <Link
+            href="/intelligence"
+            className={`group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all ${matchesHref(pathname, "/intelligence")
+              ? "border-l-2 border-rust bg-ink-soft font-semibold text-cream"
+              : "border-l-2 border-transparent bg-linear-to-r from-rust-soft/10 to-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+              }`}
+          >
+            <Sparkles
+              size={18}
+              className={`shrink-0 transition-colors ${matchesHref(pathname, "/intelligence")
+                ? "text-rust"
+                : "text-rust/60 group-hover:text-rust"
+                }`}
+            />
+            <span className="font-medium">3PL Intelligence</span>
+            <span className="ml-auto shrink-0 rounded-full bg-rust-soft/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rust">
+              AI
+            </span>
+          </Link>
+        </div>
+
         {NAV.filter((group) => !group.adminOnly || role === "admin").map(
           (group) => (
             <div key={group.section} className="mb-6">
@@ -87,11 +114,10 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${
-                          active
-                            ? "border-rust bg-ink-soft font-semibold text-cream"
-                            : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
-                        }`}
+                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${active
+                          ? "border-rust bg-ink-soft font-semibold text-cream"
+                          : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+                          }`}
                       >
                         {item.label}
                       </Link>
