@@ -84,7 +84,7 @@ export default function KnowledgeHubPage() {
         <div className="flex items-start justify-between gap-6">
           <div>
             <h1 className="intel-page-title">AI Knowledge Hub</h1>
-            <p className="mt-1.5 intel-body-secondary">
+            <p className="mt-2 intel-body-secondary mr-32">
               Centralize the company information, policies, procedures, and
               reference materials used by 3PL Intelligence.
             </p>
@@ -110,15 +110,15 @@ export default function KnowledgeHubPage() {
                 type="button"
                 onClick={() => setActiveCategory(cat)}
                 className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium transition-all duration-150 ${active
-                    ? "bg-rust-soft/60 text-rust-dark"
-                    : "text-steel hover:bg-manila hover:text-ink"
+                  ? "bg-rust-soft/60 text-rust-dark"
+                  : "text-steel hover:bg-manila hover:text-ink"
                   }`}
               >
                 {cat}
                 <span
                   className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ${active
-                      ? "bg-rust-soft text-rust-dark"
-                      : "bg-manila-dark/60 text-steel"
+                    ? "bg-rust-soft text-rust-dark"
+                    : "bg-manila-dark/60 text-steel"
                     }`}
                 >
                   {count}

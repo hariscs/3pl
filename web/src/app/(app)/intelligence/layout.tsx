@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, PanelRightOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { ConversationHistory } from "@/components/intelligence/ConversationHistory";
 import { MOCK_CONVERSATIONS } from "@/lib/mocks/conversationHistory";
 import type { Conversation } from "@/lib/intelligence";
@@ -13,7 +13,6 @@ export default function IntelligenceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [conversations, setConversations] =
@@ -39,8 +38,6 @@ export default function IntelligenceLayout({
     );
   }
 
-  const isChat = pathname === "/intelligence";
-
   return (
     <div className="flex h-screen bg-paper">
       <ConversationHistory
@@ -53,16 +50,14 @@ export default function IntelligenceLayout({
         onRenameConversation={handleRenameConversation}
       />
 
-      <main className="flex flex-1 flex-col overflow-y-auto">
-        <div className="flex h-11 flex-none items-center px-5">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-[13px] font-medium text-steel transition-colors hover:text-ink"
-          >
-            <ArrowLeft size={14} />
-            Back to Portal
-          </Link>
-        </div>
+      <main className="relative flex flex-1 flex-col overflow-y-auto">
+        <Link
+          href="/"
+          className="absolute left-5 top-4 flex items-center gap-1.5 text-[13px] font-medium text-steel-light transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={14} />
+          Back to Portal
+        </Link>
         {children}
       </main>
     </div>

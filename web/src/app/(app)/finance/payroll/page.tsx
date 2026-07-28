@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { PayrollPdfDocument } from "@/components/PayrollPdfDocument";
 import { TopBar } from "@/components/TopBar";
@@ -29,12 +29,18 @@ export default function PayrollPage() {
   const [showDocument, setShowDocument] = useState(false);
   const [printRows, setPrintRows] = useState<EmployeePayroll[]>([]);
 
-  const customerName = (id: string) =>
-    customers.find((c) => c.id === id)?.displayName ?? "—";
-  const productTypeName = (id: string) =>
-    productTypes.find((p) => p.id === id)?.name ?? "—";
-  const locationName = (id: string) =>
-    locations.find((l) => l.id === id)?.name ?? "—";
+  const customerName = useCallback(
+    (id: string) => customers.find((c) => c.id === id)?.displayName ?? "—",
+    [customers],
+  );
+  const productTypeName = useCallback(
+    (id: string) => productTypes.find((p) => p.id === id)?.name ?? "—",
+    [productTypes],
+  );
+  const locationName = useCallback(
+    (id: string) => locations.find((l) => l.id === id)?.name ?? "—",
+    [locations],
+  );
 
   const periods = useMemo(() => getPayPeriods(loads), [loads]);
   const latestPeriod = periods[periods.length - 1] ?? null;

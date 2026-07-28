@@ -357,7 +357,9 @@ export function ChatWorkspace({
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-8">
         <GlobalAttachmentDropOverlay active={isDragActive} />
         <div className="w-full max-w-175 text-center">
-          <p className="intel-body-secondary">How can I help?</p>
+          <p className="text-[34px] font-medium leading-[1.15] tracking-[-0.015em] text-ink">
+            How can I help?
+          </p>
           <div className="mt-8">{composer}</div>
           <div className="mt-6">
             <div className="flex flex-wrap gap-2 justify-center">
