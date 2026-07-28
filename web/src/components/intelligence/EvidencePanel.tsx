@@ -103,9 +103,7 @@ export function EvidencePanel({ evidence, onClose }: Props) {
                       </div>
                       <div>
                         <p className="text-[13px] text-steel">{r.title}</p>
-                        <p className="text-xs text-steel-light">
-                          {r.subtitle}
-                        </p>
+                        <p className="text-xs text-steel-light">{r.subtitle}</p>
                       </div>
                     </div>
                   ))}

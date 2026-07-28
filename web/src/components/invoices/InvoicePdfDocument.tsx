@@ -10,56 +10,82 @@ const styles = StyleSheet.create({
   page: {
     padding: 48,
     fontFamily: "Helvetica",
-    fontSize: 9,
-    color: "#1e293b",
-    lineHeight: 1.4,
+    fontSize: 10,
+    color: "#0f172a",
+    lineHeight: 1.5,
   },
+
   // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 32,
-    paddingBottom: 16,
+    paddingBottom: 18,
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
     borderBottomStyle: "solid",
   },
-  companyName: { fontSize: 16, fontWeight: 700, marginBottom: 2 },
-  companyDetail: { fontSize: 8, color: "#64748b" },
-  invoiceTitle: { fontSize: 22, fontWeight: 700, marginBottom: 4 },
-  invoiceNumber: { fontSize: 11, fontWeight: 600, color: "#475569" },
-  statusRow: { flexDirection: "row", marginTop: 8 },
+  headerLeft: {},
+  headerRight: {
+    width: 160,
+    alignItems: "flex-end",
+  },
+  companyName: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#0f172a",
+    marginBottom: 3,
+  },
+  companyDetail: { fontSize: 9, color: "#475569", lineHeight: 1.5 },
+
+  invoiceTitle: {
+    fontSize: 26,
+    fontWeight: 700,
+    color: "#0f172a",
+  },
+  invoiceNumber: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#334155",
+    marginTop: 8,
+    marginBottom: 12,
+  },
   statusPill: {
     backgroundColor: "#f1f5f9",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    alignSelf: "flex-start",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignSelf: "flex-end",
   },
-  statusText: { fontSize: 8, fontWeight: 600, color: "#64748b" },
+  statusText: { fontSize: 9, fontWeight: 600, color: "#475569" },
 
   // Two-column section
-  twoCol: { flexDirection: "row", gap: 24, marginBottom: 24 },
+  twoCol: { flexDirection: "row", gap: 12, marginBottom: 24 },
   col: { flex: 1 },
 
-  // Section cards
+  // Section headings
   sectionTitle: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: 700,
-    color: "#94a3b8",
+    color: "#334155",
     textTransform: "uppercase",
-    letterSpacing: 1.2,
-    marginBottom: 8,
+    letterSpacing: 1.5,
+    marginBottom: 10,
   },
-  billToName: { fontSize: 11, fontWeight: 600, marginBottom: 2 },
-  billToDetail: { fontSize: 9, color: "#64748b" },
+  billToName: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#0f172a",
+    marginBottom: 3,
+  },
+  billToDetail: { fontSize: 10, color: "#475569", lineHeight: 1.4 },
 
   // Info grid
-  infoGrid: { gap: 6 },
+  infoGrid: { gap: 7 },
   infoRow: { flexDirection: "row" },
-  infoLabel: { width: "40%", fontSize: 8, color: "#94a3b8" },
-  infoValue: { width: "60%", fontSize: 9 },
-  infoMono: { fontSize: 9, fontFamily: "Courier" },
+  infoLabel: { width: "40%", fontSize: 9, color: "#475569" },
+  infoValue: { width: "60%", fontSize: 10, color: "#0f172a" },
+  infoMono: { fontSize: 10, fontFamily: "Courier", color: "#0f172a" },
 
   // Table
   table: { marginBottom: 16 },
@@ -67,14 +93,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#f8fafc",
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: "#cbd5e1",
     borderBottomStyle: "solid",
   },
   tableHeaderCell: {
-    padding: "6 6",
-    fontSize: 7,
+    padding: "8 8",
+    fontSize: 8,
     fontWeight: 700,
-    color: "#94a3b8",
+    color: "#475569",
   },
   tableRow: {
     flexDirection: "row",
@@ -82,12 +108,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f1f5f9",
     borderBottomStyle: "solid",
   },
-  tableCell: { padding: "5 6", fontSize: 8 },
-  tableCellMono: { padding: "5 6", fontSize: 8, fontFamily: "Courier" },
-  tableCellRight: { padding: "5 6", fontSize: 8, textAlign: "right" },
+  tableCell: { padding: "8 8", fontSize: 9 },
+  tableCellMono: { padding: "8 8", fontSize: 9, fontFamily: "Courier" },
+  tableCellRight: { padding: "8 8", fontSize: 9, textAlign: "right" },
   tableCellRightMoney: {
-    padding: "5 6",
-    fontSize: 8,
+    padding: "8 8",
+    fontSize: 9,
     textAlign: "right",
     fontWeight: 700,
   },
@@ -106,35 +132,40 @@ const styles = StyleSheet.create({
   totalsContainer: {
     alignSelf: "flex-end",
     width: "35%",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   totalsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: "#cbd5e1",
     borderBottomStyle: "solid",
   },
   totalsRowBold: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 5,
+    paddingVertical: 6,
   },
-  totalsLabel: { fontSize: 9, color: "#64748b" },
-  totalsValue: { fontSize: 9, fontFamily: "Courier" },
-  totalsLabelBold: { fontSize: 10, fontWeight: 700 },
-  totalsValueBold: { fontSize: 10, fontWeight: 700, fontFamily: "Courier" },
+  totalsLabel: { fontSize: 10, color: "#475569" },
+  totalsValue: { fontSize: 10, fontFamily: "Courier", color: "#0f172a" },
+  totalsLabelBold: { fontSize: 13, fontWeight: 700, color: "#0f172a" },
+  totalsValueBold: {
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "Courier",
+    color: "#0f172a",
+  },
 
   // Notes
   notesSection: {
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
     borderTopStyle: "solid",
-    paddingTop: 12,
+    paddingTop: 14,
     marginBottom: 16,
   },
-  notesText: { fontSize: 8, color: "#64748b" },
+  notesText: { fontSize: 9, color: "#475569", lineHeight: 1.5 },
 
   // Footer
   footer: {
@@ -149,7 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  footerText: { fontSize: 7, color: "#94a3b8" },
+  footerText: { fontSize: 7.5, color: "#64748b" },
 });
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -186,9 +217,10 @@ export function InvoicePdfDocument({ invoice }: Props) {
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        {/* Header */}
+        {/* ── HEADER ──────────────────────────────────── */}
         <View style={styles.header}>
-          <View>
+          {/* Left: Company info */}
+          <View style={styles.headerLeft}>
             <Text style={styles.companyName}>{COMPANY_INFO.name}</Text>
             <Text style={styles.companyDetail}>{COMPANY_INFO.byline}</Text>
             {COMPANY_INFO.address.map((line) => (
@@ -199,18 +231,22 @@ export function InvoicePdfDocument({ invoice }: Props) {
             <Text style={styles.companyDetail}>{COMPANY_INFO.phone}</Text>
             <Text style={styles.companyDetail}>{COMPANY_INFO.email}</Text>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={styles.invoiceTitle}>Invoice</Text>
-            <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.statusPill}>
-                <Text style={styles.statusText}>Draft Invoice</Text>
-              </View>
+
+          {/* Right: Title → Number → Badge */}
+          <View style={styles.headerRight}>
+            <View style={{ marginBottom: 8 }}>
+              <Text style={styles.invoiceTitle}>Invoice</Text>
+            </View>
+            <View style={{ marginBottom: 12 }}>
+              <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
+            </View>
+            <View style={styles.statusPill}>
+              <Text style={styles.statusText}>Draft Invoice</Text>
             </View>
           </View>
         </View>
 
-        {/* Bill To + Invoice Info */}
+        {/* ── BILL TO + INVOICE INFO ──────────────────── */}
         <View style={styles.twoCol}>
           <View style={styles.col}>
             <Text style={styles.sectionTitle}>Bill To</Text>
@@ -243,7 +279,7 @@ export function InvoicePdfDocument({ invoice }: Props) {
           </View>
         </View>
 
-        {/* Line Items */}
+        {/* ── LINE ITEMS TABLE ───────────────────────── */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderCell, styles.colLoad]}>Load</Text>
@@ -297,7 +333,7 @@ export function InvoicePdfDocument({ invoice }: Props) {
           ))}
         </View>
 
-        {/* Totals */}
+        {/* ── TOTALS ──────────────────────────────────── */}
         <View style={styles.totalsContainer}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>Subtotal</Text>
@@ -309,7 +345,7 @@ export function InvoicePdfDocument({ invoice }: Props) {
           </View>
         </View>
 
-        {/* Notes */}
+        {/* ── NOTES ───────────────────────────────────── */}
         <View style={styles.notesSection}>
           <Text style={styles.sectionTitle}>Notes</Text>
           <Text style={styles.notesText}>
@@ -317,7 +353,7 @@ export function InvoicePdfDocument({ invoice }: Props) {
           </Text>
         </View>
 
-        {/* Footer */}
+        {/* ── FOOTER ──────────────────────────────────── */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>{invoice.invoiceNumber}</Text>
           <Text

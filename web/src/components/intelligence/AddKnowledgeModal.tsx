@@ -132,10 +132,11 @@ function FileDropzone({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${dragOver
-          ? "border-rust/40 bg-rust-soft/20"
-          : "border-manila-dark/60 bg-cream hover:border-rust/20 hover:bg-rust-soft/10"
-          }`}
+        className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+          dragOver
+            ? "border-rust/40 bg-rust-soft/20"
+            : "border-manila-dark/60 bg-cream hover:border-rust/20 hover:bg-rust-soft/10"
+        }`}
       >
         <Upload size={22} className="mx-auto text-steel-light/60" />
         <p className="mt-2.5 text-[13px] font-medium text-steel">
@@ -305,10 +306,11 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
                     setFile(null);
                     setFileError("");
                   }}
-                  className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${sourceType === s.value
-                    ? "bg-rust-soft/60 text-rust-dark ring-1 ring-rust/20"
-                    : "text-steel/60 hover:bg-manila hover:text-steel"
-                    }`}
+                  className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
+                    sourceType === s.value
+                      ? "bg-rust-soft/60 text-rust-dark ring-1 ring-rust/20"
+                      : "text-steel/60 hover:bg-manila hover:text-steel"
+                  }`}
                 >
                   {s.label}
                 </button>

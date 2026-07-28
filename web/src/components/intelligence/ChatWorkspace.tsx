@@ -241,10 +241,11 @@ export function ChatWorkspace({
   // ── Composer ────────────────────────────────────────
   const composer = (
     <div
-      className={`rounded-2xl border transition-all duration-300 ${isDragActive
-        ? "border-rust/50 bg-rust-soft/10 shadow-[0_8px_40px_-12px_rgba(37,99,235,0.2)]"
-        : "border-manila-dark bg-cream shadow-card focus-within:border-rust/30 focus-within:shadow-[0_8px_40px_-12px_rgba(37,99,235,0.1),0_0_0_1px_rgba(37,99,235,0.08)]"
-        }`}
+      className={`rounded-2xl border transition-all duration-300 ${
+        isDragActive
+          ? "border-rust/50 bg-rust-soft/10 shadow-[0_8px_40px_-12px_rgba(37,99,235,0.2)]"
+          : "border-manila-dark bg-cream shadow-card focus-within:border-rust/30 focus-within:shadow-[0_8px_40px_-12px_rgba(37,99,235,0.1),0_0_0_1px_rgba(37,99,235,0.08)]"
+      }`}
     >
       {/* Attachment previews */}
       {attachments.length > 0 && (
@@ -252,10 +253,11 @@ export function ChatWorkspace({
           {attachments.map((att) => (
             <div
               key={att.id}
-              className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 ${att.status === "invalid"
-                ? "border-stamp/30 bg-stamp-soft/30"
-                : "border-manila-dark bg-cream hover:border-rust/20"
-                }`}
+              className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 ${
+                att.status === "invalid"
+                  ? "border-stamp/30 bg-stamp-soft/30"
+                  : "border-manila-dark bg-cream hover:border-rust/20"
+              }`}
             >
               {/* Thumbnail or file icon */}
               {att.previewUrl ? (

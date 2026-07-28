@@ -41,9 +41,7 @@ export function ContextPanel({ onClose }: Props) {
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-manila/50">
                   <Icon size={18} className="text-steel-light" />
                 </div>
-                <p className="text-xs font-medium text-steel">
-                  {slot.label}
-                </p>
+                <p className="text-xs font-medium text-steel">{slot.label}</p>
               </div>
             );
           })}

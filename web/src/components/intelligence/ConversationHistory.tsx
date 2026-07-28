@@ -138,8 +138,8 @@ export function ConversationHistory({
 
   const filtered = search.trim()
     ? conversations.filter((c) =>
-      c.title.toLowerCase().includes(search.toLowerCase()),
-    )
+        c.title.toLowerCase().includes(search.toLowerCase()),
+      )
     : conversations;
 
   const today = filtered.filter((c) => c.group === "today");
@@ -163,10 +163,11 @@ export function ConversationHistory({
           <Link
             href="/intelligence/knowledge"
             title="AI Knowledge Hub"
-            className={`mx-auto flex justify-center rounded-lg p-2 transition-colors ${isKnowledge
-              ? "bg-ink-soft text-rust"
-              : "text-steel-light hover:bg-ink-soft hover:text-cream/70"
-              }`}
+            className={`mx-auto flex justify-center rounded-lg p-2 transition-colors ${
+              isKnowledge
+                ? "bg-ink-soft text-rust"
+                : "text-steel-light hover:bg-ink-soft hover:text-cream/70"
+            }`}
           >
             <Sparkles size={18} />
           </Link>
@@ -293,10 +294,11 @@ export function ConversationHistory({
       <div className="flex-none border-t border-ink-line px-3 py-3">
         <Link
           href="/intelligence/knowledge"
-          className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold transition-all duration-200 ${isKnowledge
-            ? "bg-rust text-cream"
-            : "text-steel-light hover:bg-ink-soft hover:text-cream/80"
-            }`}
+          className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold transition-all duration-200 ${
+            isKnowledge
+              ? "bg-rust text-cream"
+              : "text-steel-light hover:bg-ink-soft hover:text-cream/80"
+          }`}
         >
           <Sparkles
             size={17}
