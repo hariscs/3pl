@@ -35,7 +35,7 @@
   --color-chart-2: #008300;
 }
 
-@theme inline {
+@theme {
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
   --color-ink-line: var(--color-ink-line);
@@ -72,6 +72,40 @@
 
   /* Soft elevation for clean cards (mirrors the mobile card shadow). */
   --shadow-card: 0 4px 14px rgb(15 23 42 / 0.04);
+
+  /* ── Intelligence typography scale ── */
+  --text-intel-page-title: 28px;
+  --text-intel-page-title--line-height: 1.25;
+  --text-intel-page-title--weight: 600;
+
+  --text-intel-section-title: 16px;
+  --text-intel-section-title--line-height: 1.35;
+  --text-intel-section-title--weight: 600;
+
+  --text-intel-body: 16px;
+  --text-intel-body--line-height: 1.65;
+  --text-intel-body--weight: 400;
+
+  --text-intel-secondary: 15px;
+  --text-intel-secondary--line-height: 1.6;
+  --text-intel-secondary--weight: 400;
+
+  --text-intel-label: 14px;
+  --text-intel-label--line-height: 1.4;
+  --text-intel-label--weight: 500;
+
+  --text-intel-metadata: 13px;
+  --text-intel-metadata--line-height: 1.4;
+  --text-intel-metadata--weight: 400;
+
+  --text-intel-overline: 12px;
+  --text-intel-overline--line-height: 1.4;
+  --text-intel-overline--weight: 600;
+  --text-intel-overline--tracking: 0.08em;
+
+  --text-intel-button: 14px;
+  --text-intel-button--line-height: 1.4;
+  --text-intel-button--weight: 600;
 }
 
 body {
@@ -80,6 +114,63 @@ body {
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* ── Intelligence shared typography utilities ── */
+
+.intel-page-title {
+  font-size: var(--text-intel-page-title);
+  font-weight: var(--text-intel-page-title--weight);
+  line-height: var(--text-intel-page-title--line-height);
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+
+.intel-section-title {
+  font-size: var(--text-intel-section-title);
+  font-weight: var(--text-intel-section-title--weight);
+  line-height: var(--text-intel-section-title--line-height);
+  color: var(--color-ink);
+}
+
+.intel-body {
+  font-size: var(--text-intel-body);
+  font-weight: var(--text-intel-body--weight);
+  line-height: var(--text-intel-body--line-height);
+}
+
+.intel-body-secondary {
+  font-size: var(--text-intel-secondary);
+  font-weight: var(--text-intel-secondary--weight);
+  line-height: var(--text-intel-secondary--line-height);
+  color: var(--color-steel);
+}
+
+.intel-label {
+  font-size: var(--text-intel-label);
+  font-weight: var(--text-intel-label--weight);
+  line-height: var(--text-intel-label--line-height);
+}
+
+.intel-metadata {
+  font-size: var(--text-intel-metadata);
+  font-weight: var(--text-intel-metadata--weight);
+  line-height: var(--text-intel-metadata--line-height);
+}
+
+.intel-overline {
+  font-size: var(--text-intel-overline);
+  font-weight: var(--text-intel-overline--weight);
+  line-height: var(--text-intel-overline--line-height);
+  letter-spacing: var(--text-intel-overline--tracking);
+  text-transform: uppercase;
+  color: var(--color-steel);
+}
+
+.intel-button-text {
+  font-size: var(--text-intel-button);
+  font-weight: var(--text-intel-button--weight);
+  line-height: var(--text-intel-button--line-height);
 }
 
 /* Subtle perforated edge, used by <TicketStub>. */

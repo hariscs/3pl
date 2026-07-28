@@ -80,17 +80,19 @@ export function Sidebar() {
         <div className="mb-4 px-1">
           <Link
             href="/intelligence"
-            className={`group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all ${matchesHref(pathname, "/intelligence")
-              ? "border-l-2 border-rust bg-ink-soft font-semibold text-cream"
-              : "border-l-2 border-transparent bg-linear-to-r from-rust-soft/10 to-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
-              }`}
+            className={`group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all ${
+              matchesHref(pathname, "/intelligence")
+                ? "border-l-2 border-rust bg-ink-soft font-semibold text-cream"
+                : "border-l-2 border-transparent bg-linear-to-r from-rust-soft/10 to-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+            }`}
           >
             <Sparkles
               size={18}
-              className={`shrink-0 transition-colors ${matchesHref(pathname, "/intelligence")
-                ? "text-rust"
-                : "text-rust/60 group-hover:text-rust"
-                }`}
+              className={`shrink-0 transition-colors ${
+                matchesHref(pathname, "/intelligence")
+                  ? "text-rust"
+                  : "text-rust/60 group-hover:text-rust"
+              }`}
             />
             <span className="font-medium">3PL Intelligence</span>
             <span className="ml-auto shrink-0 rounded-full bg-rust-soft/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rust">
@@ -114,10 +116,11 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${active
-                          ? "border-rust bg-ink-soft font-semibold text-cream"
-                          : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
-                          }`}
+                        className={`block rounded-sm border-l-2 px-3 py-1.5 text-sm transition-colors ${
+                          active
+                            ? "border-rust bg-ink-soft font-semibold text-cream"
+                            : "border-transparent text-steel-light hover:bg-ink-soft hover:text-paper"
+                        }`}
                       >
                         {item.label}
                       </Link>
