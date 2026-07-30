@@ -8,6 +8,7 @@ import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
 import { useAppData } from "@/lib/store";
@@ -186,94 +187,60 @@ export default function LoadReportPage() {
   // ── Render ────────────────────────────────────────────────────
 
   return (
-    <AdminOnly>
+    <>
       <TopBar
         title="Load Report"
         description="Historical view of completed warehouse loads."
       />
-      <main className="flex-1 space-y-4 p-6">
-        {/* Summary */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Completed Loads
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {rows.length}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Total Cases
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {totalCases.toLocaleString()}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Total Weight
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {totalWeight.toLocaleString()} lb
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Total Labor Hours
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {totalLabor.toFixed(1)}h
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Total Customer Billing
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {formatMoney(totalBilling)}
-              </p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Table */}
-        <Card>
-          {rows.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <p className="text-sm font-medium text-ink">
-                No completed loads found.
-              </p>
-              <p className="text-sm text-steel">
-                Completed warehouse loads will appear here.
-              </p>
-            </div>
-          ) : (
-            <FilterableTable
-              columns={columns}
-              rows={rows}
-              getRowKey={(r) => r.load.id}
-              defaultFilterKeys={["customerName", "status"]}
-              onExport={(filteredRows) =>
-                downloadCsv(
-                  "load-report.csv",
-                  CSV_COLUMNS(columns),
-                  filteredRows,
-                )
-              }
+      <AdminOnly>
+        <main className="flex-1 space-y-4 p-6">
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <StatCard label="Completed Loads" value={rows.length} />
+            <StatCard label="Total Cases" value={totalCases.toLocaleString()} />
+            <StatCard
+              label="Total Weight"
+              value={`${totalWeight.toLocaleString()} lb`}
             />
-          )}
-        </Card>
-      </main>
-    </AdminOnly>
+            <StatCard
+              label="Total Labor Hours"
+              value={`${totalLabor.toFixed(1)}h`}
+            />
+            <StatCard
+              label="Total Customer Billing"
+              value={formatMoney(totalBilling)}
+            />
+          </div>
+
+          {/* Table */}
+          <Card>
+            {rows.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <p className="text-sm font-medium text-ink">
+                  No completed loads found.
+                </p>
+                <p className="text-sm text-steel">
+                  Completed warehouse loads will appear here.
+                </p>
+              </div>
+            ) : (
+              <FilterableTable
+                columns={columns}
+                rows={rows}
+                getRowKey={(r) => r.load.id}
+                defaultFilterKeys={["customerName", "status"]}
+                onExport={(filteredRows) =>
+                  downloadCsv(
+                    "load-report.csv",
+                    CSV_COLUMNS(columns),
+                    filteredRows,
+                  )
+                }
+              />
+            )}
+          </Card>
+        </main>
+      </AdminOnly>
+    </>
   );
 }

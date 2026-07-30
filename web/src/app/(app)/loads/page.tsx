@@ -5,7 +5,9 @@ import { useState } from "react";
 import { TicketStub } from "@/components/TicketStub";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatMoney } from "@/lib/billing";
 import { useAppData } from "@/lib/store";
 import type { Load } from "@/lib/types";
 
@@ -19,6 +21,7 @@ export default function LoadsPage() {
     role,
     voidLoad,
     archiveLoad,
+    isLoading,
   } = useAppData();
   const [confirmVoid, setConfirmVoid] = useState<Load | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Load | null>(null);
@@ -36,15 +39,22 @@ export default function LoadsPage() {
         title="Loads"
         description={`Active loads at ${locationName}. Every ticket number is visible here — no more screenshotting a load to flag it.`}
       />
-      <main className="flex-1 p-6">
-        <div className="mb-4 flex justify-end">
+      <main className="flex-1 space-y-4 p-6">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-steel">
+            {isLoading ? "Loading…" : `${locationLoads.length} loads`}
+          </p>
           <Link href="/loads/new">
             <Button>Enter a load</Button>
           </Link>
         </div>
         <div className="flex flex-col gap-3">
-          {locationLoads.length === 0 && (
-            <p className="text-sm text-steel">No loads at this location yet.</p>
+          {!isLoading && locationLoads.length === 0 && (
+            <Card>
+              <p className="py-2 text-center text-sm text-steel">
+                No loads at this location yet.
+              </p>
+            </Card>
           )}
           {locationLoads.map((load) => {
             const customer = customers.find((c) => c.id === load.customerId);
@@ -69,7 +79,7 @@ export default function LoadsPage() {
                     label: "Billed",
                     value:
                       load.status === "complete"
-                        ? `$${load.billedAmount.toFixed(2)}`
+                        ? formatMoney(load.billedAmount)
                         : "—",
                   },
                 ]}
@@ -113,7 +123,7 @@ export default function LoadsPage() {
         title="Archive load"
         body={`Ticket #${confirmArchive?.ticketNumber} will be hidden from active lists but its billing and payout history stays in reports.`}
         confirmLabel="Archive load"
-        variant="danger"
+        variant="primary"
         onConfirm={() => confirmArchive && archiveLoad(confirmArchive.id)}
       />
     </>

@@ -1,12 +1,12 @@
 "use client";
 
+import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { Sparkles, Plus } from "lucide-react";
-import {
-  MOCK_KNOWLEDGE_ITEMS,
-  type KnowledgeItem,
-} from "@/lib/mocks/mockKnowledgeItems";
 import { AddKnowledgeModal } from "@/components/intelligence/AddKnowledgeModal";
+import {
+  type KnowledgeItem,
+  MOCK_KNOWLEDGE_ITEMS,
+} from "@/lib/mocks/mockKnowledgeItems";
 
 const CATEGORIES = [
   "All",

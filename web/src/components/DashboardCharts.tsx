@@ -34,7 +34,12 @@ function money(n: number) {
 
 export function LoadsPerDayChart({ data }: { data: DayPoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer
+      width="100%"
+      height={220}
+      role="img"
+      aria-label="Bar chart of loads created per day"
+    >
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
         <CartesianGrid
           stroke={gridStroke}
@@ -73,7 +78,12 @@ export function LoadsPerDayChart({ data }: { data: DayPoint[] }) {
 
 export function BillingPayoutChart({ data }: { data: DayPoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer
+      width="100%"
+      height={220}
+      role="img"
+      aria-label="Bar chart comparing billed and payout amounts per day"
+    >
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -4 }}>
         <CartesianGrid
           stroke={gridStroke}

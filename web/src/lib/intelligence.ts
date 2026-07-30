@@ -79,7 +79,6 @@ export type Conversation = {
   title: string;
   createdAt: number;
   updatedAt: number;
-  group: "today" | "yesterday" | "previous";
   preview: string;
 };
 

@@ -106,7 +106,7 @@ export function CreateInvoiceDialog({
     <Modal open={open} onClose={onClose} title="Create Invoice">
       <div className="space-y-5">
         {/* Summary */}
-        <div className="space-y-2 rounded-lg border border-manila-dark bg-cream p-3 text-sm">
+        <div className="space-y-2 rounded-xl border border-manila-dark bg-cream p-3 text-sm">
           <div className="flex justify-between">
             <span className="text-steel">Customer</span>
             <span className="font-medium text-ink">{customer.displayName}</span>
@@ -131,10 +131,10 @@ export function CreateInvoiceDialog({
 
         {/* Line items */}
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
+          <p className="text-xs font-semibold uppercase tracking-wider text-steel">
             Line Items
           </p>
-          <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-manila-dark bg-cream p-2">
+          <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-manila-dark bg-cream p-2">
             {selectedRows.map((r) => (
               <div
                 key={r.loadId}

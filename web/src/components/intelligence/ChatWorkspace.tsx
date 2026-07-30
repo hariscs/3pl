@@ -1,22 +1,22 @@
 "use client";
 
+import { ArrowUp, FileText, Mic, Paperclip, X } from "lucide-react";
 import {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  type KeyboardEvent,
   type ChangeEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
-import { ArrowUp, Mic, Paperclip, X, FileText } from "lucide-react";
-import { MessageList } from "@/components/intelligence/MessageList";
-import { ImagePreviewModal } from "@/components/intelligence/ImagePreviewModal";
 import { GlobalAttachmentDropOverlay } from "@/components/intelligence/GlobalAttachmentDropOverlay";
+import { ImagePreviewModal } from "@/components/intelligence/ImagePreviewModal";
+import { MessageList } from "@/components/intelligence/MessageList";
 import { useGlobalFileDrop } from "@/components/intelligence/useGlobalFileDrop";
 import type {
-  Message,
-  Evidence,
   ChatAttachment,
+  Evidence,
+  Message,
   SentAttachment,
 } from "@/lib/intelligence";
 
@@ -250,54 +250,58 @@ export function ChatWorkspace({
       {/* Attachment previews */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2.5 px-4 pt-4 pb-1 max-h-40 overflow-y-auto">
-          {attachments.map((att) => (
-            <div
-              key={att.id}
-              className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 ${
-                att.status === "invalid"
-                  ? "border-stamp/30 bg-stamp-soft/30"
-                  : "border-manila-dark bg-cream hover:border-rust/20"
-              }`}
-            >
-              {/* Thumbnail or file icon */}
-              {att.previewUrl ? (
+          {attachments.map((att) => {
+            const previewUrl = att.previewUrl;
+            return (
+              <div
+                key={att.id}
+                className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 ${
+                  att.status === "invalid"
+                    ? "border-stamp/30 bg-stamp-soft/30"
+                    : "border-manila-dark bg-cream hover:border-rust/20"
+                }`}
+              >
+                {/* Thumbnail or file icon */}
+                {previewUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => openImagePreview(previewUrl, att.name)}
+                    className="h-10 w-10 shrink-0 overflow-hidden rounded-lg"
+                  >
+                    {/* biome-ignore lint/performance/noImgElement: object-URL preview, not eligible for next/image */}
+                    <img
+                      src={previewUrl}
+                      alt={att.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-manila/60">
+                    <FileText size={18} className="text-steel-light" />
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-ink max-w-35">
+                    {att.name}
+                  </p>
+                  <p
+                    className={`text-[10px] ${att.status === "invalid" ? "text-stamp" : "text-steel-light"}`}
+                  >
+                    {att.error ?? formatFileSize(att.size)}
+                  </p>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => openImagePreview(att.previewUrl!, att.name)}
-                  className="h-10 w-10 shrink-0 overflow-hidden rounded-lg"
+                  onClick={() => removeAttachment(att.id)}
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-manila-dark bg-cream text-steel-light opacity-0 shadow-sm transition-opacity hover:text-stamp group-hover:opacity-100"
                 >
-                  <img
-                    src={att.previewUrl}
-                    alt={att.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <X size={10} />
                 </button>
-              ) : (
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-manila/60">
-                  <FileText size={18} className="text-steel-light" />
-                </div>
-              )}
-
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-ink max-w-35">
-                  {att.name}
-                </p>
-                <p
-                  className={`text-[10px] ${att.status === "invalid" ? "text-stamp" : "text-steel-light"}`}
-                >
-                  {att.error ?? formatFileSize(att.size)}
-                </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => removeAttachment(att.id)}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-manila-dark bg-cream text-steel-light opacity-0 shadow-sm transition-opacity hover:text-stamp group-hover:opacity-100"
-              >
-                <X size={10} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

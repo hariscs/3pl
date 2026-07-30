@@ -1,8 +1,8 @@
+import type { StreamEvent } from "@/lib/intelligence";
 import {
-  MOCK_RESPONSE,
   MOCK_ASSISTANT_CONTENT,
+  MOCK_RESPONSE,
 } from "@/lib/mocks/intelligenceResponse";
-import type { StreamEvent, Evidence } from "@/lib/intelligence";
 
 const CHUNK_SIZE = 8;
 const CHUNK_DELAY = 55;

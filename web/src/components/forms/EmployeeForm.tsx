@@ -104,7 +104,7 @@ export function EmployeeForm({
           onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
         />
       </Field>
-      <Field label="Location" required>
+      <Field label="Location" required className="sm:col-span-2">
         <Select
           value={form.locationId}
           onChange={(e) =>

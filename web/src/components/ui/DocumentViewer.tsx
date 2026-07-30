@@ -33,6 +33,15 @@ export function DocumentViewer({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   const generateBlob = useCallback(async () => {
     setGenerating(true);
     try {
@@ -92,6 +101,7 @@ export function DocumentViewer({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close document preview"
             className="rounded-lg p-1.5 text-steel-light transition-colors hover:bg-ink-soft hover:text-cream"
           >
             <X className="h-5 w-5" />

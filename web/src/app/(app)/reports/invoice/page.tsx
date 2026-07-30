@@ -5,6 +5,7 @@ import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
+import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
 import { useAppData } from "@/lib/store";
 import type { Load } from "@/lib/types";
@@ -73,7 +74,7 @@ export default function InvoiceReportPage() {
       header: "Billed",
       accessor: (r) => r.load.billedAmount,
       align: "right",
-      render: (r) => `$${r.load.billedAmount.toFixed(2)}`,
+      render: (r) => formatMoney(r.load.billedAmount),
     },
   ];
 
@@ -108,7 +109,7 @@ export default function InvoiceReportPage() {
           <p className="text-sm text-steel">
             Total billed across {rows.length} completed loads:{" "}
             <span className="font-tick font-semibold text-ink">
-              ${totalBilled.toFixed(2)}
+              {formatMoney(totalBilled)}
             </span>
           </p>
         </main>

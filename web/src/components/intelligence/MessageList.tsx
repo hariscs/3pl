@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Sparkles,
-  Copy,
-  RefreshCw,
-  FileSearch,
   Check,
+  Copy,
+  FileSearch,
   FileText,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
-import type { Message, Evidence, SentAttachment } from "@/lib/intelligence";
+import { useState } from "react";
+import type { Evidence, Message, SentAttachment } from "@/lib/intelligence";
 
 function FormattedContent({ content }: { content: string }) {
   const paragraphs = content.split("\n\n").filter(Boolean);
@@ -18,13 +18,15 @@ function FormattedContent({ content }: { content: string }) {
     <div className="space-y-3.5">
       {paragraphs.map((paragraph, i) => {
         const lines = paragraph.split("\n");
+        const key = `p-${i}-${paragraph.slice(0, 16)}`;
+
         if (
           lines.length === 1 &&
           !lines[0].startsWith("- ") &&
           !lines[0].startsWith("* ")
         ) {
           return (
-            <p key={i} className="text-[15px] leading-relaxed text-ink/85">
+            <p key={key} className="text-[15px] leading-relaxed text-ink/85">
               {lines[0]}
             </p>
           );
@@ -32,10 +34,10 @@ function FormattedContent({ content }: { content: string }) {
 
         if (lines.every((l) => l.startsWith("- ") || l.startsWith("* "))) {
           return (
-            <ul key={i} className="space-y-1.5">
+            <ul key={key} className="space-y-1.5">
               {lines.map((line, j) => (
                 <li
-                  key={j}
+                  key={`${key}-${j}-${line.slice(0, 12)}`}
                   className="flex gap-2 text-[15px] leading-relaxed text-ink/85"
                 >
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-steel-light/60" />
@@ -47,9 +49,9 @@ function FormattedContent({ content }: { content: string }) {
         }
 
         return (
-          <p key={i} className="text-[15px] leading-relaxed text-ink/85">
+          <p key={key} className="text-[15px] leading-relaxed text-ink/85">
             {lines.filter(Boolean).map((line, j) => (
-              <span key={j}>
+              <span key={`${key}-${j}-${line.slice(0, 12)}`}>
                 {j > 0 && <br />}
                 {line}
               </span>
@@ -138,18 +140,18 @@ function AttachmentCard({
   onImagePreview?: (url: string, filename: string) => void;
 }) {
   const isImg = attachment.category === "image";
+  const previewUrl = attachment.previewUrl;
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/4 px-3 py-2">
-      {isImg && attachment.previewUrl ? (
+      {isImg && previewUrl ? (
         <button
           type="button"
-          onClick={() =>
-            onImagePreview?.(attachment.previewUrl!, attachment.name)
-          }
+          onClick={() => onImagePreview?.(previewUrl, attachment.name)}
           className="h-9 w-9 shrink-0 overflow-hidden rounded-lg"
         >
+          {/* biome-ignore lint/performance/noImgElement: object-URL preview, not eligible for next/image */}
           <img
-            src={attachment.previewUrl}
+            src={previewUrl}
             alt={attachment.name}
             className="h-full w-full object-cover"
           />

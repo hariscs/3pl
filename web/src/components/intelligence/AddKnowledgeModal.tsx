@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
-import { X, Upload, FileText, File, Check } from "lucide-react";
+import { Check, File, Upload, X } from "lucide-react";
+import { type DragEvent, useRef, useState } from "react";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import type { KnowledgeItem } from "@/lib/mocks/mockKnowledgeItems";
 
@@ -124,7 +124,8 @@ function FileDropzone({
 
   return (
     <div>
-      <div
+      <button
+        type="button"
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -132,7 +133,7 @@ function FileDropzone({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+        className={`w-full cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
           dragOver
             ? "border-rust/40 bg-rust-soft/20"
             : "border-manila-dark/60 bg-cream hover:border-rust/20 hover:bg-rust-soft/10"
@@ -145,7 +146,7 @@ function FileDropzone({
         <p className="mt-1 text-[11px] text-steel-light">
           {accept} · Max {formatFileSize(MAX_FILE_SIZE)}
         </p>
-      </div>
+      </button>
       <input
         ref={inputRef}
         type="file"
@@ -181,8 +182,6 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
 
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const titleRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 

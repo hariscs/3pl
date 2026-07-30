@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
 import { X } from "lucide-react";
+import { useCallback, useEffect } from "react";
 
 type Props = {
   url: string | null;
@@ -53,6 +53,7 @@ export function ImagePreviewModal({ url, filename, onClose }: Props) {
 
         {/* Image */}
         <div className="flex items-center justify-center p-4">
+          {/* biome-ignore lint/performance/noImgElement: object-URL preview, not eligible for next/image */}
           <img
             src={url}
             alt={filename}

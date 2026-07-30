@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -36,6 +37,7 @@ export default function LoadEntryPage() {
     useAppData();
   const [form, setForm] = useState(blankFields);
   const [savedLoad, setSavedLoad] = useState<Load | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const locationName =
     locations.find((l) => l.id === currentLocationId)?.name ?? "";
@@ -86,23 +88,28 @@ export default function LoadEntryPage() {
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.customerId || !form.productTypeId) return;
-    const created = await addLoad({
-      date: today(),
-      locationId: currentLocationId,
-      customerId: form.customerId,
-      productTypeId: form.productTypeId,
-      doorNumber: form.doorNumber,
-      containerNumber: form.containerNumber,
-      vendor: form.vendor,
-      poNumbers: form.poNumbers.map((po) => po.value).filter(Boolean),
-      sorts: form.sorts,
-      cases: form.cases,
-      weight: form.weight,
-      assignments: [],
-    });
-    if (!created) return; // error already surfaced as a toast
-    setSavedLoad(created);
-    setForm(blankFields);
+    setSaving(true);
+    try {
+      const created = await addLoad({
+        date: today(),
+        locationId: currentLocationId,
+        customerId: form.customerId,
+        productTypeId: form.productTypeId,
+        doorNumber: form.doorNumber,
+        containerNumber: form.containerNumber,
+        vendor: form.vendor,
+        poNumbers: form.poNumbers.map((po) => po.value).filter(Boolean),
+        sorts: form.sorts,
+        cases: form.cases,
+        weight: form.weight,
+        assignments: [],
+      });
+      if (!created) return; // error already surfaced as a toast
+      setSavedLoad(created);
+      setForm(blankFields);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -113,7 +120,7 @@ export default function LoadEntryPage() {
       />
       <main className="flex-1 space-y-6 p-6">
         {savedLoad && (
-          <div className="flex items-center justify-between rounded-md border border-freight bg-freight-soft px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border border-freight bg-freight-soft px-4 py-3">
             <p className="text-sm text-freight-dark">
               Load{" "}
               <span className="font-tick font-semibold">
@@ -212,9 +219,9 @@ export default function LoadEntryPage() {
               </Field>
             </div>
 
-            <div className="rounded-md border border-manila-dark bg-manila/40 p-4">
+            <div className="rounded-xl border border-manila-dark bg-paper-dim p-4">
               <div className="mb-2 flex items-center justify-between">
-                <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
+                <p className="text-xs font-semibold uppercase tracking-wider text-steel">
                   PO numbers
                 </p>
                 <Button type="button" variant="secondary" onClick={addPoField}>
@@ -228,15 +235,17 @@ export default function LoadEntryPage() {
                       value={po.value}
                       onChange={(e) => handlePoChange(po.id, e.target.value)}
                       placeholder={`PO number ${i + 1}`}
+                      className="min-w-0 flex-1"
                     />
                     {form.poNumbers.length > 1 && (
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
                         onClick={() => removePoField(po.id)}
+                        aria-label={`Remove PO number ${i + 1}`}
+                        className="flex w-11 flex-none items-center justify-center rounded-xl border border-manila-dark text-steel transition-colors hover:border-stamp/40 hover:bg-stamp-soft hover:text-stamp"
                       >
-                        ✕
-                      </Button>
+                        <X size={16} />
+                      </button>
                     )}
                   </div>
                 ))}
@@ -276,7 +285,9 @@ export default function LoadEntryPage() {
               </Field>
             </div>
 
-            <Button type="submit">Save load</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save load"}
+            </Button>
           </form>
         </Card>
       </main>

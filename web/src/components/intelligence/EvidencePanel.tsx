@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import {
-  X,
+  CheckCircle,
   ChevronDown,
+  Circle,
   FileText,
   Image,
-  CheckCircle,
-  Circle,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import type { Evidence } from "@/lib/intelligence";
 
 function EvidenceSection({

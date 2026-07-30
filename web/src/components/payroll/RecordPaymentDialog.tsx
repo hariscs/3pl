@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/billing";
 import {
@@ -22,7 +22,7 @@ type Props = {
     method: PayrollPaymentMethod;
     reference: string;
     note?: string;
-  }) => void;
+  }) => void | Promise<void>;
 };
 
 function todayStr() {
@@ -43,6 +43,7 @@ export function RecordPaymentDialog({
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -58,15 +59,20 @@ export function RecordPaymentDialog({
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit({
-      paidAt,
-      method,
-      reference: reference.trim(),
-      note: note.trim() || undefined,
-    });
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        paidAt,
+        method,
+        reference: reference.trim(),
+        note: note.trim() || undefined,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (!open) return null;
@@ -133,10 +139,9 @@ export function RecordPaymentDialog({
         </Field>
 
         <Field label="Payment Notes" hint="Optional note about this payment.">
-          <textarea
+          <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full rounded-xl border border-manila-dark bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
             rows={2}
             placeholder="Any additional notes..."
           />
@@ -148,10 +153,17 @@ export function RecordPaymentDialog({
         </p>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button type="submit">Record Payment</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Recording…" : "Record Payment"}
+          </Button>
         </div>
       </form>
     </Modal>

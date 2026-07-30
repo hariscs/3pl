@@ -6,12 +6,12 @@ import {
   type DayPoint,
   LoadsPerDayChart,
 } from "@/components/DashboardCharts";
+import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatCard } from "@/components/ui/StatCard";
-import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
 import type { Role } from "@/lib/types";
 
@@ -48,8 +48,15 @@ const QUICK_ACTIONS: Array<{
 ];
 
 export default function DashboardPage() {
-  const { loads, customers, employees, currentLocationId, locations, role } =
-    useAppData();
+  const {
+    loads,
+    customers,
+    employees,
+    currentLocationId,
+    locations,
+    role,
+    isLoading,
+  } = useAppData();
 
   const locationLoads = loads.filter(
     (l) =>
@@ -106,30 +113,36 @@ export default function DashboardPage() {
         description={`Live snapshot for ${locationName}.`}
       />
       <main className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between rounded-2xl border border-manila-dark bg-cream p-5 shadow-card">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-steel">
-              Current location
-            </p>
-            <p className="mt-1 text-lg font-semibold text-ink">
-              {locationName || "—"}
-            </p>
-            <div className="mt-1.5 flex items-center gap-2 text-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-freight" />
-              <span className="font-semibold text-freight">On shift</span>
-              {location?.region ? (
-                <span className="text-steel-light">· {location.region}</span>
-              ) : null}
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-steel">
+                Current location
+              </p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {locationName || "—"}
+              </p>
+              <div className="mt-1.5 flex items-center gap-2 text-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-freight" />
+                <span className="font-semibold text-freight">On shift</span>
+                {location?.region ? (
+                  <span className="text-steel">· {location.region}</span>
+                ) : null}
+              </div>
             </div>
+            <Link href="/loads/new">
+              <Button>New load</Button>
+            </Link>
           </div>
-          <Link href="/loads/new">
-            <Button>New load</Button>
-          </Link>
-        </div>
+        </Card>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} />
+            <StatCard
+              key={s.label}
+              label={s.label}
+              value={isLoading ? "—" : s.value}
+            />
           ))}
         </div>
 
@@ -152,12 +165,17 @@ export default function DashboardPage() {
             actionLabel="View all"
             href="/loads"
           />
-          {activeLoads.length ? (
+          {isLoading ? (
+            <Card>
+              <p className="py-2 text-center text-sm text-steel">Loading…</p>
+            </Card>
+          ) : activeLoads.length ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {activeLoads.slice(0, 6).map((l) => (
-                <div
+                <Link
                   key={l.id}
-                  className="rounded-2xl border border-manila-dark bg-cream p-4 shadow-card"
+                  href={`/loads/${l.id}`}
+                  className="block rounded-2xl border border-manila-dark bg-cream p-4 shadow-card transition-colors hover:border-rust/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -168,13 +186,13 @@ export default function DashboardPage() {
                         Container {l.containerNumber || "—"}
                       </p>
                     </div>
-                    <StatusPill tone="success">In progress</StatusPill>
+                    <StampBadge status={l.status} />
                   </div>
                   <div className="mt-3 flex items-center gap-4 text-sm text-steel">
                     <span>{l.assignments.length} crew</span>
                     <span>{l.cases} cases</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

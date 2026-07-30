@@ -3,9 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { AdminOnly } from "@/components/AdminOnly";
 import { LocationForm } from "@/components/forms/LocationForm";
+import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
 import { useAppData } from "@/lib/store";
+import type { RecordStatus } from "@/lib/types";
 
 export default function EditLocationPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +37,10 @@ export default function EditLocationPage() {
       />
       <AdminOnly>
         <main className="flex-1 p-6">
-          <Card title="Location details">
+          <Card
+            title="Location details"
+            action={<StampBadge status={location.status as RecordStatus} />}
+          >
             <LocationForm
               initial={{
                 name: location.name,

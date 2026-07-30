@@ -25,7 +25,8 @@ import { useAppData } from "@/lib/store";
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { employees, loads, customers, productTypes, locations } = useAppData();
+  const { employees, loads, customers, productTypes, locations, isLoading } =
+    useAppData();
   const [showDocument, setShowDocument] = useState(false);
   const [printRows, setPrintRows] = useState<EmployeePayroll[]>([]);
 
@@ -177,8 +178,24 @@ export default function PayrollPage() {
         ),
       },
     ],
-    [employees, locations],
+    [employees, locations, locationName],
   );
+
+  if (isLoading) {
+    return (
+      <>
+        <TopBar
+          title="Payroll"
+          description="Hourly and production pay for all active crew members across completed loads."
+        />
+        <main className="flex flex-1 items-center justify-center p-6">
+          <output aria-live="polite" className="text-sm text-steel">
+            Loading…
+          </output>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -193,6 +210,7 @@ export default function PayrollPage() {
             <div className="flex items-center justify-between gap-4">
               <Button
                 variant="ghost"
+                aria-label="Previous pay period"
                 onClick={() => prevPeriod && setSelectedPeriodId(prevPeriod.id)}
                 disabled={!prevPeriod}
               >
@@ -212,6 +230,7 @@ export default function PayrollPage() {
               </div>
               <Button
                 variant="ghost"
+                aria-label="Next pay period"
                 onClick={() => nextPeriod && setSelectedPeriodId(nextPeriod.id)}
                 disabled={!nextPeriod}
               >
@@ -259,7 +278,7 @@ export default function PayrollPage() {
                   )
                 }
               >
-                Export CSV
+                Export to Excel
               </Button>
             </div>
           </div>
@@ -270,14 +289,9 @@ export default function PayrollPage() {
             defaultFilterKeys={["category", "location"]}
             onRowClick={(p) => router.push(`/finance/payroll/${p.employee.id}`)}
             onFilteredRowsChange={setPrintRows}
+            emptyMessage="No completed loads with crew assignments in this period."
           />
         </Card>
-
-        {payroll.length === 0 && (
-          <p className="text-center text-sm text-steel">
-            No completed loads with crew assignments in this period.
-          </p>
-        )}
       </main>
 
       <DocumentViewer

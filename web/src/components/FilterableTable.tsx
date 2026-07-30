@@ -32,6 +32,7 @@ export function FilterableTable<T>({
   onFilteredRowsChange,
   searchFn,
   defaultSort,
+  emptyMessage = "No records yet.",
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -47,6 +48,8 @@ export function FilterableTable<T>({
   searchFn?: (row: T, query: string) => boolean;
   /** Initial sort configuration. */
   defaultSort?: { key: string; dir: "asc" | "desc" };
+  /** Message shown when `rows` itself is empty (no filters applied). */
+  emptyMessage?: string;
 }) {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() =>
@@ -168,7 +171,7 @@ export function FilterableTable<T>({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search everything…"
-              className="w-56 rounded-full border border-manila-dark bg-cream py-1.5 pl-7 pr-3 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
+              className="w-56 rounded-full border border-manila-dark bg-cream py-1.5 pl-7 pr-3 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
             />
           </div>
 
@@ -227,14 +230,14 @@ export function FilterableTable<T>({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-manila-dark">
+      <div className="overflow-x-auto rounded-xl border border-manila-dark">
         <table className="w-full min-w-max border-collapse text-sm">
           <thead>
             <tr className="bg-manila">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`border-b border-manila-dark px-3 py-2 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
+                  className={`border-b border-manila-dark px-3 py-2.5 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
                     col.align === "right" ? "text-right" : ""
                   }`}
                 >
@@ -244,7 +247,7 @@ export function FilterableTable<T>({
                     <button
                       type="button"
                       onClick={() => toggleSort(col.key)}
-                      className="inline-flex items-center gap-1 hover:text-rust"
+                      className="inline-flex items-center gap-1 transition-colors hover:text-rust"
                     >
                       {col.header}
                       <span className="text-[10px] text-steel-light">
@@ -265,22 +268,24 @@ export function FilterableTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-3 py-8 text-center text-sm text-steel"
+                  className="px-3 py-10 text-center text-sm text-steel"
                 >
-                  No rows match these filters.
+                  {rows.length === 0
+                    ? emptyMessage
+                    : "No rows match these filters."}
                 </td>
               </tr>
             ) : (
               filtered.map((row) => (
                 <tr
                   key={getRowKey(row)}
-                  className={`odd:bg-paper even:bg-paper-dim/40 hover:bg-manila/40 ${onRowClick ? "cursor-pointer" : ""}`}
+                  className={`odd:bg-paper even:bg-paper-dim/40 transition-colors ${onRowClick ? "cursor-pointer hover:bg-manila/40" : ""}`}
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`border-b border-manila-dark/60 px-3 py-2 text-ink ${
+                      className={`border-b border-manila-dark/60 px-3 py-2.5 text-ink ${
                         col.align === "right" ? "text-right font-tick" : ""
                       }`}
                     >

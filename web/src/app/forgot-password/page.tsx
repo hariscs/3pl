@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +19,7 @@ export default function ForgotPasswordPage() {
   const [passwordError, setPasswordError] = useState("");
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink px-4 py-12">
+    <div className="flex min-h-dvh items-center justify-center bg-ink px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
           <p className="font-display text-lg font-semibold tracking-wide text-cream">
@@ -29,7 +30,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <div className="rounded-md border border-manila-dark bg-paper p-6 shadow-xl">
+        <div className="rounded-2xl border border-manila-dark bg-cream p-6 shadow-xl">
           {step === "identify" && (
             <form
               className="space-y-4"
@@ -74,7 +75,7 @@ export default function ForgotPasswordPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-3 rounded-sm border border-manila-dark bg-cream px-3 py-2.5 text-sm">
+                <label className="flex items-center gap-3 rounded-lg border border-manila-dark bg-cream px-3 py-2.5 text-sm transition-colors has-checked:border-rust has-checked:bg-rust-soft has-focus-visible:ring-2 has-focus-visible:ring-rust/30">
                   <input
                     type="radio"
                     name="method"
@@ -89,7 +90,7 @@ export default function ForgotPasswordPage() {
                     </span>
                   </span>
                 </label>
-                <label className="flex items-center gap-3 rounded-sm border border-manila-dark bg-cream px-3 py-2.5 text-sm">
+                <label className="flex items-center gap-3 rounded-lg border border-manila-dark bg-cream px-3 py-2.5 text-sm transition-colors has-checked:border-rust has-checked:bg-rust-soft has-focus-visible:ring-2 has-focus-visible:ring-rust/30">
                   <input
                     type="radio"
                     name="method"
@@ -109,7 +110,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="button"
                 onClick={() => setStep("identify")}
-                className="w-full text-center text-xs text-steel underline"
+                className="w-full text-center text-xs text-steel underline transition-colors hover:text-rust"
               >
                 Back
               </button>
@@ -145,6 +146,7 @@ export default function ForgotPasswordPage() {
                   placeholder="000000"
                   maxLength={6}
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                 />
               </Field>
               {codeError && <p className="text-xs text-stamp">{codeError}</p>}
@@ -154,7 +156,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="button"
                 onClick={() => setStep("verify-method")}
-                className="w-full text-center text-xs text-steel underline"
+                className="w-full text-center text-xs text-steel underline transition-colors hover:text-rust"
               >
                 Send a different way
               </button>
@@ -192,6 +194,7 @@ export default function ForgotPasswordPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
                     required
                   />
                 </Field>
@@ -200,6 +203,7 @@ export default function ForgotPasswordPage() {
                     type="password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
+                    autoComplete="new-password"
                     required
                   />
                 </Field>
@@ -216,7 +220,7 @@ export default function ForgotPasswordPage() {
           {step === "done" && (
             <div className="space-y-4 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-freight text-freight">
-                ✓
+                <Check className="h-5 w-5" />
               </div>
               <div>
                 <h1 className="font-display text-lg font-semibold text-ink">

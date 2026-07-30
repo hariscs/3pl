@@ -78,7 +78,7 @@ export function CustomerForm({
           required
         />
       </Field>
-      <Field label="Legal company name" required>
+      <Field label="Legal company name" required className="sm:col-span-2">
         <Input
           value={form.legalCompanyName}
           onChange={(e) =>
@@ -88,11 +88,11 @@ export function CustomerForm({
         />
       </Field>
 
-      <div className="sm:col-span-2 rounded-md border border-manila-dark bg-manila/40 p-4">
-        <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
+      <div className="rounded-xl border border-manila-dark bg-paper-dim p-4 sm:col-span-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-steel">
           Locations
         </p>
-        <p className="mb-3 text-xs text-steel-light">
+        <p className="mb-3 text-xs text-steel">
           Every product type and load for this customer must belong to one of
           these locations.
         </p>
@@ -100,7 +100,7 @@ export function CustomerForm({
           {locations.map((loc) => (
             <label
               key={loc.id}
-              className="flex items-center gap-2 rounded-sm border border-manila-dark bg-cream px-3 py-1.5 text-sm text-ink"
+              className="flex items-center gap-2 rounded-lg border border-manila-dark bg-cream px-3 py-1.5 text-sm text-ink transition-colors has-checked:border-rust has-checked:bg-rust-soft has-focus-visible:ring-2 has-focus-visible:ring-rust/30"
             >
               <input
                 type="checkbox"

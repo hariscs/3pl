@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useRef, type KeyboardEvent } from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
 import {
-  Search,
-  Plus,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
+  Plus,
+  Search,
   Sparkles,
-  Library,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { type KeyboardEvent, useRef, useState } from "react";
 import type { Conversation } from "@/lib/intelligence";
 
 function ConversationItem({
@@ -61,16 +60,16 @@ function ConversationItem({
     <div
       className={`group flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-all duration-150 ${active ? "bg-ink-soft" : "hover:bg-ink-soft"}`}
     >
-      <button type="button" onClick={onClick} className="mt-0.5 shrink-0">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`Open conversation: ${title}`}
+        className="mt-0.5 shrink-0"
+      >
         <MessageSquare size={15} className="text-steel-light" />
       </button>
-      <div
-        className="min-w-0 flex-1"
-        onClick={onClick}
-        role="button"
-        tabIndex={-1}
-      >
-        {editing ? (
+      {editing ? (
+        <div className="min-w-0 flex-1">
           <input
             ref={inputRef}
             value={editValue}
@@ -79,13 +78,20 @@ function ConversationItem({
             onKeyDown={handleKeyDown}
             className="w-full rounded bg-ink-soft px-1 py-0.5 text-[13px] font-medium text-cream outline-none ring-1 ring-rust/30"
           />
-        ) : (
+          <p className="mt-0.5 text-xs text-cream/50">{updatedAt}</p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onClick}
+          className="min-w-0 flex-1 text-left"
+        >
           <p className="truncate text-[13px] font-medium leading-snug text-cream/80">
             {title}
           </p>
-        )}
-        <p className="mt-0.5 text-xs text-cream/50">{updatedAt}</p>
-      </div>
+          <p className="mt-0.5 text-xs text-cream/50">{updatedAt}</p>
+        </button>
+      )}
       {!editing && (
         <button
           type="button"
@@ -98,6 +104,15 @@ function ConversationItem({
       )}
     </div>
   );
+}
+
+const DAY_MS = 86_400_000;
+
+function bucketFor(updatedAt: number): "today" | "yesterday" | "previous" {
+  const age = Date.now() - updatedAt;
+  if (age < DAY_MS) return "today";
+  if (age < 2 * DAY_MS) return "yesterday";
+  return "previous";
 }
 
 function formatRelativeTime(ms: number): string {
@@ -142,9 +157,12 @@ export function ConversationHistory({
       )
     : conversations;
 
-  const today = filtered.filter((c) => c.group === "today");
-  const yesterday = filtered.filter((c) => c.group === "yesterday");
-  const previous = filtered.filter((c) => c.group === "previous");
+  const sorted = [...filtered].sort((a, b) => b.updatedAt - a.updatedAt);
+  const today = sorted.filter((c) => bucketFor(c.updatedAt) === "today");
+  const yesterday = sorted.filter(
+    (c) => bucketFor(c.updatedAt) === "yesterday",
+  );
+  const previous = sorted.filter((c) => bucketFor(c.updatedAt) === "previous");
 
   if (collapsed) {
     return (

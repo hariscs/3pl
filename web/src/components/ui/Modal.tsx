@@ -22,8 +22,8 @@ export function Modal({
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
-      <div className="relative z-10 w-full max-w-md rounded-md border border-manila-dark bg-paper shadow-xl">
-        <div className="flex items-center justify-between border-b border-manila-dark px-5 py-3.5">
+      <div className="animate-global-drop-in relative z-10 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-manila-dark bg-paper shadow-xl">
+        <div className="flex flex-none items-center justify-between border-b border-manila-dark px-5 py-3.5">
           <h2 className="font-display text-sm font-semibold uppercase tracking-wider text-ink">
             {title}
           </h2>
@@ -31,12 +31,12 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-steel hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-steel transition-colors hover:bg-paper-dim hover:text-ink"
           >
             ✕
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   );

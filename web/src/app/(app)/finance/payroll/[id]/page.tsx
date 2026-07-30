@@ -10,14 +10,16 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { PayrollPdfDocument } from "@/components/PayrollPdfDocument";
 import { RecordPaymentDialog } from "@/components/payroll/RecordPaymentDialog";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ApiError, api } from "@/lib/api/client";
@@ -69,7 +71,6 @@ function fmtDateTime(iso: string | null) {
 
 export default function EmployeePayrollPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const { employees, loads, customers, productTypes, locations, isLoading } =
     useAppData();
 
@@ -115,6 +116,7 @@ export default function EmployeePayrollPage() {
   const [recordLoading, setRecordLoading] = useState(false);
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showDocument, setShowDocument] = useState(false);
 
   async function fetchRecord() {
     if (!employee) return;
@@ -176,10 +178,6 @@ export default function EmployeePayrollPage() {
     }
   }
 
-  function handlePrint() {
-    window.print();
-  }
-
   async function copyReference(ref: string) {
     try {
       await navigator.clipboard.writeText(ref);
@@ -205,9 +203,16 @@ export default function EmployeePayrollPage() {
       <>
         <TopBar title="Employee not found" />
         <main className="flex-1 p-6">
-          <p className="text-sm text-steel">
-            This employee doesn't exist or was removed.
-          </p>
+          <Card>
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="text-sm text-steel">
+                This employee doesn&apos;t exist or was removed.
+              </p>
+              <Link href="/finance/payroll">
+                <Button variant="secondary">Back to Payroll</Button>
+              </Link>
+            </div>
+          </Card>
         </main>
       </>
     );
@@ -228,13 +233,12 @@ export default function EmployeePayrollPage() {
         description={`${employee.category ? CREW_CATEGORY_LABELS[employee.category] : "Uncategorized"} · ${locationName} · ${formatMoney(employee.hourlyRate)}/hr`}
       />
       <main className="flex-1 space-y-4 p-6">
-        <button
-          type="button"
-          onClick={() => router.push("/finance/payroll")}
-          className="inline-flex items-center gap-1.5 text-sm text-steel transition-colors hover:text-ink"
+        <Link
+          href="/finance/payroll"
+          className="inline-flex items-center gap-1.5 py-1 text-sm text-steel transition-colors hover:text-ink"
         >
           <ArrowLeft className="h-4 w-4" /> Back to payroll
-        </button>
+        </Link>
 
         {/* Period selector */}
         {periods.length > 1 && (
@@ -242,6 +246,7 @@ export default function EmployeePayrollPage() {
             <div className="flex items-center justify-between gap-4">
               <Button
                 variant="ghost"
+                aria-label="Previous pay period"
                 onClick={() => prevPeriod && setSelectedPeriodId(prevPeriod.id)}
                 disabled={!prevPeriod}
               >
@@ -261,6 +266,7 @@ export default function EmployeePayrollPage() {
               </div>
               <Button
                 variant="ghost"
+                aria-label="Next pay period"
                 onClick={() => nextPeriod && setSelectedPeriodId(nextPeriod.id)}
                 disabled={!nextPeriod}
               >
@@ -326,6 +332,11 @@ export default function EmployeePayrollPage() {
             value={formatMoney(payroll.totalPay)}
             hint={`+ ${formatMoney(payroll.productionPay)} production`}
           />
+          <StatCard
+            label="Loads Worked"
+            value={payroll.entries.length}
+            hint={selectedPeriod?.label}
+          />
         </div>
 
         {/* Pay breakdown */}
@@ -363,9 +374,7 @@ export default function EmployeePayrollPage() {
             </div>
             <div className="col-span-2 sm:col-span-4 border-t border-manila-dark pt-2">
               <span className="text-steel-light">Deductions</span>
-              <p className="font-tick text-steel-light">
-                — (not yet configured)
-              </p>
+              <p className="text-steel-light">— (not yet configured)</p>
             </div>
             <div className="col-span-2 sm:col-span-4 border-t border-manila-dark pt-2">
               <span className="text-steel-light">Net pay</span>
@@ -392,34 +401,35 @@ export default function EmployeePayrollPage() {
               </div>
               <div>
                 <span className="text-steel-light">Payment Method</span>
-                <p className="font-tick text-ink">
+                <p className="text-ink">
                   {PAYROLL_PAYMENT_METHOD_LABELS[payment.method]}
                 </p>
               </div>
               <div>
                 <span className="text-steel-light">Payment Reference</span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <span className="font-tick text-ink">
                     {payment.reference}
                   </span>
                   <button
                     type="button"
                     onClick={() => copyReference(payment.reference)}
-                    className="rounded p-0.5 text-steel-light hover:text-rust"
+                    aria-label="Copy payment reference"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-steel transition-colors hover:bg-paper-dim hover:text-rust"
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
               <div>
                 <span className="text-steel-light">Payment Notes</span>
-                <p className="font-tick text-ink">
+                <p className="text-ink">
                   {payment.note || "No payment notes."}
                 </p>
               </div>
               <div>
                 <span className="text-steel-light">Recorded By</span>
-                <p className="font-tick text-ink">{payment.recordedByName}</p>
+                <p className="text-ink">{payment.recordedByName}</p>
               </div>
               <div>
                 <span className="text-steel-light">Recorded At</span>
@@ -435,7 +445,7 @@ export default function EmployeePayrollPage() {
         <Card
           title={`Load History · ${payroll.entries.length} load${payroll.entries.length !== 1 ? "s" : ""}`}
           action={
-            <Button variant="secondary" onClick={handlePrint}>
+            <Button variant="secondary" onClick={() => setShowDocument(true)}>
               <Printer className="h-3.5 w-3.5" /> Print
             </Button>
           }
@@ -472,7 +482,7 @@ export default function EmployeePayrollPage() {
                     <span className="font-tick w-14 text-right text-steel">
                       {formatHours(entry.hours)}
                     </span>
-                    <span className="font-tick w-20 text-right text-freight">
+                    <span className="font-tick w-20 text-right font-medium text-ink">
                       {formatMoney(entry.productionPay)}
                     </span>
                   </div>
@@ -501,6 +511,22 @@ export default function EmployeePayrollPage() {
           totalPay={payroll.totalPay}
           periodStartDate={selectedPeriod?.startDate ?? ""}
           onSubmit={handleRecordPayment}
+        />
+
+        <DocumentViewer
+          open={showDocument}
+          onClose={() => setShowDocument(false)}
+          title="Payroll Report"
+          subtitle={`${employee.name}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
+          fileName={`payroll-${employee.name.toLowerCase().replace(/\s+/g, "-")}`}
+          documentNode={
+            <PayrollPdfDocument
+              title="Payroll Report"
+              subtitle={`${employee.name}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
+              rows={[payroll]}
+              locationName={() => locationName}
+            />
+          }
         />
       </main>
     </>

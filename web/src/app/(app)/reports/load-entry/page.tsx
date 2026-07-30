@@ -6,6 +6,7 @@ import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
+import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
 import { useAppData } from "@/lib/store";
 import type { Load } from "@/lib/types";
@@ -77,9 +78,7 @@ export default function LoadEntryReportPage() {
       accessor: (r) => r.load.billedAmount,
       align: "right",
       render: (r) =>
-        r.load.status === "complete"
-          ? `$${r.load.billedAmount.toFixed(2)}`
-          : "—",
+        r.load.status === "complete" ? formatMoney(r.load.billedAmount) : "—",
     },
     {
       key: "payout",
@@ -87,9 +86,7 @@ export default function LoadEntryReportPage() {
       accessor: (r) => r.load.payoutAmount,
       align: "right",
       render: (r) =>
-        r.load.status === "complete"
-          ? `$${r.load.payoutAmount.toFixed(2)}`
-          : "—",
+        r.load.status === "complete" ? formatMoney(r.load.payoutAmount) : "—",
     },
     {
       key: "status",
@@ -108,7 +105,7 @@ export default function LoadEntryReportPage() {
         description="Filter any column below, Excel-style, instead of one generic search box."
       />
       <AdminOnly>
-        <main className="flex-1 p-6">
+        <main className="flex-1 space-y-4 p-6">
           <Card>
             <FilterableTable
               columns={columns}
@@ -127,7 +124,7 @@ export default function LoadEntryReportPage() {
               }
             />
           </Card>
-          <p className="mt-4 text-xs text-steel-light">
+          <p className="text-sm text-steel">
             Employees count is shown separately from the {employees.length}{" "}
             total registered employees to make thin staffing easy to spot.
           </p>

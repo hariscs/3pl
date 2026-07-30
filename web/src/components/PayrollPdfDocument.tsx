@@ -1,6 +1,7 @@
 "use client";
 
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { COMPANY_INFO } from "@/lib/invoices";
 import type { EmployeePayroll } from "@/lib/payroll";
 
 const styles = StyleSheet.create({
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   footerBold: { fontSize: 9, fontWeight: 700, color: "#0f172a" },
   genDate: { textAlign: "right", fontSize: 7, color: "#94a3b8", marginTop: 24 },
   money: { fontWeight: 700 },
-  colEmployee: { width: "22%" },
+  colEmployee: { width: "21%" },
   colCategory: { width: "12%" },
   colLocation: { width: "14%" },
   colLoads: { width: "8%", textAlign: "right" },
@@ -99,8 +100,8 @@ export function PayrollPdfDocument({
       <Page size="LETTER" style={styles.page}>
         {/* Letterhead */}
         <View style={styles.header}>
-          <Text style={styles.company}>Dockmaster</Text>
-          <Text style={styles.subtitle}>3PL Operations</Text>
+          <Text style={styles.company}>{COMPANY_INFO.name}</Text>
+          <Text style={styles.subtitle}>{COMPANY_INFO.byline}</Text>
         </View>
 
         {/* Title */}

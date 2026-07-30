@@ -1,4 +1,4 @@
-import type { IntelligenceResponse, Evidence } from "@/lib/intelligence";
+import type { Evidence, IntelligenceResponse } from "@/lib/intelligence";
 
 const RESPONSE_ID = "resp-demo-001";
 const CONVERSATION_ID = "conv-demo-001";

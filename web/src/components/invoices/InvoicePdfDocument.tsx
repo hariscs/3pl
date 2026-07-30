@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   colProductType: { width: "12%" },
   colContainer: { width: "9%" },
   colCases: { width: "7%", textAlign: "right" },
-  colDescription: { width: "25%" },
+  colDescription: { width: "30%" },
   colAmount: { width: "10%", textAlign: "right" },
 
   // Totals

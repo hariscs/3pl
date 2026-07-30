@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { formatMoney } from "@/lib/billing";
 import { useAppData } from "@/lib/store";
 import {
   CREW_CATEGORY_KEYS,
@@ -69,7 +70,7 @@ export default function EmployeesPage() {
       header: "Hourly Rate",
       accessor: (e) => e.hourlyRate,
       align: "right",
-      render: (e) => `$${e.hourlyRate.toFixed(2)}`,
+      render: (e) => formatMoney(e.hourlyRate),
     },
     {
       key: "status",
@@ -115,8 +116,8 @@ export default function EmployeesPage() {
         description="Archive a crew member to remove them from load pickers without losing their payout history."
       />
       <AdminOnly>
-        <main className="flex-1 p-6">
-          <div className="mb-4 flex justify-end">
+        <main className="flex-1 space-y-4 p-6">
+          <div className="flex justify-end">
             <Link href="/crew/new">
               <Button>New crew member</Button>
             </Link>

@@ -21,15 +21,18 @@ export default function AppShellLayout({
 
   if (status !== "authenticated") {
     return (
-      <div className="flex h-screen items-center justify-center bg-ink text-sm text-steel-light">
+      <output
+        aria-live="polite"
+        className="flex h-dvh items-center justify-center bg-paper text-sm text-steel"
+      >
         Loading…
-      </div>
+      </output>
     );
   }
 
   return (
     <AppDataProvider>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-dvh overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-y-auto">{children}</div>
       </div>

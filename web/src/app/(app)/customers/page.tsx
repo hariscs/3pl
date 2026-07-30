@@ -98,8 +98,8 @@ export default function CustomersPage() {
         description="Archive a customer instead of deleting it — their load and billing history stays in reports."
       />
       <AdminOnly>
-        <main className="flex-1 p-6">
-          <div className="mb-4 flex justify-end">
+        <main className="flex-1 space-y-4 p-6">
+          <div className="flex justify-end">
             <Link href="/customers/new">
               <Button>New customer</Button>
             </Link>

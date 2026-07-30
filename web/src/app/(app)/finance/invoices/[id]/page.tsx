@@ -136,7 +136,7 @@ export default function InvoiceDetailPage() {
         title={`Invoice ${invoice.invoiceNumber}`}
         description={invoice.status === "draft" ? "Draft invoice" : ""}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1">
         {/* ── Toolbar ─────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-6 pt-4">
           <Link
@@ -147,7 +147,7 @@ export default function InvoiceDetailPage() {
             Back to Invoices
           </Link>
           <div className="flex items-center gap-2">
-            <StatusPill tone="muted">Draft</StatusPill>
+            <StatusPill tone="muted">Draft Invoice</StatusPill>
             <Button variant="secondary" onClick={() => setShowDocument(true)}>
               <Eye className="h-3.5 w-3.5" />
               Preview PDF
@@ -160,12 +160,12 @@ export default function InvoiceDetailPage() {
           {/* Invoice Header */}
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-ink">
+              <p className="text-xs font-semibold uppercase tracking-wider text-steel">
                 Invoice
-              </h1>
-              <p className="mt-1 font-tick text-lg font-semibold text-steel">
-                {invoice.invoiceNumber}
               </p>
+              <h1 className="mt-1 font-tick text-3xl font-bold tracking-tight text-ink">
+                {invoice.invoiceNumber}
+              </h1>
               <div className="mt-3">
                 <StatusPill tone="muted">Draft Invoice</StatusPill>
               </div>
@@ -184,21 +184,17 @@ export default function InvoiceDetailPage() {
           {/* Bill To + Invoice Info */}
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Bill To */}
-            <Card>
-              <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-steel-light mb-3">
-                Bill To
-              </h2>
+            <Card title="Bill To">
               <p className="text-sm font-semibold text-ink">
                 {invoice.customerName}
               </p>
-              <p className="mt-1 text-sm text-steel">Address not available.</p>
+              <p className="mt-1 text-sm text-steel italic">
+                Address not available.
+              </p>
             </Card>
 
             {/* Invoice Information */}
-            <Card>
-              <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-steel-light mb-3">
-                Invoice Information
-              </h2>
+            <Card title="Invoice Information">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <InfoField
                   label="Invoice Number"
@@ -230,14 +226,11 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Line Items */}
-          <Card>
-            <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-steel-light mb-4">
-              Invoice Items
-            </h2>
+          <Card title="Invoice Items">
             <div className="overflow-x-auto">
               <table className="w-full min-w-160 text-sm">
                 <thead>
-                  <tr className="border-b border-manila-dark text-left text-xs font-medium uppercase tracking-wide text-steel-light">
+                  <tr className="border-b border-manila-dark text-left font-display text-xs font-semibold uppercase tracking-wide text-steel">
                     <th className="py-2 pr-3">Load</th>
                     <th className="py-2 pr-3">Completed</th>
                     <th className="py-2 pr-3">Location</th>
@@ -252,7 +245,7 @@ export default function InvoiceDetailPage() {
                   {invoice.lineItems.map((item) => (
                     <tr
                       key={item.id}
-                      className="border-b border-manila-dark/50"
+                      className="border-b border-manila-dark/50 odd:bg-paper even:bg-paper-dim/40"
                     >
                       <td className="py-2.5 pr-3">
                         <Link
@@ -292,7 +285,7 @@ export default function InvoiceDetailPage() {
 
           {/* Totals */}
           <div className="flex justify-end">
-            <div className="w-64 space-y-2 rounded-lg border border-manila-dark bg-cream p-4 text-sm">
+            <div className="w-64 space-y-2 rounded-xl border border-manila-dark bg-cream p-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-steel">Subtotal</span>
                 <span className="font-tick text-ink">
@@ -309,10 +302,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Notes */}
-          <Card>
-            <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-steel-light mb-3">
-              Notes
-            </h2>
+          <Card title="Notes">
             {invoice.notes ? (
               <p className="text-sm text-steel whitespace-pre-wrap">
                 {invoice.notes}
@@ -350,7 +340,7 @@ function InfoField({
 }) {
   return (
     <div>
-      <p className="text-xs text-steel-light">{label}</p>
+      <p className="text-xs text-steel">{label}</p>
       <p className={`text-ink ${mono ? "font-tick font-medium" : ""}`}>
         {value}
       </p>

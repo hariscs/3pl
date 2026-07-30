@@ -11,6 +11,7 @@ import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SidekickPanel } from "@/components/ui/SidekickPanel";
+import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import {
   type BillingStatus,
@@ -159,6 +160,7 @@ export default function CustomerBillingPage() {
               className="h-4 w-4 rounded border-manila-dark accent-rust"
               disabled={isInvoiced}
               checked={selectedIds.has(r.loadId)}
+              aria-label={`Select load #${r.ticketNumber}`}
               onChange={() => {
                 setSelectedIds((prev) => {
                   const next = new Set(prev);
@@ -212,7 +214,12 @@ export default function CustomerBillingPage() {
         header: "Container",
         accessor: (r) => r.containerNumber ?? "—",
       },
-      { key: "caseCount", header: "Cases", accessor: (r) => r.caseCount },
+      {
+        key: "caseCount",
+        header: "Cases",
+        accessor: (r) => r.caseCount,
+        align: "right",
+      },
       {
         key: "billingAmount",
         header: "Billing Amount",
@@ -282,51 +289,21 @@ export default function CustomerBillingPage() {
       <main className="flex-1 space-y-4 p-6">
         {/* Summary metrics */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Unbilled Loads
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {unbilledRows.length}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Unbilled Amount
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {formatMoney(unbilledAmount)}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Selected Loads
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {selectedRows.length}
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-steel-light">
-                Selected Amount
-              </p>
-              <p className="mt-1 font-tick text-xl font-semibold text-ink">
-                {formatMoney(selectedAmount)}
-              </p>
-            </div>
-          </Card>
+          <StatCard label="Unbilled Loads" value={unbilledRows.length} />
+          <StatCard
+            label="Unbilled Amount"
+            value={formatMoney(unbilledAmount)}
+          />
+          <StatCard label="Selected Loads" value={selectedRows.length} />
+          <StatCard
+            label="Selected Amount"
+            value={formatMoney(selectedAmount)}
+          />
         </div>
 
         {/* Selected loads action bar */}
         {selectedRows.length > 0 && (
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 rounded-2xl border border-rust/30 bg-rust-soft px-5 py-3">
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-rust/30 bg-rust-soft px-5 py-3">
             <div className="flex items-center gap-4 text-sm">
               <span className="font-semibold text-ink">
                 {selectedRows.length} load{selectedRows.length !== 1 ? "s" : ""}{" "}
@@ -348,28 +325,34 @@ export default function CustomerBillingPage() {
         {/* Table */}
         <Card>
           {/* Select-all placed outside FilterableTable's own toolbar */}
-          {billingRows.length > 0 && (
-            <div className="mb-3 flex items-center gap-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-manila-dark accent-rust"
-                onChange={() =>
-                  selectAllVisible(
-                    visibleRows.length > 0 ? visibleRows : billingRows,
-                  )
-                }
-                checked={
-                  (visibleRows.length > 0 ? visibleRows : billingRows).filter(
-                    (r) => r.billingStatus === "unbilled",
-                  ).length > 0 &&
-                  (visibleRows.length > 0 ? visibleRows : billingRows)
-                    .filter((r) => r.billingStatus === "unbilled")
-                    .every((r) => selectedIds.has(r.loadId))
-                }
-              />
-              <span className="text-xs text-steel">Select all unbilled</span>
-            </div>
-          )}
+          {billingRows.length > 0 &&
+            (() => {
+              const visibleUnbilled = (
+                visibleRows.length > 0 ? visibleRows : billingRows
+              ).filter((r) => r.billingStatus === "unbilled");
+              const allSelected =
+                visibleUnbilled.length > 0 &&
+                visibleUnbilled.every((r) => selectedIds.has(r.loadId));
+              const someSelected = visibleUnbilled.some((r) =>
+                selectedIds.has(r.loadId),
+              );
+              return (
+                <label className="mb-3 flex w-fit items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-manila-dark accent-rust"
+                    onChange={() => selectAllVisible(visibleUnbilled)}
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected && !allSelected;
+                    }}
+                  />
+                  <span className="text-xs text-steel">
+                    Select all unbilled
+                  </span>
+                </label>
+              );
+            })()}
           {billingRows.length === 0 ? (
             <p className="py-8 text-center text-sm text-steel">
               No completed loads are ready for billing.
@@ -396,7 +379,7 @@ export default function CustomerBillingPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
-                <span className="text-xs text-steel-light">Status</span>
+                <span className="text-xs text-steel">Status</span>
                 <StatusPill
                   tone={
                     sidekickLoad.status === "complete"
@@ -413,58 +396,58 @@ export default function CustomerBillingPage() {
                 </StatusPill>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Date</span>
+                <span className="text-xs text-steel">Date</span>
                 <p className="font-tick text-ink">{sidekickLoad.date}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Customer</span>
+                <span className="text-xs text-steel">Customer</span>
                 <p className="text-ink">{sidekickCustomerName}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Location</span>
+                <span className="text-xs text-steel">Location</span>
                 <p className="text-steel">{sidekickLocationName}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Product Type</span>
+                <span className="text-xs text-steel">Product Type</span>
                 <p className="text-steel">{sidekickProductTypeName}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Door</span>
+                <span className="text-xs text-steel">Door</span>
                 <p className="font-tick text-ink">
                   {sidekickLoad.doorNumber || "—"}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Container</span>
+                <span className="text-xs text-steel">Container</span>
                 <p className="font-tick text-ink">
                   {sidekickLoad.containerNumber || "—"}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Cases</span>
+                <span className="text-xs text-steel">Cases</span>
                 <p className="font-tick text-ink">{sidekickLoad.cases}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Sorts</span>
+                <span className="text-xs text-steel">Sorts</span>
                 <p className="font-tick text-ink">{sidekickLoad.sorts}</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Weight</span>
+                <span className="text-xs text-steel">Weight</span>
                 <p className="font-tick text-ink">{sidekickLoad.weight} lb</p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Billing Amount</span>
+                <span className="text-xs text-steel">Billing Amount</span>
                 <p className="font-tick font-semibold text-ink">
                   {formatMoney(sidekickLoad.billedAmount)}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-steel-light">Vendor</span>
+                <span className="text-xs text-steel">Vendor</span>
                 <p className="text-ink">{sidekickLoad.vendor || "—"}</p>
               </div>
               {sidekickLoad.poNumbers.length > 0 && (
                 <div className="col-span-2">
-                  <span className="text-xs text-steel-light">PO Numbers</span>
+                  <span className="text-xs text-steel">PO Numbers</span>
                   <p className="text-ink">
                     {sidekickLoad.poNumbers.join(", ")}
                   </p>

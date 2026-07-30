@@ -13,8 +13,8 @@ import {
   Save,
   Trash2,
   Users,
-  X,
 } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { StampBadge } from "@/components/StampBadge";
@@ -23,7 +23,7 @@ import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
 
@@ -369,7 +369,9 @@ export default function LoadDetailPage() {
       <>
         <TopBar title="Load" />
         <main className="flex flex-1 items-center justify-center p-6">
-          <p className="text-sm text-steel">Loading load data…</p>
+          <output aria-live="polite" className="text-sm text-steel">
+            Loading load data…
+          </output>
         </main>
       </>
     );
@@ -473,14 +475,13 @@ export default function LoadDetailPage() {
 
       <main className="flex-1 space-y-4 p-6">
         {/* ── Back link ── */}
-        <button
-          type="button"
-          onClick={() => router.push("/loads")}
-          className="inline-flex items-center gap-1.5 text-sm text-steel transition-colors hover:text-ink"
+        <Link
+          href="/loads"
+          className="inline-flex items-center gap-1.5 py-1 text-sm text-steel transition-colors hover:text-ink"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to loads
-        </button>
+        </Link>
 
         {/* ── Operational status banner ── */}
         {load.status === "void" && (
@@ -512,7 +513,7 @@ export default function LoadDetailPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center rounded-lg border border-manila-dark bg-paper-dim px-4 py-3">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-steel-light">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-steel">
                   Ticket
                 </span>
                 <span className="mt-0.5 font-tick text-xl font-semibold text-ink">
@@ -735,7 +736,7 @@ export default function LoadDetailPage() {
                           </StatusPill>
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-steel-light">
+                      <p className="mt-0.5 text-xs text-steel">
                         ID: {emp?.id ?? "—"}
                       </p>
                     </div>
@@ -798,15 +799,21 @@ export default function LoadDetailPage() {
           ) : (
             <div className="flex items-center gap-1 overflow-x-auto pb-1">
               {activity.map((entry, i) => (
-                <div key={i} className="flex flex-none items-center gap-1">
-                  <div className="flex items-center gap-2 rounded-md border border-manila-dark bg-cream px-3 py-1.5 text-xs">
-                    <span className="font-tick text-steel-light">
+                <div
+                  key={`${entry.time}-${entry.description}`}
+                  className="flex flex-none items-center gap-1"
+                >
+                  <div className="flex items-center gap-2 rounded-lg border border-manila-dark bg-cream px-3 py-1.5 text-xs">
+                    <span className="font-tick text-steel">
                       {fmtTime(entry.time)}
                     </span>
                     <span className="text-ink">{entry.description}</span>
                   </div>
                   {i < activity.length - 1 && (
-                    <span className="flex-none text-xs text-steel-light">
+                    <span
+                      aria-hidden
+                      className="flex-none text-xs text-steel-light"
+                    >
                       →
                     </span>
                   )}
@@ -846,7 +853,7 @@ export default function LoadDetailPage() {
                     <p className="truncate text-sm font-medium text-ink">
                       {att.name}
                     </p>
-                    <p className="text-xs text-steel-light">
+                    <p className="text-xs text-steel">
                       {att.type} · {att.size}
                     </p>
                   </div>
@@ -874,11 +881,11 @@ export default function LoadDetailPage() {
                 >
                   {editingNoteId === note.id ? (
                     <div className="space-y-2">
-                      <textarea
+                      <Textarea
                         value={editNoteText}
                         onChange={(e) => setEditNoteText(e.target.value)}
-                        className="w-full rounded-lg border border-manila-dark bg-white px-3 py-2 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
                         rows={2}
+                        autoFocus
                       />
                       <div className="flex gap-2">
                         <Button onClick={() => saveNoteEdit(note.id)}>
@@ -899,7 +906,7 @@ export default function LoadDetailPage() {
                     <>
                       <p className="text-sm text-ink">{note.text}</p>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-xs text-steel-light">
+                        <span className="text-xs text-steel">
                           {note.author} · {fmtTimeAgo(note.createdAt)}
                         </span>
                         <div className="flex gap-1">
@@ -909,16 +916,18 @@ export default function LoadDetailPage() {
                               setEditingNoteId(note.id);
                               setEditNoteText(note.text);
                             }}
-                            className="rounded p-1 text-steel-light hover:text-ink"
+                            aria-label="Edit note"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-steel transition-colors hover:bg-paper-dim hover:text-ink"
                           >
-                            <Edit3 className="h-3 w-3" />
+                            <Edit3 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteNote(note.id)}
-                            className="rounded p-1 text-steel-light hover:text-stamp"
+                            aria-label="Delete note"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-steel transition-colors hover:bg-stamp-soft hover:text-stamp"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
@@ -943,11 +952,7 @@ export default function LoadDetailPage() {
                 if (e.key === "Enter") addNote();
               }}
             />
-            <Button
-              variant="secondary"
-              onClick={addNote}
-              disabled={!newNote.trim()}
-            >
+            <Button onClick={addNote} disabled={!newNote.trim()}>
               Add
             </Button>
           </div>
@@ -982,7 +987,7 @@ export default function LoadDetailPage() {
         title="Archive load"
         body={`Load #${load.ticketNumber} will be archived.`}
         confirmLabel="Archive"
-        variant="danger"
+        variant="primary"
         onConfirm={() => {
           archiveLoad(load.id);
           router.push("/loads");
@@ -1009,7 +1014,7 @@ function Meta({
 }) {
   return (
     <div className={full ? "col-span-2 sm:col-span-3 lg:col-span-4" : ""}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-steel-light">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-steel">
         {label}
       </p>
       <div className={`mt-0.5 text-sm text-ink ${mono ? "font-tick" : ""}`}>
@@ -1030,7 +1035,7 @@ function StatCell({
 }) {
   return (
     <div className="rounded-lg border border-manila-dark bg-cream p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-steel-light">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-steel">
         {label}
       </p>
       <div className="mt-1">

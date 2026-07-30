@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { AdminOnly } from "@/components/AdminOnly";
+import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { StatusPill } from "@/components/ui/StatusPill";
 import { useAppData } from "@/lib/store";
-import type { Location } from "@/lib/types";
+import type { Location, RecordStatus } from "@/lib/types";
 
 function WarehouseIcon() {
   return (
@@ -49,8 +49,8 @@ export default function LocationsPage() {
         description="Warehouses your crews check into. Create and edit sites here."
       />
       <AdminOnly>
-        <main className="flex-1 p-6">
-          <div className="mb-4 flex justify-end">
+        <main className="flex-1 space-y-4 p-6">
+          <div className="flex justify-end">
             <Link href="/locations/new">
               <Button>New location</Button>
             </Link>
@@ -61,7 +61,7 @@ export default function LocationsPage() {
                 <Link
                   key={l.id}
                   href={`/locations/${l.id}`}
-                  className="flex items-start gap-4 rounded-2xl border border-manila-dark bg-cream p-4 shadow-card transition-colors hover:border-rust/40"
+                  className="flex items-start gap-4 rounded-2xl border border-manila-dark bg-cream p-4 shadow-card transition-colors hover:border-rust/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rust/40"
                 >
                   <div className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-rust-soft text-rust">
                     <WarehouseIcon />
@@ -71,21 +71,17 @@ export default function LocationsPage() {
                       <p className="truncate font-semibold text-ink">
                         {l.name}
                       </p>
-                      <StatusPill
-                        tone={l.status === "active" ? "success" : "muted"}
-                      >
-                        {l.status}
-                      </StatusPill>
+                      <StampBadge status={l.status as RecordStatus} />
                     </div>
                     <p className="mt-0.5 text-sm text-steel">
                       {[l.code, l.region].filter(Boolean).join(" · ")}
                     </p>
                     {addressLine(l) ? (
-                      <p className="mt-1 truncate text-xs text-steel-light">
+                      <p className="mt-1 truncate text-xs text-steel">
                         {addressLine(l)}
                       </p>
                     ) : null}
-                    <p className="mt-2 text-xs text-steel-light">
+                    <p className="mt-2 text-xs text-steel">
                       Shift {l.shiftStart}–{l.shiftEnd}
                     </p>
                   </div>

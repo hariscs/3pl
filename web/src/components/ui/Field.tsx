@@ -5,15 +5,17 @@ export function Field({
   hint,
   required,
   children,
+  className = "",
 }: {
   label: string;
   hint?: string;
   required?: boolean;
   children: ReactNode;
+  className?: string;
 }) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: children is always the field's input/select, nested inside this label
-    <label className="flex flex-col gap-1.5">
+    <label className={`flex flex-col gap-1.5 ${className}`}>
       <span className="text-sm font-semibold text-ink">
         {label}
         {required && <span className="ml-1 text-rust">*</span>}
@@ -25,7 +27,7 @@ export function Field({
 }
 
 const fieldBase =
-  "w-full rounded-xl border border-manila-dark bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-steel-light transition-colors focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20";
+  "w-full rounded-xl border border-manila-dark bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-steel-light transition-colors focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20 disabled:cursor-not-allowed disabled:border-manila-dark disabled:bg-paper-dim disabled:text-steel";
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (

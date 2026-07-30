@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
@@ -121,7 +122,7 @@ export function ProductTypeForm({
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
+          <p className="text-xs font-semibold uppercase tracking-wider text-steel">
             Rate card
           </p>
           <Button
@@ -137,10 +138,10 @@ export function ProductTypeForm({
           thresholds can differ from what you bill the customer.
         </p>
 
-        <div className="overflow-x-auto rounded-md border border-manila-dark">
+        <div className="overflow-x-auto rounded-xl border border-manila-dark">
           <table className="w-full min-w-max border-collapse text-sm">
             <thead>
-              <tr className="bg-manila text-left font-display text-xs uppercase tracking-wide text-ink">
+              <tr className="bg-manila text-left font-display text-xs font-semibold uppercase tracking-wide text-ink">
                 <th
                   rowSpan={2}
                   className="border-b border-manila-dark px-3 py-2 align-bottom"
@@ -155,16 +156,18 @@ export function ProductTypeForm({
                 </th>
                 <th
                   colSpan={3}
-                  className="border-b border-l border-manila-dark px-3 py-1 text-center text-freight"
+                  className="border-b border-l border-manila-dark px-3 py-1 text-center text-steel"
                 >
                   Pay (employee)
                 </th>
                 <th
                   rowSpan={2}
                   className="border-b border-manila-dark px-2 py-2"
-                />
+                >
+                  <span className="sr-only">Remove</span>
+                </th>
               </tr>
-              <tr className="bg-paper-dim text-left text-xs uppercase tracking-wide text-steel">
+              <tr className="bg-manila text-left font-display text-xs font-semibold uppercase tracking-wide text-steel">
                 <th className="border-b border-l border-manila-dark px-3 py-1.5">
                   Base
                 </th>
@@ -188,43 +191,49 @@ export function ProductTypeForm({
             <tbody>
               {rateLines.map((line) => (
                 <tr key={line.id} className="odd:bg-paper even:bg-paper-dim/40">
-                  <td className="border-b border-manila-dark/60 p-1.5">
+                  <td className="border-b border-manila-dark/60 p-2">
                     <Input
                       value={line.unit}
                       onChange={(e) =>
                         updateLine(line.id, { unit: e.target.value })
                       }
                       placeholder="case, pallet, lb…"
+                      aria-label="Unit"
                       className="w-28"
                     />
                   </td>
-                  <td className="border-b border-l border-manila-dark/60 p-1.5">
+                  <td className="border-b border-l border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       value={line.billBase}
                       onChange={(e) =>
                         updateLine(line.id, {
                           billBase: Number(e.target.value),
                         })
                       }
+                      aria-label="Bill base"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-manila-dark/60 p-1.5">
+                  <td className="border-b border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       value={line.billThreshold}
                       onChange={(e) =>
                         updateLine(line.id, {
                           billThreshold: Number(e.target.value),
                         })
                       }
+                      aria-label="Bill included quantity"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-manila-dark/60 p-1.5">
+                  <td className="border-b border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       step="0.01"
                       value={line.billOverRate}
                       onChange={(e) =>
@@ -232,24 +241,28 @@ export function ProductTypeForm({
                           billOverRate: Number(e.target.value),
                         })
                       }
+                      aria-label="Bill rate over included quantity"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-l border-manila-dark/60 p-1.5">
+                  <td className="border-b border-l border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       value={line.payThreshold}
                       onChange={(e) =>
                         updateLine(line.id, {
                           payThreshold: Number(e.target.value),
                         })
                       }
+                      aria-label="Pay included quantity"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-manila-dark/60 p-1.5">
+                  <td className="border-b border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       step="0.01"
                       value={line.payOverRate}
                       onChange={(e) =>
@@ -257,12 +270,14 @@ export function ProductTypeForm({
                           payOverRate: Number(e.target.value),
                         })
                       }
+                      aria-label="Pay rate over included quantity"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-manila-dark/60 p-1.5">
+                  <td className="border-b border-manila-dark/60 p-2">
                     <Input
                       type="number"
+                      min="0"
                       step="0.01"
                       value={line.payBonus}
                       onChange={(e) =>
@@ -270,17 +285,19 @@ export function ProductTypeForm({
                           payBonus: Number(e.target.value),
                         })
                       }
+                      aria-label="Pay bonus"
                       className="w-24"
                     />
                   </td>
-                  <td className="border-b border-manila-dark/60 p-1.5 text-center">
+                  <td className="border-b border-manila-dark/60 p-2 text-center">
                     <button
                       type="button"
                       onClick={() => removeLine(line.id)}
                       disabled={rateLines.length === 1}
-                      className="text-xs text-stamp underline disabled:opacity-30"
+                      aria-label="Remove rate line"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-steel transition-colors hover:bg-stamp-soft hover:text-stamp disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-steel"
                     >
-                      Remove
+                      <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>

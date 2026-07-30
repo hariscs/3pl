@@ -46,6 +46,11 @@ export default function ProductTypesPage() {
       key: "units",
       header: "Units Billed",
       accessor: (p) => p.rateLines.map((l) => l.unit).join(", "),
+      render: (p) => (
+        <span className="block max-w-64 truncate">
+          {p.rateLines.map((l) => l.unit).join(", ")}
+        </span>
+      ),
     },
     {
       key: "status",
@@ -91,8 +96,8 @@ export default function ProductTypesPage() {
         description="Each product type belongs to one customer and one location, so load entry only shows what's relevant."
       />
       <AdminOnly>
-        <main className="flex-1 p-6">
-          <div className="mb-4 flex justify-end">
+        <main className="flex-1 space-y-4 p-6">
+          <div className="flex justify-end">
             <Link href="/product-types/new">
               <Button>New product type</Button>
             </Link>

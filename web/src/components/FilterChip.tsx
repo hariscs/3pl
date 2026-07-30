@@ -54,7 +54,7 @@ export function FilterChip({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex max-w-56 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+        className={`flex max-w-56 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
           hasValue
             ? "border-rust bg-rust-soft text-rust-dark"
             : "border-manila-dark bg-cream text-steel hover:text-ink"
@@ -68,7 +68,7 @@ export function FilterChip({
       </button>
 
       {open && (
-        <div className="absolute left-0 z-30 mt-1.5 w-64 rounded-md border border-manila-dark bg-paper shadow-lg">
+        <div className="absolute left-0 z-30 mt-1.5 w-64 rounded-xl border border-manila-dark bg-paper shadow-lg">
           <div className="flex items-center justify-between border-b border-manila-dark px-3 py-2">
             <span className="truncate text-sm font-medium text-ink">
               {column.label}
@@ -79,7 +79,7 @@ export function FilterChip({
                 onRemove();
                 setOpen(false);
               }}
-              className="rounded-sm p-1 text-steel hover:bg-manila hover:text-stamp"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-steel transition-colors hover:bg-manila hover:text-stamp"
               aria-label={`Remove ${column.label} filter`}
             >
               ✕
@@ -96,7 +96,7 @@ export function FilterChip({
                       onChange(opt);
                       setOpen(false);
                     }}
-                    className={`rounded-sm px-2 py-1.5 text-left text-sm transition-colors ${
+                    className={`rounded-lg px-2 py-1.5 text-left text-sm transition-colors ${
                       value === opt
                         ? "bg-rust-soft font-medium text-rust-dark"
                         : "text-ink hover:bg-manila"
@@ -109,7 +109,7 @@ export function FilterChip({
                   <button
                     type="button"
                     onClick={() => onChange("")}
-                    className="mt-1 rounded-sm px-2 py-1.5 text-left text-xs text-steel hover:bg-manila"
+                    className="mt-1 rounded-lg px-2 py-1.5 text-left text-xs text-steel hover:bg-manila"
                   >
                     Clear selection
                   </button>
@@ -121,7 +121,7 @@ export function FilterChip({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Type a value…"
-                className="w-full rounded-sm border border-manila-dark bg-cream px-2.5 py-1.5 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
+                className="w-full rounded-lg border border-manila-dark bg-cream px-2.5 py-1.5 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
               />
             )}
           </div>
@@ -169,19 +169,19 @@ export function AddFilterChip({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-full border border-dashed border-manila-dark px-2.5 py-1 text-xs text-steel transition-colors hover:border-rust hover:text-rust"
+        className="flex items-center gap-1.5 rounded-full border border-dashed border-manila-dark px-3 py-1.5 text-xs text-steel transition-colors hover:border-rust hover:text-rust"
       >
         + Filter
       </button>
       {open && (
-        <div className="absolute left-0 z-30 mt-1.5 w-56 rounded-md border border-manila-dark bg-paper shadow-lg">
+        <div className="absolute right-0 z-30 mt-1.5 w-56 rounded-xl border border-manila-dark bg-paper shadow-lg">
           <div className="border-b border-manila-dark p-2">
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search fields…"
-              className="w-full rounded-sm border border-manila-dark bg-cream px-2 py-1 text-xs text-ink placeholder:text-steel-light focus:border-rust focus:outline-none"
+              className="w-full rounded-lg border border-manila-dark bg-cream px-2.5 py-1.5 text-xs text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
             />
           </div>
           <div className="max-h-48 overflow-y-auto py-1">
@@ -197,7 +197,7 @@ export function AddFilterChip({
                     setOpen(false);
                     setQuery("");
                   }}
-                  className="block w-full px-3 py-1.5 text-left text-sm text-ink hover:bg-manila"
+                  className="block w-full px-3 py-1.5 text-left text-sm text-ink transition-colors hover:bg-manila"
                 >
                   {col.label}
                 </button>

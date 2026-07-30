@@ -138,14 +138,14 @@ export default function RegisterUserPage() {
                 </Select>
               </Field>
 
-              <div className="sm:col-span-2 rounded-md border border-manila-dark bg-manila/40 p-4">
-                <p className="font-display text-xs font-medium uppercase tracking-wider text-steel">
+              <div className="rounded-xl border border-manila-dark bg-paper-dim p-4 sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-steel">
                   Location <span className="text-rust">*</span>
                 </p>
                 <p className="mb-3 text-xs text-steel-light">
                   This user will only see data from the location assigned here.
                 </p>
-                <div className="mb-3 flex gap-1.5 rounded-sm border border-manila-dark bg-cream p-1 w-fit">
+                <div className="mb-3 flex w-fit gap-1.5 rounded-lg border border-manila-dark bg-cream p-1">
                   {(
                     [
                       { key: "choose", label: "Choose from list" },
@@ -156,9 +156,9 @@ export default function RegisterUserPage() {
                       key={opt.key}
                       type="button"
                       onClick={() => setLocationMode(opt.key)}
-                      className={`rounded-sm px-2.5 py-1 text-xs font-medium transition-colors ${
+                      className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
                         locationMode === opt.key
-                          ? "bg-ink text-cream"
+                          ? "bg-rust text-cream"
                           : "text-steel hover:text-ink"
                       }`}
                     >
@@ -208,9 +208,13 @@ export default function RegisterUserPage() {
           </Card>
 
           {justCreated && (
-            <p className="text-sm text-freight">
-              {justCreated} was registered and can now log in.
-            </p>
+            <output
+              aria-live="polite"
+              className="block rounded-lg border border-freight bg-freight-soft px-4 py-3 text-sm text-freight-dark"
+            >
+              <span className="font-semibold">{justCreated}</span> was
+              registered and can now log in.
+            </output>
           )}
 
           <Card title="Existing users">
