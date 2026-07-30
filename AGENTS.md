@@ -13,7 +13,7 @@ Run every `pnpm` command **from inside the app** you're changing (`cd api` or `c
 
 ## Gotchas that will bite you (TL;DR)
 
-- **Don't run long-running dev servers** (`pnpm dev`, `fastify start -w`, `next dev`). Output the command for the human to run instead.
+- **Don't run long-running dev servers** (`pnpm dev`, `fastify start -w`, `next dev`) unless the user has explicitly said so in the current session. Otherwise output the command for the human to run instead. When authorized, run it in the background and stop it when done.
 - **`web/` is Next.js 16** — breaking changes vs. common training data. Read the guide in `web/node_modules/next/dist/docs/` before writing web code (see `web/AGENTS.md`).
 - **The two apps share no code.** API response shapes (`api/src/schemas/domain.ts`) and web types (`web/src/lib/types.ts`) are mirrored **by hand** — change both together.
 - **API validation is TypeBox, not Zod.** Schemas live in `api/src/schemas/`; derive types with `Static<typeof Schema>`.
@@ -277,7 +277,7 @@ When implementing any feature, follow this sequence:
 
 ## Forbidden Actions
 
-- **Never run long-running dev servers** (`pnpm dev` in `api/` or `web/`, `fastify start -w`, `next dev`) — output the command for the user to run.
+- **Never run long-running dev servers** (`pnpm dev` in `api/` or `web/`, `fastify start -w`, `next dev`) unless the user explicitly authorizes it in the session — otherwise output the command for the user to run. When authorized, run in the background and stop it when the task is done.
 - **Never assume the Prisma schema** — always derive from `api/prisma/schema.prisma`.
 - **Never mix layers** — no DB calls that skip serialization, no `process.env` reads inside handlers.
 - **Never return raw Prisma objects** — map through a serializer first.
