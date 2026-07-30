@@ -116,8 +116,27 @@ export const MOCK_CONVERSATION_MESSAGES: Record<string, Message[]> = {
     {
       id: "conv-4-a",
       role: "assistant",
-      content:
-        "Three employees recorded overtime exceeding 6 hours this period — Marcus Rivera, Sarah Chen, and David Okonkwo, mostly on longer-than-average unload shifts.",
+      content: `Three employees recorded overtime exceeding 6 hours this period, mostly on longer-than-average unload shifts.
+
+**Overtime summary**
+
+| Employee | Hours | Overtime |
+| --- | --- | --- |
+| Marcus Rivera | 48.5 | 8.5 |
+| Sarah Chen | 46.2 | 6.2 |
+| David Okonkwo | 44.0 | 0.0 |
+
+Recommended follow-ups:
+
+1. Review shift assignments for \`LD-2047\` and \`LD-2048\`.
+2. Confirm overtime approvals were logged before payroll close.
+3. Flag any crew nearing the weekly overtime threshold.
+
+> Overtime concentrated in two locations — Westgate Logistics and Eastport Freight — suggests a staffing gap during peak unload windows rather than a company-wide trend.
+
+- Consider redistributing shifts across the two busiest locations
+- Cross-train additional crew for unload coverage
+- Re-run this report after next week's schedule changes`,
       createdAt: Date.now() - 90_000_000,
     },
   ],

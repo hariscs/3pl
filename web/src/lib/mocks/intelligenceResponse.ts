@@ -7,9 +7,14 @@ export const MOCK_ASSISTANT_CONTENT = `Payroll increased this week primarily bec
 
 The available records indicate that the increase was driven by a combination of additional crew assignments, more completed loads, and employees remaining clocked in longer than the previous period.
 
-Looking at the breakdown, three employees — Marcus Rivera, Sarah Chen, and David Okonkwo — accounted for the majority of the additional hours. Marcus logged 48.5 hours including 8.5 hours of overtime, while Sarah recorded 46.2 hours with 6.2 hours of overtime.
+Looking at the breakdown, three employees — **Marcus Rivera**, **Sarah Chen**, and **David Okonkwo** — accounted for the majority of the additional hours. Marcus logged 48.5 hours including 8.5 hours of overtime, while Sarah recorded 46.2 hours with 6.2 hours of overtime.
 
-The two most time-intensive loads this week were LD-2047 at Westgate Logistics and LD-2048 at Eastport Freight, which together required more than 10 hours of unloading time. This is roughly 30% higher than the average for the previous four weeks.
+The two most time-intensive loads this week were \`LD-2047\` at Westgate Logistics and \`LD-2048\` at Eastport Freight, which together required more than 10 hours of unloading time. This is roughly 30% higher than the average for the previous four weeks.
+
+| Load | Location | Unload Time |
+| --- | --- | --- |
+| LD-2047 | Westgate Logistics | 4.2 hrs |
+| LD-2048 | Eastport Freight | 5.8 hrs |
 
 Payroll policy and labor SOP documents are available in the evidence panel for reference. A payroll export CSV and a load activity spreadsheet are also attached for deeper analysis.
 

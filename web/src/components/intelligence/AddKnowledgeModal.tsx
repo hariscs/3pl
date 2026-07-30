@@ -1,12 +1,17 @@
 "use client";
 
 import { Check, File, Upload, X } from "lucide-react";
+import { motion } from "motion/react";
 import { type DragEvent, useRef, useState } from "react";
+import { ShimmerText } from "@/components/intelligence/ShimmerText";
+import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import type { KnowledgeItem } from "@/lib/mocks/mockKnowledgeItems";
 
 // ── Types ───────────────────────────────────────────────
 type SourceType = "Document" | "PDF" | "Plain Text";
+type UploadStage = "idle" | "validating" | "uploading" | "processing" | "ready";
 
 const SOURCE_TYPES: { value: SourceType; label: string; accept: string }[] = [
   { value: "Document", label: "Document", accept: ".doc,.docx" },
@@ -26,6 +31,7 @@ const CATEGORIES = [
 const STATUSES = ["Draft", "Published", "Needs Review"] as const;
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const UPLOAD_STEPS = 18;
 
 // ── Helpers ──────────────────────────────────────────────
 function formatFileSize(bytes: number): string {
@@ -38,6 +44,10 @@ function filenameToTitle(name: string): string {
   const dot = name.lastIndexOf(".");
   if (dot === -1) return name;
   return name.slice(0, dot);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 let itemIdCounter = 100;
@@ -59,7 +69,7 @@ function FileDropzone({
   accept: string;
   file: File | null;
   error: string;
-  onFile: (f: File | null) => void;
+  onFile: (f: File | null, error?: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -77,7 +87,7 @@ function FileDropzone({
   function handleFile(f: File) {
     const err = validate(f);
     if (err) {
-      onFile(null);
+      onFile(null, err);
       return;
     }
     onFile(f);
@@ -97,8 +107,8 @@ function FileDropzone({
 
   if (file) {
     return (
-      <div className="flex items-center justify-between rounded-xl border border-manila-dark bg-cream px-4 py-3.5">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="animate-fade-up flex items-center justify-between rounded-xl border border-manila-dark bg-cream px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rust-soft/40">
             <File size={17} className="text-rust" />
           </div>
@@ -114,6 +124,7 @@ function FileDropzone({
         <button
           type="button"
           onClick={() => onFile(null)}
+          aria-label="Remove file"
           className="ml-3 shrink-0 rounded-lg p-1.5 text-steel-light transition-colors hover:bg-manila hover:text-steel"
         >
           <X size={14} />
@@ -133,9 +144,9 @@ function FileDropzone({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`w-full cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+        className={`w-full cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-all duration-150 ${
           dragOver
-            ? "border-rust/40 bg-rust-soft/20"
+            ? "scale-[1.01] border-rust/40 bg-rust-soft/20"
             : "border-manila-dark/60 bg-cream hover:border-rust/20 hover:bg-rust-soft/10"
         }`}
       >
@@ -161,6 +172,53 @@ function FileDropzone({
   );
 }
 
+// ── Staged upload progress ──────────────────────────────
+function UploadProgress({
+  stage,
+  progress,
+}: {
+  stage: UploadStage;
+  progress: number;
+}) {
+  if (stage === "validating") {
+    return <ShimmerText className="text-[13px]">Validating…</ShimmerText>;
+  }
+  if (stage === "uploading") {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-manila-dark/60">
+          <div
+            className="h-full rounded-full bg-rust transition-[width] duration-150 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <span className="w-9 shrink-0 text-right text-xs font-medium text-steel">
+          {progress}%
+        </span>
+      </div>
+    );
+  }
+  if (stage === "processing") {
+    return (
+      <ShimmerText className="text-[13px]">Processing & indexing…</ShimmerText>
+    );
+  }
+  if (stage === "ready") {
+    return (
+      <motion.div
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", duration: 0.4, bounce: 0.4 }}
+        className="flex items-center gap-1.5 text-[13px] font-medium text-freight-dark"
+      >
+        <Check size={14} />
+        Added to Knowledge Hub
+      </motion.div>
+    );
+  }
+  return null;
+}
+
 // ── Modal ────────────────────────────────────────────────
 type Props = {
   open: boolean;
@@ -180,10 +238,9 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
   const [effectiveDate, setEffectiveDate] = useState("");
   const [description, setDescription] = useState("");
 
-  const [saved, setSaved] = useState(false);
+  const [stage, setStage] = useState<UploadStage>("idle");
+  const [progress, setProgress] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  if (!open) return null;
 
   function reset() {
     setSourceType("Document");
@@ -197,6 +254,8 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
     setEffectiveDate("");
     setDescription("");
     setErrors({});
+    setStage("idle");
+    setProgress(0);
   }
 
   function handleClose() {
@@ -204,8 +263,8 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
     onClose();
   }
 
-  function handleFileSelected(f: File | null) {
-    setFileError("");
+  function handleFileSelected(f: File | null, error?: string) {
+    setFileError(error ?? "");
     setFile(f);
     if (f && !title) {
       setTitle(filenameToTitle(f.name));
@@ -231,8 +290,21 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
     return Object.keys(e).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return;
+
+    setStage("validating");
+    await delay(400);
+
+    setStage("uploading");
+    setProgress(0);
+    for (let i = 1; i <= UPLOAD_STEPS; i++) {
+      await delay(45);
+      setProgress(Math.round((i / UPLOAD_STEPS) * 100));
+    }
+
+    setStage("processing");
+    await delay(700);
 
     const type =
       sourceType === "Plain Text"
@@ -254,235 +326,209 @@ export function AddKnowledgeModal({ open, onClose, onSave }: Props) {
     };
 
     onSave(item);
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      handleClose();
-    }, 800);
+    setStage("ready");
+    await delay(900);
+    handleClose();
   }
 
   const accept = SOURCE_TYPES.find((s) => s.value === sourceType)?.accept ?? "";
+  const busy = stage !== "idle";
+
+  const footer = (
+    <div className="flex flex-col gap-3">
+      {busy && <UploadProgress stage={stage} progress={progress} />}
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-steel-light">
+          {stage === "idle" && "All fields marked with * are required"}
+        </p>
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            disabled={busy}
+          >
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={busy}>
+            Add to Knowledge Hub
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 px-4 py-10">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={handleClose}
-        className="absolute inset-0 cursor-default"
-      />
+    <Modal
+      open={open}
+      onClose={busy ? () => {} : handleClose}
+      title="Add Knowledge"
+      size="lg"
+      footer={footer}
+    >
+      <div className="space-y-6">
+        <p className="-mt-1 text-[13px] text-steel">
+          Add a document, PDF, or plain-text knowledge item.
+        </p>
 
-      <div className="relative z-10 w-full max-w-xl rounded-2xl border border-manila-dark bg-paper shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-manila-dark px-6 py-4">
-          <div>
-            <h2 className="intel-section-title">Add Knowledge</h2>
-            <p className="mt-0.5 text-[13px] text-steel">
-              Add a document, PDF, or plain-text knowledge item.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg p-1.5 text-steel-light transition-colors hover:bg-manila hover:text-steel"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-6">
-          {/* Source type selector */}
-          <Field label="Source Type" required>
-            <div className="flex gap-1.5">
-              {SOURCE_TYPES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => {
-                    setSourceType(s.value);
-                    setFile(null);
-                    setFileError("");
-                  }}
-                  className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
-                    sourceType === s.value
-                      ? "bg-rust-soft/60 text-rust-dark ring-1 ring-rust/20"
-                      : "text-steel/60 hover:bg-manila hover:text-steel"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </Field>
-
-          {/* File dropzone or plain text */}
-          {sourceType === "Plain Text" ? (
-            <Field
-              label="Knowledge Content"
-              required
-              hint={`${plainText.length} characters`}
-            >
-              <Textarea
-                value={plainText}
-                onChange={(e) => setPlainText(e.target.value)}
-                placeholder="Write or paste the company policy, procedure, location information, or other knowledge that 3PL Intelligence should understand."
-                rows={6}
-                className="min-h-35"
-              />
-              {errors.plainText && (
-                <p className="mt-1 text-xs font-medium text-stamp">
-                  {errors.plainText}
-                </p>
-              )}
-            </Field>
-          ) : (
-            <Field label="Upload File" required>
-              <FileDropzone
-                accept={accept}
-                file={file}
-                error={fileError}
-                onFile={handleFileSelected}
-              />
-              {errors.file && !fileError && (
-                <p className="mt-1.5 text-xs font-medium text-stamp">
-                  {errors.file}
-                </p>
-              )}
-            </Field>
-          )}
-
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <Field label="Title" required>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Knowledge item title"
-                />
-                {errors.title && (
-                  <p className="mt-1 text-xs font-medium text-stamp">
-                    {errors.title}
-                  </p>
-                )}
-              </Field>
-            </div>
-
-            <Field label="Category" required>
-              <Select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+        {/* Source type selector */}
+        <Field label="Source Type" required>
+          <div className="flex gap-1.5">
+            {SOURCE_TYPES.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => {
+                  setSourceType(s.value);
+                  setFile(null);
+                  setFileError("");
+                }}
+                className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
+                  sourceType === s.value
+                    ? "bg-rust-soft/60 text-rust-dark ring-1 ring-rust/20"
+                    : "text-steel/60 hover:bg-manila hover:text-steel"
+                }`}
               >
-                <option value="" disabled>
-                  Select category
-                </option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
-              {errors.category && (
-                <p className="mt-1 text-xs font-medium text-stamp">
-                  {errors.category}
-                </p>
-              )}
-            </Field>
-
-            <Field label="Owner" required>
-              <Input
-                value={owner}
-                onChange={(e) => setOwner(e.target.value)}
-                placeholder="e.g. HR Department"
-              />
-              {errors.owner && (
-                <p className="mt-1 text-xs font-medium text-stamp">
-                  {errors.owner}
-                </p>
-              )}
-            </Field>
-
-            <Field label="Status" required>
-              <Select
-                value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as (typeof STATUSES)[number])
-                }
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            <Field label="Effective Date" required>
-              <Input
-                type="date"
-                value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-              />
-              {errors.effectiveDate && (
-                <p className="mt-1 text-xs font-medium text-stamp">
-                  {errors.effectiveDate}
-                </p>
-              )}
-            </Field>
+                {s.label}
+              </button>
+            ))}
           </div>
+        </Field>
 
+        {/* File dropzone or plain text */}
+        {sourceType === "Plain Text" ? (
           <Field
-            label="Description"
+            label="Knowledge Content"
             required
-            hint="A concise summary of what this knowledge item contains"
+            hint={`${plainText.length} characters`}
           >
             <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the content..."
-              rows={2}
+              value={plainText}
+              onChange={(e) => setPlainText(e.target.value)}
+              placeholder="Write or paste the company policy, procedure, location information, or other knowledge that 3PL Intelligence should understand."
+              rows={6}
+              className="min-h-35"
             />
-            {errors.description && (
+            {errors.plainText && (
               <p className="mt-1 text-xs font-medium text-stamp">
-                {errors.description}
+                {errors.plainText}
+              </p>
+            )}
+          </Field>
+        ) : (
+          <Field label="Upload File" required>
+            <FileDropzone
+              accept={accept}
+              file={file}
+              error={fileError}
+              onFile={handleFileSelected}
+            />
+            {errors.file && !fileError && (
+              <p className="mt-1.5 text-xs font-medium text-stamp">
+                {errors.file}
+              </p>
+            )}
+          </Field>
+        )}
+
+        {/* Metadata */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Field label="Title" required>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Knowledge item title"
+              />
+              {errors.title && (
+                <p className="mt-1 text-xs font-medium text-stamp">
+                  {errors.title}
+                </p>
+              )}
+            </Field>
+          </div>
+
+          <Field label="Category" required>
+            <Select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="" disabled>
+                Select category
+              </option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+            {errors.category && (
+              <p className="mt-1 text-xs font-medium text-stamp">
+                {errors.category}
+              </p>
+            )}
+          </Field>
+
+          <Field label="Owner" required>
+            <Input
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              placeholder="e.g. HR Department"
+            />
+            {errors.owner && (
+              <p className="mt-1 text-xs font-medium text-stamp">
+                {errors.owner}
+              </p>
+            )}
+          </Field>
+
+          <Field label="Status" required>
+            <Select
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value as (typeof STATUSES)[number])
+              }
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <Field label="Effective Date" required>
+            <Input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+            />
+            {errors.effectiveDate && (
+              <p className="mt-1 text-xs font-medium text-stamp">
+                {errors.effectiveDate}
               </p>
             )}
           </Field>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-manila-dark px-6 py-4">
-          <p className="text-[13px] text-steel-light">
-            {saved ? (
-              <span className="flex items-center gap-1.5 text-freight-dark">
-                <Check size={14} />
-                Added to Knowledge Hub
-              </span>
-            ) : (
-              "All fields marked with * are required"
-            )}
-          </p>
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="intel-button-text rounded-xl border border-manila-dark bg-cream px-4 py-2.5 text-steel transition-colors hover:bg-paper-dim active:scale-[0.99]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saved}
-              className="intel-button-text rounded-xl bg-rust px-4 py-2.5 text-cream transition-all duration-200 hover:bg-rust-dark hover:shadow-[0_4px_16px_-4px_var(--color-rust)/0.4] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Add to Knowledge Hub
-            </button>
-          </div>
-        </div>
+        <Field
+          label="Description"
+          required
+          hint="A concise summary of what this knowledge item contains"
+        >
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Brief description of the content..."
+            rows={2}
+          />
+          {errors.description && (
+            <p className="mt-1 text-xs font-medium text-stamp">
+              {errors.description}
+            </p>
+          )}
+        </Field>
       </div>
-    </div>
+    </Modal>
   );
 }

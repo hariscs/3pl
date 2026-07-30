@@ -211,6 +211,83 @@ body {
   animation: global-drop-in 200ms ease-out forwards;
 }
 
+/* Entrance for a newly-arrived message block (paragraph, list, table, code). */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 260ms ease-out both;
+}
+
+/* Gradient-sweep "thinking" text (chat + knowledge processing states). */
+@keyframes shimmer-sweep {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-steel) 0%,
+    var(--color-steel) 35%,
+    var(--color-ink) 50%,
+    var(--color-steel) 65%,
+    var(--color-steel) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-sweep 1.6s linear infinite;
+}
+
+/* Streaming text caret. */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-caret-blink {
+  animation: caret-blink 1s step-end infinite;
+}
+
+/* Soft pulsing glow behind the assistant avatar while awaiting the first token. */
+@keyframes avatar-pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-rust) 35%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-rust) 0%, transparent);
+  }
+}
+
+.animate-avatar-pulse {
+  animation: avatar-pulse-glow 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
