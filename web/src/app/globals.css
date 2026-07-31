@@ -33,6 +33,11 @@
   /* Chart series — validated categorical pair (dataviz slots 1–2, light mode). */
   --color-chart-1: #2a78d6;
   --color-chart-2: #008300;
+  /* Extra categorical slots (3–4) for multi-series charts like the Load
+   * Status donut — chosen to stay visually distinct from the amber/stamp
+   * warning/danger semantics used elsewhere. */
+  --color-chart-3: #7c3aed;
+  --color-chart-4: #0d9488;
 }
 
 @theme {
@@ -65,6 +70,8 @@
   --color-amber-soft: var(--color-amber-soft);
   --color-chart-1: var(--color-chart-1);
   --color-chart-2: var(--color-chart-2);
+  --color-chart-3: var(--color-chart-3);
+  --color-chart-4: var(--color-chart-4);
 
   --font-display: var(--font-inter);
   --font-body: var(--font-inter);

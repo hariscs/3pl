@@ -55,6 +55,17 @@ export function getAssignmentLiveElapsedMinutes(
   return Math.max(0, total - breakMinutes);
 }
 
+/** Elapsed minutes of an assignment's currently-open break, or null if none
+ * is open — used for "extended break" exception detection on the Dashboard. */
+export function getOpenBreakMinutes(
+  assignment: LoadCrewAssignment,
+  nowHHMM: string,
+): number | null {
+  const openBreak = assignment.breaks.find((b) => !b.breakEnd);
+  if (!openBreak) return null;
+  return Math.max(0, minutesBetween(openBreak.breakStart, nowHHMM));
+}
+
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);

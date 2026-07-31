@@ -28,6 +28,7 @@ export function FilterableTable<T>({
   getRowKey,
   onExport,
   defaultFilterKeys,
+  initialFilterValues,
   onRowClick,
   onFilteredRowsChange,
   searchFn,
@@ -40,6 +41,10 @@ export function FilterableTable<T>({
   onExport?: (rows: T[]) => void;
   /** Columns whose filter chip should be shown by default, with no value set. */
   defaultFilterKeys?: string[];
+  /** Columns whose filter chip should be shown by default, pre-set to a
+   * value (keyed by column key). Lets a caller deep-link into a pre-filtered
+   * table, e.g. from a Dashboard tile. Applied once, on mount. */
+  initialFilterValues?: Record<string, string>;
   /** Called when a row is clicked. The row data is passed. */
   onRowClick?: (row: T) => void;
   /** Called with the currently filtered/sorted rows whenever they change. */
@@ -52,13 +57,20 @@ export function FilterableTable<T>({
   emptyMessage?: string;
 }) {
   const [search, setSearch] = useState("");
-  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() =>
-    (defaultFilterKeys ?? []).map((key) => {
-      chipCounter += 1;
-      return { id: `chip-${chipCounter}`, key, openOnMount: false };
-    }),
-  );
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() => {
+    const keys = new Set<string>([
+      ...(defaultFilterKeys ?? []),
+      ...Object.keys(initialFilterValues ?? {}),
+    ]);
+    return [...keys].map((key) => ({ id: `initial-${key}`, key, openOnMount: false }));
+  });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    for (const [key, value] of Object.entries(initialFilterValues ?? {})) {
+      values[`initial-${key}`] = value;
+    }
+    return values;
+  });
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     defaultSort ?? null,
   );
