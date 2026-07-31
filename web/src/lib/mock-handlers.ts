@@ -11,6 +11,21 @@ import {
   getNextInvoiceNumber,
 } from "./invoices";
 import {
+  addLoadAttachment,
+  getLoadAttachmentById,
+  listLoadAttachments as getLoadAttachments,
+  resetLoadAttachments,
+  updateLoadAttachment,
+} from "./load-attachments";
+import { computeLoadFinancials } from "./load-financials";
+import { getLoadReadiness } from "./load-readiness";
+import {
+  clockOutBlockedReason,
+  endBreakBlockedReason,
+  nowHHMM,
+  startBreakBlockedReason,
+} from "./load-time";
+import {
   CUSTOMERS,
   EMPLOYEES,
   LOADS,
@@ -19,13 +34,17 @@ import {
   SYSTEM_USERS,
 } from "./mock-data";
 import { DEV_BYPASS_TOKEN, getToken } from "./token";
-import type {
-  Customer,
-  Employee,
-  Load,
-  Location,
-  ProductType,
-  SystemUser,
+import {
+  type Customer,
+  EDITABLE_LOAD_STATUSES,
+  type Employee,
+  type Load,
+  type LoadAttachment,
+  type LoadCrewAssignment,
+  type LoadStatus,
+  type Location,
+  type ProductType,
+  type SystemUser,
 } from "./types";
 
 // Clone mutable copies so mutations don't pollute the original static data.
@@ -62,11 +81,11 @@ const payrollStatusOverrides: Record<string, PayrollStatusOverride> = {
     paidAt: "2026-07-09T14:30:00Z",
     paidByName: "Rick Alvarez",
     payment: {
-      amount: 134.0,
+      amount: 21.0,
       paidAt: "2026-07-09",
       method: "direct_deposit",
       reference: "DD-2026-0709-0012",
-      note: "Payroll for Jun 30 \u2013 Jul 6",
+      note: "Payroll for Jun 29 \u2013 Jul 5",
       recordedAt: "2026-07-09T14:30:00Z",
       recordedByName: "Rick Alvarez",
     },
@@ -88,6 +107,7 @@ export function resetMockData(): void {
   loads = structuredClone(LOADS);
   users = structuredClone(SYSTEM_USERS);
   ticketCounter = Math.max(...loads.map((l) => l.ticketNumber)) + 1;
+  resetLoadAttachments();
 }
 
 /** Returns true if the current session uses the dev-bypass token. */
@@ -461,18 +481,129 @@ async function toggleProductTypeArchive(path: string) {
   return jsonResponse(productTypes[idx]);
 }
 
+// ── Load domain helpers ─────────────────────────────────────────────
+
+const READONLY_LOAD_STATUSES: LoadStatus[] = ["closed", "cancelled"];
+
+function loadNotEditableResponse(): Response {
+  return jsonResponse(
+    {
+      message: "This load is closed or cancelled and cannot be edited.",
+      code: "LOAD_NOT_EDITABLE",
+    },
+    409,
+  );
+}
+
+function snapshotFromProductType(pt: ProductType, now: string) {
+  return {
+    paySnapshot: {
+      productTypeId: pt.id,
+      employeePayType: pt.employeePayType,
+      employeePayRate: pt.employeePayRate,
+      unitOfMeasure: pt.unitOfMeasure,
+      snapshottedAt: now,
+    },
+    billingSnapshot: {
+      productTypeId: pt.id,
+      customerBillingType: pt.customerBillingType,
+      customerBillingRate: pt.customerBillingRate,
+      unitOfMeasure: pt.unitOfMeasure,
+      snapshottedAt: now,
+    },
+  };
+}
+
+function recomputeLoadFinancials(idx: number): void {
+  const { billedAmount, payoutAmount } = computeLoadFinancials(loads[idx]);
+  loads[idx].billedAmount = billedAmount;
+  loads[idx].payoutAmount = payoutAmount;
+}
+
+/** Path segments for /loads/:id/assignments/:aid/<action> style routes. */
+function loadAndAssignmentIds(path: string): { id: string; aid: string } {
+  const parts = path.split("/");
+  return { id: parts[2], aid: parts[4] };
+}
+
+function findAssignment(
+  load: Load,
+  assignmentId: string,
+): LoadCrewAssignment | undefined {
+  return load.assignments.find((a) => a.id === assignmentId);
+}
+
 async function createLoad(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<Load>;
+
+  if (!data.customerId || !data.locationId || !data.productTypeId) {
+    return jsonResponse(
+      { message: "Customer, Location, and Work Type are required." },
+      400,
+    );
+  }
+  const location = locations.find((l) => l.id === data.locationId);
+  if (!location || location.customerId !== data.customerId) {
+    return jsonResponse(
+      { message: "Location does not belong to the selected Customer." },
+      400,
+    );
+  }
+  const productType = productTypes.find((p) => p.id === data.productTypeId);
+  if (!productType || productType.customerId !== data.customerId) {
+    return jsonResponse(
+      { message: "Work Type does not belong to the selected Customer." },
+      400,
+    );
+  }
+
+  const now = new Date().toISOString();
   const ticketNumber = ticketCounter++;
-  const load = {
-    ...(body as Record<string, unknown>),
+  const { paySnapshot, billingSnapshot } = snapshotFromProductType(
+    productType,
+    now,
+  );
+  const load: Load = {
     id: generateId("load"),
     ticketNumber,
-    status: "active",
+    date: data.date ?? now.slice(0, 10),
+    locationId: data.locationId,
+    customerId: data.customerId,
+    productTypeId: data.productTypeId,
+    doorNumber: data.doorNumber ?? "",
+    containerNumber: data.containerNumber ?? "",
+    trailerNumber: data.trailerNumber ?? "",
+    sealNumber: data.sealNumber ?? "",
+    vendor: data.vendor ?? "",
+    poNumbers: data.poNumbers ?? [],
+    sorts: data.sorts ?? 0,
+    cases: data.cases ?? 0,
+    weight: data.weight ?? 0,
+    palletCount: data.palletCount,
+    pieceCount: data.pieceCount,
+    assignments: [],
+    supervisorUserId: data.supervisorUserId ?? null,
+    paySnapshot,
+    billingSnapshot,
+    status: data.scheduledDate ? "scheduled" : "draft",
     billedAmount: 0,
     payoutAmount: 0,
-    lastUpdatedAt: new Date().toISOString(),
-  } as unknown as Load;
+    notes: [],
+    operationalNotes: data.operationalNotes ?? null,
+    completionNotes: null,
+    scheduledDate: data.scheduledDate ?? null,
+    scheduledStartTime: data.scheduledStartTime ?? null,
+    createdAt: now,
+    createdByUserId: data.createdByUserId ?? "user-admin",
+    startedAt: null,
+    pausedAt: null,
+    completedAt: null,
+    closedAt: null,
+    closedByUserId: null,
+    cancelledAt: null,
+    lastUpdatedAt: now,
+  };
   loads.push(load);
   return jsonResponse(load, 201);
 }
@@ -482,32 +613,410 @@ async function updateLoad(path: string, body?: unknown) {
   const id = path.split("/")[2];
   const idx = loads.findIndex((l) => l.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+
+  const data = body as Partial<Load>;
+  const nextCustomerId = data.customerId ?? loads[idx].customerId;
+  const nextLocationId = data.locationId ?? loads[idx].locationId;
+  if (data.customerId || data.locationId) {
+    const location = locations.find((l) => l.id === nextLocationId);
+    if (!location || location.customerId !== nextCustomerId) {
+      return jsonResponse(
+        { message: "Location does not belong to the selected Customer." },
+        400,
+      );
+    }
+  }
+
   loads[idx] = {
     ...loads[idx],
-    ...(body as Partial<Load>),
+    ...data,
     lastUpdatedAt: new Date().toISOString(),
   };
+
+  // Work Type changed pre-closure — re-snapshot from the live rates.
+  if (data.productTypeId && data.productTypeId !== loads[idx].productTypeId) {
+    const productType = productTypes.find((p) => p.id === data.productTypeId);
+    if (!productType || productType.customerId !== nextCustomerId) {
+      return jsonResponse(
+        { message: "Work Type does not belong to the selected Customer." },
+        400,
+      );
+    }
+    const { paySnapshot, billingSnapshot } = snapshotFromProductType(
+      productType,
+      new Date().toISOString(),
+    );
+    loads[idx].paySnapshot = paySnapshot;
+    loads[idx].billingSnapshot = billingSnapshot;
+  }
+
+  recomputeLoadFinancials(idx);
   return jsonResponse(loads[idx]);
 }
 
-async function voidLoad(path: string) {
+async function assignCrewMember(path: string, body?: unknown) {
   await delay();
   const id = path.split("/")[2];
   const idx = loads.findIndex((l) => l.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  loads[idx].status = "void";
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+
+  const data = body as { employeeId?: string; assignedByUserId?: string };
+  if (!data.employeeId) {
+    return jsonResponse({ message: "employeeId is required." }, 400);
+  }
+  const employee = employees.find((e) => e.id === data.employeeId);
+  if (!employee || employee.employmentStatus === "archived") {
+    return jsonResponse(
+      { message: "Crew member must be active to be assigned." },
+      400,
+    );
+  }
+  const alreadyAssigned = loads[idx].assignments.some(
+    (a) => a.employeeId === data.employeeId && a.status !== "removed",
+  );
+  if (alreadyAssigned) {
+    return jsonResponse(
+      { message: "This crew member is already assigned to this load." },
+      409,
+    );
+  }
+
+  const now = new Date().toISOString();
+  const assignment: LoadCrewAssignment = {
+    id: generateId(`${id}-a`),
+    employeeId: data.employeeId,
+    status: "assigned",
+    assignedAt: now,
+    assignedByUserId: data.assignedByUserId ?? "user-admin",
+    clockIn: null,
+    clockOut: null,
+    breaks: [],
+    removedAt: null,
+    removedByUserId: null,
+    removalReason: null,
+  };
+  loads[idx].assignments.push(assignment);
+  loads[idx].lastUpdatedAt = now;
+  return jsonResponse(loads[idx]);
+}
+
+async function clockInCrewMember(path: string, body?: unknown) {
+  await delay();
+  const { id, aid } = loadAndAssignmentIds(path);
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const assignment = findAssignment(loads[idx], aid);
+  if (!assignment) return jsonResponse({ message: "Not found" }, 404);
+  if (assignment.status !== "assigned") {
+    return jsonResponse(
+      { message: "This crew member has already clocked in." },
+      400,
+    );
+  }
+
+  const data = body as { atTime?: string };
+  const atTime = data.atTime ?? nowHHMM();
+  assignment.status = "clocked_in";
+  assignment.clockIn = atTime;
+
+  if (loads[idx].status === "draft" || loads[idx].status === "scheduled") {
+    loads[idx].status = "in_progress";
+    loads[idx].startedAt = new Date().toISOString();
+  }
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function startCrewBreak(path: string, body?: unknown) {
+  await delay();
+  const { id, aid } = loadAndAssignmentIds(path);
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const assignment = findAssignment(loads[idx], aid);
+  if (!assignment) return jsonResponse({ message: "Not found" }, 404);
+  const blocked = startBreakBlockedReason(assignment);
+  if (blocked) return jsonResponse({ message: blocked }, 400);
+
+  const data = body as { atTime?: string };
+  const atTime = data.atTime ?? nowHHMM();
+  assignment.breaks.push({
+    id: generateId(`${aid}-b`),
+    breakStart: atTime,
+    breakEnd: null,
+  });
+  assignment.status = "on_break";
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function endCrewBreak(path: string, body?: unknown) {
+  await delay();
+  const { id, aid } = loadAndAssignmentIds(path);
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const assignment = findAssignment(loads[idx], aid);
+  if (!assignment) return jsonResponse({ message: "Not found" }, 404);
+  const blocked = endBreakBlockedReason(assignment);
+  if (blocked) return jsonResponse({ message: blocked }, 400);
+
+  const data = body as { atTime?: string };
+  const atTime = data.atTime ?? nowHHMM();
+  const openBreak = assignment.breaks.find((b) => !b.breakEnd);
+  if (openBreak) openBreak.breakEnd = atTime;
+  assignment.status = "clocked_in";
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function clockOutCrewMember(path: string, body?: unknown) {
+  await delay();
+  const { id, aid } = loadAndAssignmentIds(path);
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const assignment = findAssignment(loads[idx], aid);
+  if (!assignment) return jsonResponse({ message: "Not found" }, 404);
+  const blocked = clockOutBlockedReason(assignment);
+  if (blocked) return jsonResponse({ message: blocked }, 400);
+
+  const data = body as { atTime?: string };
+  const atTime = data.atTime ?? nowHHMM();
+  assignment.status = "clocked_out";
+  assignment.clockOut = atTime;
+  recomputeLoadFinancials(idx);
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function removeCrewMember(path: string, body?: unknown) {
+  await delay();
+  const { id, aid } = loadAndAssignmentIds(path);
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (READONLY_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const assignment = findAssignment(loads[idx], aid);
+  if (!assignment) return jsonResponse({ message: "Not found" }, 404);
+  if (assignment.status === "removed") {
+    return jsonResponse({ message: "Already removed." }, 400);
+  }
+
+  const data = body as { removedByUserId?: string; removalReason?: string };
+  const now = new Date().toISOString();
+  const atTime = nowHHMM();
+  // Preserve worked-time history: close any open break and clock out first.
+  if (assignment.status === "on_break") {
+    const openBreak = assignment.breaks.find((b) => !b.breakEnd);
+    if (openBreak) openBreak.breakEnd = atTime;
+  }
+  if (assignment.status === "clocked_in" || assignment.status === "on_break") {
+    assignment.clockOut = atTime;
+  }
+  assignment.status = "removed";
+  assignment.removedAt = now;
+  assignment.removedByUserId = data.removedByUserId ?? "user-admin";
+  assignment.removalReason = data.removalReason ?? null;
+
+  recomputeLoadFinancials(idx);
+  loads[idx].lastUpdatedAt = now;
+  return jsonResponse(loads[idx]);
+}
+
+async function pauseLoad(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (loads[idx].status !== "in_progress") {
+    return jsonResponse(
+      { message: "Only an in-progress load can be paused." },
+      400,
+    );
+  }
+  const now = new Date().toISOString();
+  loads[idx].status = "paused";
+  loads[idx].pausedAt = now;
+  loads[idx].lastUpdatedAt = now;
+  return jsonResponse(loads[idx]);
+}
+
+async function resumeLoad(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (loads[idx].status !== "paused") {
+    return jsonResponse({ message: "Only a paused load can be resumed." }, 400);
+  }
+  loads[idx].status = "in_progress";
+  loads[idx].pausedAt = null;
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function completeLoad(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  const load = loads[idx];
+  if (load.status !== "in_progress" && load.status !== "paused") {
+    return jsonResponse(
+      { message: "Only an in-progress or paused load can be completed." },
+      400,
+    );
+  }
+
+  const productType = productTypes.find((p) => p.id === load.productTypeId);
+  const readiness = getLoadReadiness(load, employees, productType);
+  if (readiness.status === "review") {
+    const blockers = readiness.issues.filter((i) => i.severity === "blocker");
+    if (blockers.length > 0) {
+      return jsonResponse(
+        {
+          message: "This load isn't ready to complete.",
+          code: "LOAD_NOT_READY",
+          issues: readiness.issues,
+        },
+        409,
+      );
+    }
+  }
+
+  const now = new Date().toISOString();
+  load.status = "completed";
+  load.completedAt = now;
+  recomputeLoadFinancials(idx);
+  load.lastUpdatedAt = now;
+  return jsonResponse(load);
+}
+
+async function reopenLoad(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (loads[idx].status !== "completed") {
+    return jsonResponse(
+      { message: "Only a completed load can be reopened." },
+      400,
+    );
+  }
+  loads[idx].status = "in_progress";
+  loads[idx].completedAt = null;
+  loads[idx].lastUpdatedAt = new Date().toISOString();
+  return jsonResponse(loads[idx]);
+}
+
+async function closeLoad(path: string, body?: unknown) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (loads[idx].status !== "completed") {
+    return jsonResponse(
+      { message: "Only a completed load can be closed." },
+      400,
+    );
+  }
+  const data = body as { closedByUserId?: string };
+  const now = new Date().toISOString();
+  loads[idx].status = "closed";
+  loads[idx].closedAt = now;
+  loads[idx].closedByUserId = data.closedByUserId ?? "user-admin";
+  loads[idx].lastUpdatedAt = now;
+  return jsonResponse(loads[idx]);
+}
+
+async function cancelLoad(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = loads.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  if (!EDITABLE_LOAD_STATUSES.includes(loads[idx].status)) {
+    return loadNotEditableResponse();
+  }
+  const now = new Date().toISOString();
+  loads[idx].status = "cancelled";
+  loads[idx].cancelledAt = now;
   loads[idx].billedAmount = 0;
   loads[idx].payoutAmount = 0;
+  loads[idx].lastUpdatedAt = now;
   return jsonResponse(loads[idx]);
 }
 
-async function archiveLoad(path: string) {
+// ── Load attachments ────────────────────────────────────────────────
+
+async function listLoadAttachmentsHandler(path: string) {
   await delay();
   const id = path.split("/")[2];
-  const idx = loads.findIndex((l) => l.id === id);
-  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  loads[idx].status = "archived";
-  return jsonResponse(loads[idx]);
+  return jsonResponse(getLoadAttachments(id));
+}
+
+async function createLoadAttachmentHandler(path: string, body?: unknown) {
+  await delay();
+  const id = path.split("/")[2];
+  if (!loads.some((l) => l.id === id)) {
+    return jsonResponse({ message: "Not found" }, 404);
+  }
+  const data = body as Partial<LoadAttachment>;
+  if (!data.fileName || !data.category || !data.fileUrl) {
+    return jsonResponse(
+      { message: "fileName, category, and fileUrl are required." },
+      400,
+    );
+  }
+  const attachment: LoadAttachment = {
+    id: generateId("att"),
+    loadId: id,
+    fileName: data.fileName,
+    category: data.category,
+    mimeType: data.mimeType ?? "application/octet-stream",
+    sizeBytes: data.sizeBytes ?? 0,
+    fileUrl: data.fileUrl,
+    thumbnailUrl: data.thumbnailUrl,
+    title: data.title,
+    description: data.description,
+    uploadedByUserId: data.uploadedByUserId ?? "user-admin",
+    uploadedAt: new Date().toISOString(),
+    source: data.source ?? "admin",
+    status: "active",
+  };
+  addLoadAttachment(attachment);
+  return jsonResponse(attachment, 201);
+}
+
+async function toggleAttachmentArchiveHandler(path: string) {
+  await delay();
+  const parts = path.split("/");
+  const attachmentId = parts[4];
+  const attachment = getLoadAttachmentById(attachmentId);
+  if (!attachment) return jsonResponse({ message: "Not found" }, 404);
+  const archiving = attachment.status === "active";
+  const updated = updateLoadAttachment(attachmentId, {
+    status: archiving ? "archived" : "active",
+    archivedAt: archiving ? new Date().toISOString() : undefined,
+    archivedByUserId: archiving ? "user-admin" : undefined,
+  });
+  return jsonResponse(updated);
 }
 
 async function createUser(_path: string, body?: unknown) {
@@ -606,8 +1115,45 @@ const routes: {
   exact("GET", "/loads", listLoads),
   exact("POST", "/loads", createLoad),
   pattern("PATCH", /^\/loads\/[^/]+$/, updateLoad),
-  pattern("POST", /^\/loads\/[^/]+\/void$/, voidLoad),
-  pattern("POST", /^\/loads\/[^/]+\/archive$/, archiveLoad),
+  pattern("POST", /^\/loads\/[^/]+\/assignments$/, assignCrewMember),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/assignments\/[^/]+\/clock-in$/,
+    clockInCrewMember,
+  ),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/assignments\/[^/]+\/break-start$/,
+    startCrewBreak,
+  ),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/assignments\/[^/]+\/break-end$/,
+    endCrewBreak,
+  ),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/assignments\/[^/]+\/clock-out$/,
+    clockOutCrewMember,
+  ),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/assignments\/[^/]+\/remove$/,
+    removeCrewMember,
+  ),
+  pattern("POST", /^\/loads\/[^/]+\/pause$/, pauseLoad),
+  pattern("POST", /^\/loads\/[^/]+\/resume$/, resumeLoad),
+  pattern("POST", /^\/loads\/[^/]+\/complete$/, completeLoad),
+  pattern("POST", /^\/loads\/[^/]+\/reopen$/, reopenLoad),
+  pattern("POST", /^\/loads\/[^/]+\/close$/, closeLoad),
+  pattern("POST", /^\/loads\/[^/]+\/cancel$/, cancelLoad),
+  pattern("GET", /^\/loads\/[^/]+\/attachments$/, listLoadAttachmentsHandler),
+  pattern("POST", /^\/loads\/[^/]+\/attachments$/, createLoadAttachmentHandler),
+  pattern(
+    "POST",
+    /^\/loads\/[^/]+\/attachments\/[^/]+\/toggle-archive$/,
+    toggleAttachmentArchiveHandler,
+  ),
 
   // Users
   exact("GET", "/users", listUsers),
@@ -703,10 +1249,10 @@ async function createInvoice(_path: string, body?: unknown) {
         },
         400,
       );
-    if (load.status !== "complete")
+    if (load.status !== "completed" && load.status !== "closed")
       return jsonResponse(
         {
-          message: "Only completed loads can be invoiced.",
+          message: "Only completed or closed loads can be invoiced.",
           code: "LOAD_NOT_COMPLETED",
         },
         400,

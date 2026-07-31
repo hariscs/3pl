@@ -10,15 +10,17 @@ export type ReadinessIssue = {
 export type ReadinessResult =
   | { status: "ready" }
   | { status: "review"; issues: ReadinessIssue[] }
-  | { status: "voided" };
+  | { status: "cancelled" };
 
+/** The gate a Load must pass to move → completed. Wired into the
+ * completeLoad mock handler — a blocker issue rejects the transition. */
 export function getLoadReadiness(
   load: Load,
   employees: Employee[],
   productType: ProductType | undefined,
 ): ReadinessResult {
-  if (load.status === "void") return { status: "voided" };
-  if (load.status === "archived") return { status: "ready" };
+  if (load.status === "cancelled") return { status: "cancelled" };
+  if (load.status === "closed") return { status: "ready" };
 
   const issues: ReadinessIssue[] = [];
 
@@ -29,16 +31,18 @@ export function getLoadReadiness(
       severity: "warning",
     });
   } else {
-    const stillClockedIn = load.assignments.filter((a) => !a.clockOut);
-    if (stillClockedIn.length > 0) {
-      const names = stillClockedIn
+    const stillWorking = load.assignments.filter(
+      (a) => a.status === "clocked_in" || a.status === "on_break",
+    );
+    if (stillWorking.length > 0) {
+      const names = stillWorking
         .map((a) => {
           const employee = employees.find((e) => e.id === a.employeeId);
           return employee ? getEmployeeDisplayName(employee) : "Unknown";
         })
         .join(", ");
       issues.push({
-        label: `${stillClockedIn.length} crew member${stillClockedIn.length > 1 ? "s" : ""} still clocked in: ${names}`,
+        label: `${stillWorking.length} crew member${stillWorking.length > 1 ? "s" : ""} still clocked in: ${names}`,
         severity: "blocker",
       });
     }
@@ -61,7 +65,13 @@ export function getLoadReadiness(
   }
 
   // Quantities
-  if (load.cases === 0 && load.sorts === 0 && load.weight === 0) {
+  if (
+    load.cases === 0 &&
+    load.sorts === 0 &&
+    load.weight === 0 &&
+    !load.palletCount &&
+    !load.pieceCount
+  ) {
     issues.push({
       label: "All production quantities are zero (cases, sorts, weight).",
       severity: "blocker",

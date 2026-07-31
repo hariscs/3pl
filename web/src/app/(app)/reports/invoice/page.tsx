@@ -7,6 +7,7 @@ import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
 import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
+import { formatLoadNumber } from "@/lib/loads";
 import { useAppData } from "@/lib/store";
 import type { Load } from "@/lib/types";
 
@@ -22,7 +23,9 @@ export default function InvoiceReportPage() {
   const rows: Row[] = useMemo(
     () =>
       loads
-        .filter((load) => load.status === "complete")
+        .filter(
+          (load) => load.status === "completed" || load.status === "closed",
+        )
         .map((load) => ({
           load,
           customerName:
@@ -34,7 +37,12 @@ export default function InvoiceReportPage() {
   );
 
   const columns: Column<Row>[] = [
-    { key: "ticket", header: "Ticket #", accessor: (r) => r.load.ticketNumber },
+    {
+      key: "ticket",
+      header: "Load #",
+      accessor: (r) => r.load.ticketNumber,
+      render: (r) => formatLoadNumber(r.load.ticketNumber),
+    },
     { key: "date", header: "Date", accessor: (r) => r.load.date },
     {
       key: "customer",
@@ -107,7 +115,7 @@ export default function InvoiceReportPage() {
             />
           </Card>
           <p className="text-sm text-steel">
-            Total billed across {rows.length} completed loads:{" "}
+            Total billed across {rows.length} completed/closed loads:{" "}
             <span className="font-tick font-semibold text-ink">
               {formatMoney(totalBilled)}
             </span>

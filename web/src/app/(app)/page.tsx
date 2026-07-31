@@ -6,7 +6,7 @@ import {
   type DayPoint,
   LoadsPerDayChart,
 } from "@/components/DashboardCharts";
-import { StampBadge } from "@/components/StampBadge";
+import { LoadStatusPill } from "@/components/loads/LoadStatusPill";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -54,11 +54,11 @@ export default function DashboardPage() {
   const locationLoads = loads.filter(
     (l) =>
       l.locationId === currentLocationId &&
-      l.status !== "void" &&
-      l.status !== "archived",
+      l.status !== "cancelled" &&
+      l.status !== "closed",
   );
-  const activeLoads = locationLoads.filter((l) => l.status === "active");
-  const completed = locationLoads.filter((l) => l.status === "complete");
+  const activeLoads = locationLoads.filter((l) => l.status === "in_progress");
+  const completed = locationLoads.filter((l) => l.status === "completed");
   const location = locations.find((l) => l.id === currentLocationId);
   const activeCustomers = customers.filter(
     (c) => c.status === "active" && c.id === location?.customerId,
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                         Container {l.containerNumber || "—"}
                       </p>
                     </div>
-                    <StampBadge status={l.status} />
+                    <LoadStatusPill status={l.status} />
                   </div>
                   <div className="mt-3 flex items-center gap-4 text-sm text-steel">
                     <span>{l.assignments.length} crew</span>

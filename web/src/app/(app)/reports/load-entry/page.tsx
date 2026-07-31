@@ -3,11 +3,12 @@
 import { useMemo } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
-import { StampBadge } from "@/components/StampBadge";
+import { LoadStatusPill } from "@/components/loads/LoadStatusPill";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
 import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
+import { formatLoadNumber } from "@/lib/loads";
 import { useAppData } from "@/lib/store";
 import type { Load } from "@/lib/types";
 
@@ -38,7 +39,12 @@ export default function LoadEntryReportPage() {
   );
 
   const columns: Column<Row>[] = [
-    { key: "ticket", header: "Ticket #", accessor: (r) => r.load.ticketNumber },
+    {
+      key: "ticket",
+      header: "Load #",
+      accessor: (r) => r.load.ticketNumber,
+      render: (r) => formatLoadNumber(r.load.ticketNumber),
+    },
     { key: "date", header: "Date", accessor: (r) => r.load.date },
     {
       key: "customer",
@@ -78,7 +84,9 @@ export default function LoadEntryReportPage() {
       accessor: (r) => r.load.billedAmount,
       align: "right",
       render: (r) =>
-        r.load.status === "complete" ? formatMoney(r.load.billedAmount) : "—",
+        r.load.status === "completed" || r.load.status === "closed"
+          ? formatMoney(r.load.billedAmount)
+          : "—",
     },
     {
       key: "payout",
@@ -86,15 +94,25 @@ export default function LoadEntryReportPage() {
       accessor: (r) => r.load.payoutAmount,
       align: "right",
       render: (r) =>
-        r.load.status === "complete" ? formatMoney(r.load.payoutAmount) : "—",
+        r.load.status === "completed" || r.load.status === "closed"
+          ? formatMoney(r.load.payoutAmount)
+          : "—",
     },
     {
       key: "status",
       header: "Status",
       accessor: (r) => r.load.status,
       filter: "select",
-      filterOptions: ["active", "complete", "void", "archived"],
-      render: (r) => <StampBadge status={r.load.status} />,
+      filterOptions: [
+        "draft",
+        "scheduled",
+        "in_progress",
+        "paused",
+        "completed",
+        "closed",
+        "cancelled",
+      ],
+      render: (r) => <LoadStatusPill status={r.load.status} />,
     },
   ];
 

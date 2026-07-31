@@ -1,0 +1,8 @@
+BILL OF LADING
+Load: LD-1249
+Container: TRIU 552091
+Carrier: Coastal Intermodal
+Shipper: Triumph Logistics
+Consignee: Triumph Logistics - Savannah, GA
+
+This is a placeholder document for the mock attachment system.

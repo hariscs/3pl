@@ -286,34 +286,178 @@ export type ProductType = {
   updatedAt: string;
 };
 
-export type LoadStatus = "active" | "complete" | "void" | "archived";
+// A Load is the central operational record connecting every other domain:
+// Customer → Location → Work Type → Load → Crew Assignments → Time/Breaks →
+// Payroll/Billing. Every Load belongs to exactly one Customer and Location
+// (the Location must belong to that Customer) and uses one Work Type (which
+// must also belong to that Customer). Selecting a Work Type snapshots its
+// pay/billing configuration onto the Load (paySnapshot/billingSnapshot) —
+// rates can change later on the Work Type without altering historical Loads.
+// A Load is editable up through "completed"; "closed" and "cancelled" are
+// read-only, protected records that Payroll/Billing/Invoices consume.
+export type LoadStatus =
+  | "draft" // created, no crew required yet — editable
+  | "scheduled" // expected at a future date/time — editable
+  | "in_progress" // crew clocked in — editable
+  | "paused" // temporarily stopped — editable
+  | "completed" // physical work finished, still correctable — editable
+  | "closed" // finalized — READ-ONLY, feeds Payroll/Billing/Invoices
+  | "cancelled"; // voided — READ-ONLY, generates no normal Payroll/Billing
 
-export type LoadEmployeeAssignment = {
+export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
+  draft: "Draft",
+  scheduled: "Scheduled",
+  in_progress: "In Progress",
+  paused: "Paused",
+  completed: "Completed",
+  closed: "Closed",
+  cancelled: "Cancelled",
+};
+
+export const EDITABLE_LOAD_STATUSES: LoadStatus[] = [
+  "draft",
+  "scheduled",
+  "in_progress",
+  "paused",
+  "completed",
+];
+
+export type LoadCrewAssignmentStatus =
+  | "assigned" // added to the load, not yet clocked in
+  | "clocked_in"
+  | "on_break"
+  | "clocked_out"
+  | "removed";
+
+export type LoadBreakEntry = {
+  id: string;
+  /** "HH:MM", local to the load's operational day — same convention as clockIn/clockOut. */
+  breakStart: string;
+  breakEnd: string | null;
+};
+
+export type LoadCrewAssignment = {
+  /** Stable per-occurrence id — not employeeId, so a removed crew member can be re-added. */
+  id: string;
   employeeId: string;
-  clockIn: string;
+  status: LoadCrewAssignmentStatus;
+  assignedAt: string;
+  assignedByUserId: string;
+  clockIn: string | null;
   clockOut: string | null;
+  breaks: LoadBreakEntry[];
+  removedAt: string | null;
+  removedByUserId: string | null;
+  removalReason: string | null;
+};
+
+/** Captured when a Work Type is (re)selected on an editable Load — frozen
+ * once the Load closes. Payroll always reads this, never the live Work Type. */
+export type LoadPaySnapshot = {
+  productTypeId: string;
+  employeePayType: WorkTypePayType;
+  employeePayRate: number;
+  unitOfMeasure: UnitOfMeasure;
+  snapshottedAt: string;
+};
+
+/** Same idea as LoadPaySnapshot, for what the Customer is billed. */
+export type LoadBillingSnapshot = {
+  productTypeId: string;
+  customerBillingType: WorkTypePayType;
+  customerBillingRate: number;
+  unitOfMeasure: UnitOfMeasure;
+  snapshottedAt: string;
+};
+
+export type LoadNote = {
+  id: string;
+  text: string;
+  authorUserId: string;
+  createdAt: string;
+};
+
+export type LoadAttachmentCategory = "photo" | "document" | "video";
+/** Which surface uploaded the file — Admin desktop or the field view. */
+export type LoadAttachmentSource = "admin" | "field";
+export type LoadAttachmentStatus = "active" | "archived";
+
+// Attachments are a normalized, load-scoped collection (never embedded in
+// Load itself) so Admin and the field view can share exactly one repository.
+export type LoadAttachment = {
+  id: string;
+  loadId: string;
+  fileName: string;
+  category: LoadAttachmentCategory;
+  mimeType: string;
+  sizeBytes: number;
+  /** Object URL (session-only) or a /public seed placeholder — never a raw
+   * base64 payload stored on the record. */
+  fileUrl: string;
+  thumbnailUrl?: string;
+  title?: string;
+  description?: string;
+  uploadedByUserId: string;
+  uploadedAt: string;
+  source: LoadAttachmentSource;
+  status: LoadAttachmentStatus;
+  archivedAt?: string;
+  archivedByUserId?: string;
 };
 
 export type Load = {
   id: string;
   ticketNumber: number;
   date: string;
+
   locationId: string;
+  /** Denormalized from Location.customerId — validated to match at every
+   * write, not derived on read (same precedent as Invoice's snapshotted
+   * display fields). */
   customerId: string;
   productTypeId: string;
+
   doorNumber: string;
   containerNumber: string;
   trailerNumber: string;
   sealNumber: string;
   vendor: string;
   poNumbers: string[];
+
   sorts: number;
   cases: number;
   weight: number;
-  assignments: LoadEmployeeAssignment[];
+  palletCount?: number;
+  pieceCount?: number;
+
+  assignments: LoadCrewAssignment[];
+  supervisorUserId: string | null;
+
+  paySnapshot: LoadPaySnapshot;
+  billingSnapshot: LoadBillingSnapshot;
+
   status: LoadStatus;
+  /** Server-computed from the snapshot + quantities/worked-hours — frozen
+   * once the Load is closed or cancelled. Never hand-entered. */
   billedAmount: number;
   payoutAmount: number;
+
+  notes: LoadNote[];
+  operationalNotes: string | null;
+  completionNotes: string | null;
+
+  scheduledDate: string | null;
+  scheduledStartTime: string | null;
+
+  createdAt: string;
+  createdByUserId: string;
+  startedAt: string | null;
+  pausedAt: string | null;
+  completedAt: string | null;
+  closedAt: string | null;
+  closedByUserId: string | null;
+  cancelledAt: string | null;
+
   /** ISO timestamp of the last update. Displayed on the load detail screen. */
   lastUpdatedAt: string | null;
 };

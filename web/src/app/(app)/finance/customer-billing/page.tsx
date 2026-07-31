@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { CreateInvoiceDialog } from "@/components/invoices/CreateInvoiceDialog";
+import { LoadStatusPill } from "@/components/loads/LoadStatusPill";
 import { TopBar } from "@/components/TopBar";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
@@ -74,7 +75,11 @@ export default function CustomerBillingPage() {
 
   const billingRows = useMemo<CustomerBillingRow[]>(() => {
     return loads
-      .filter((l) => l.status === "complete" && l.billedAmount > 0)
+      .filter(
+        (l) =>
+          (l.status === "completed" || l.status === "closed") &&
+          l.billedAmount > 0,
+      )
       .map((l) => {
         const customerName =
           customers.find((c) => c.id === l.customerId)?.displayName ?? "—";
@@ -380,20 +385,7 @@ export default function CustomerBillingPage() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <span className="text-xs text-steel">Status</span>
-                <StatusPill
-                  tone={
-                    sidekickLoad.status === "complete"
-                      ? "success"
-                      : sidekickLoad.status === "active"
-                        ? "info"
-                        : sidekickLoad.status === "void"
-                          ? "danger"
-                          : "muted"
-                  }
-                >
-                  {sidekickLoad.status.charAt(0).toUpperCase() +
-                    sidekickLoad.status.slice(1)}
-                </StatusPill>
+                <LoadStatusPill status={sidekickLoad.status} />
               </div>
               <div>
                 <span className="text-xs text-steel">Date</span>

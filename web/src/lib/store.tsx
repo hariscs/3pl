@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { ApiError, api } from "./api/client";
 import { useAuth } from "./auth";
+import { nowHHMM } from "./load-time";
 import type {
   Customer,
   Employee,
@@ -30,12 +31,23 @@ type NewLoad = Omit<
   Load,
   | "id"
   | "ticketNumber"
+  | "assignments"
+  | "paySnapshot"
+  | "billingSnapshot"
   | "status"
   | "billedAmount"
   | "payoutAmount"
+  | "notes"
+  | "completionNotes"
+  | "createdAt"
+  | "createdByUserId"
+  | "startedAt"
+  | "pausedAt"
+  | "completedAt"
+  | "closedAt"
+  | "closedByUserId"
+  | "cancelledAt"
   | "lastUpdatedAt"
-  | "trailerNumber"
-  | "sealNumber"
 >;
 type NewLocation = Omit<Location, "id" | "createdAt" | "updatedAt">;
 
@@ -77,8 +89,22 @@ type AppData = {
 
   addLoad: (input: NewLoad) => Promise<Load | undefined>;
   updateLoad: (id: string, input: Partial<Load>) => Promise<void>;
-  voidLoad: (id: string) => Promise<void>;
-  archiveLoad: (id: string) => Promise<void>;
+  assignCrewMember: (loadId: string, employeeId: string) => Promise<void>;
+  clockInCrewMember: (loadId: string, assignmentId: string) => Promise<void>;
+  startCrewBreak: (loadId: string, assignmentId: string) => Promise<void>;
+  endCrewBreak: (loadId: string, assignmentId: string) => Promise<void>;
+  clockOutCrewMember: (loadId: string, assignmentId: string) => Promise<void>;
+  removeCrewMember: (
+    loadId: string,
+    assignmentId: string,
+    removalReason?: string,
+  ) => Promise<void>;
+  pauseLoad: (id: string) => Promise<void>;
+  resumeLoad: (id: string) => Promise<void>;
+  completeLoad: (id: string) => Promise<void>;
+  reopenLoad: (id: string) => Promise<void>;
+  closeLoad: (id: string) => Promise<void>;
+  cancelLoad: (id: string) => Promise<void>;
 };
 
 const AppDataContext = createContext<AppData | null>(null);
@@ -256,15 +282,25 @@ function loadBody(input: Partial<Load>) {
     productTypeId,
     doorNumber,
     containerNumber,
+    trailerNumber,
+    sealNumber,
     vendor,
     poNumbers,
     sorts,
     cases,
     weight,
-    assignments,
-    status,
+    palletCount,
+    pieceCount,
+    supervisorUserId,
+    notes,
+    operationalNotes,
+    completionNotes,
+    scheduledDate,
+    scheduledStartTime,
+    createdByUserId,
   } = input;
-  // billedAmount / payoutAmount / ticketNumber are computed server-side.
+  // id / ticketNumber / assignments / snapshots / status / billedAmount /
+  // payoutAmount / lifecycle timestamps are all server-owned — never sent.
   return {
     date,
     locationId,
@@ -272,13 +308,22 @@ function loadBody(input: Partial<Load>) {
     productTypeId,
     doorNumber,
     containerNumber,
+    trailerNumber,
+    sealNumber,
     vendor,
     poNumbers,
     sorts,
     cases,
     weight,
-    assignments,
-    status,
+    palletCount,
+    pieceCount,
+    supervisorUserId,
+    notes,
+    operationalNotes,
+    completionNotes,
+    scheduledDate,
+    scheduledStartTime,
+    createdByUserId,
   };
 }
 
@@ -482,11 +527,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const addLoad = useCallback(
     (input: NewLoad) =>
       withToast(async () => {
-        const created = await api.post<Load>("/loads", loadBody(input));
+        const created = await api.post<Load>("/loads", {
+          ...loadBody(input),
+          createdByUserId: user?.id,
+        });
         await invalidate(keys.loads);
         return created;
-      }, "Load saved."),
-    [invalidate],
+      }, "Load created."),
+    [invalidate, user],
   );
   const updateLoad = useCallback(
     (id: string, input: Partial<Load>) =>
@@ -496,20 +544,118 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }, "Load saved."),
     [invalidate],
   );
-  const voidLoad = useCallback(
-    (id: string) =>
+  const assignCrewMember = useCallback(
+    (loadId: string, employeeId: string) =>
       withToast(async () => {
-        await api.post(`/loads/${id}/void`);
+        await api.post(`/loads/${loadId}/assignments`, {
+          employeeId,
+          assignedByUserId: user?.id,
+        });
         await invalidate(keys.loads);
-      }, "Load voided."),
+      }, "Crew member assigned."),
+    [invalidate, user],
+  );
+  const clockInCrewMember = useCallback(
+    (loadId: string, assignmentId: string) =>
+      withToast(async () => {
+        await api.post(
+          `/loads/${loadId}/assignments/${assignmentId}/clock-in`,
+          { atTime: nowHHMM() },
+        );
+        await invalidate(keys.loads);
+      }, "Clocked in."),
     [invalidate],
   );
-  const archiveLoad = useCallback(
+  const startCrewBreak = useCallback(
+    (loadId: string, assignmentId: string) =>
+      withToast(async () => {
+        await api.post(
+          `/loads/${loadId}/assignments/${assignmentId}/break-start`,
+          { atTime: nowHHMM() },
+        );
+        await invalidate(keys.loads);
+      }, "Break started."),
+    [invalidate],
+  );
+  const endCrewBreak = useCallback(
+    (loadId: string, assignmentId: string) =>
+      withToast(async () => {
+        await api.post(
+          `/loads/${loadId}/assignments/${assignmentId}/break-end`,
+          { atTime: nowHHMM() },
+        );
+        await invalidate(keys.loads);
+      }, "Break ended."),
+    [invalidate],
+  );
+  const clockOutCrewMember = useCallback(
+    (loadId: string, assignmentId: string) =>
+      withToast(async () => {
+        await api.post(
+          `/loads/${loadId}/assignments/${assignmentId}/clock-out`,
+          { atTime: nowHHMM() },
+        );
+        await invalidate(keys.loads);
+      }, "Clocked out."),
+    [invalidate],
+  );
+  const removeCrewMember = useCallback(
+    (loadId: string, assignmentId: string, removalReason?: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${loadId}/assignments/${assignmentId}/remove`, {
+          removedByUserId: user?.id,
+          removalReason,
+        });
+        await invalidate(keys.loads);
+      }, "Crew member removed."),
+    [invalidate, user],
+  );
+  const pauseLoad = useCallback(
     (id: string) =>
       withToast(async () => {
-        await api.post(`/loads/${id}/archive`);
+        await api.post(`/loads/${id}/pause`);
         await invalidate(keys.loads);
-      }, "Load archived."),
+      }, "Load paused."),
+    [invalidate],
+  );
+  const resumeLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/resume`);
+        await invalidate(keys.loads);
+      }, "Load resumed."),
+    [invalidate],
+  );
+  const completeLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/complete`);
+        await invalidate(keys.loads);
+      }, "Load completed."),
+    [invalidate],
+  );
+  const reopenLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/reopen`);
+        await invalidate(keys.loads);
+      }, "Load reopened."),
+    [invalidate],
+  );
+  const closeLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/close`, { closedByUserId: user?.id });
+        await invalidate(keys.loads);
+      }, "Load closed."),
+    [invalidate, user],
+  );
+  const cancelLoad = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/loads/${id}/cancel`);
+        await invalidate(keys.loads);
+      }, "Load cancelled."),
     [invalidate],
   );
 
@@ -550,8 +696,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       toggleProductTypeArchive,
       addLoad,
       updateLoad,
-      voidLoad,
-      archiveLoad,
+      assignCrewMember,
+      clockInCrewMember,
+      startCrewBreak,
+      endCrewBreak,
+      clockOutCrewMember,
+      removeCrewMember,
+      pauseLoad,
+      resumeLoad,
+      completeLoad,
+      reopenLoad,
+      closeLoad,
+      cancelLoad,
     }),
     [
       locations,
@@ -580,8 +736,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       toggleProductTypeArchive,
       addLoad,
       updateLoad,
-      voidLoad,
-      archiveLoad,
+      assignCrewMember,
+      clockInCrewMember,
+      startCrewBreak,
+      endCrewBreak,
+      clockOutCrewMember,
+      removeCrewMember,
+      pauseLoad,
+      resumeLoad,
+      completeLoad,
+      reopenLoad,
+      closeLoad,
+      cancelLoad,
     ],
   );
 

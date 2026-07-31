@@ -1,7 +1,6 @@
 import type {
   CustomerStatus,
   EmploymentStatus,
-  LoadStatus,
   LocationStatus,
   ProductTypeStatus,
   RecordStatus,
@@ -9,7 +8,6 @@ import type {
 
 type Stampable =
   | RecordStatus
-  | LoadStatus
   | EmploymentStatus
   | LocationStatus
   | CustomerStatus
@@ -19,8 +17,6 @@ const config: Record<Stampable, { label: string; color: string }> = {
   active: { label: "Active", color: "text-rust" },
   inactive: { label: "Inactive", color: "text-amber" },
   archived: { label: "Archived", color: "text-steel" },
-  complete: { label: "Complete", color: "text-freight" },
-  void: { label: "Void", color: "text-stamp" },
 };
 
 export function StampBadge({ status }: { status: Stampable }) {

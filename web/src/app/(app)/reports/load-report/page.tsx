@@ -4,26 +4,24 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
-import { StampBadge } from "@/components/StampBadge";
+import { LoadStatusPill } from "@/components/loads/LoadStatusPill";
 import { TopBar } from "@/components/TopBar";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { formatMoney } from "@/lib/billing";
 import { downloadCsv } from "@/lib/csv";
+import { getAssignmentWorkedMinutes } from "@/lib/load-time";
+import { formatLoadNumber } from "@/lib/loads";
 import { useAppData } from "@/lib/store";
-import type { Load, LoadEmployeeAssignment } from "@/lib/types";
+import type { Load, LoadCrewAssignment } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-function totalLaborHours(assignments: LoadEmployeeAssignment[]): number {
-  return assignments.reduce((sum, a) => {
-    if (!a.clockOut) return sum;
-    const hours =
-      (new Date(a.clockOut).getTime() - new Date(a.clockIn).getTime()) /
-      3600000;
-    return sum + Math.max(0, hours);
-  }, 0);
+function totalLaborHours(assignments: LoadCrewAssignment[]): number {
+  return assignments
+    .filter((a) => a.status !== "removed")
+    .reduce((sum, a) => sum + getAssignmentWorkedMinutes(a) / 60, 0);
 }
 
 // ── Row type ─────────────────────────────────────────────────────
@@ -54,7 +52,7 @@ export default function LoadReportPage() {
   const rows: Row[] = useMemo(
     () =>
       loads
-        .filter((l) => l.status === "complete")
+        .filter((l) => l.status === "completed" || l.status === "closed")
         .map((load) => ({
           load,
           customerName:
@@ -88,7 +86,7 @@ export default function LoadReportPage() {
             href={`/loads/${r.load.id}`}
             className="font-tick font-medium text-ink hover:text-rust"
           >
-            #{r.load.ticketNumber}
+            {formatLoadNumber(r.load.ticketNumber)}
           </Link>
         ),
       },
@@ -160,7 +158,7 @@ export default function LoadReportPage() {
         header: "Status",
         accessor: (r) => r.load.status,
         filter: "select",
-        render: (r) => <StampBadge status={r.load.status} />,
+        render: (r) => <LoadStatusPill status={r.load.status} />,
       },
       {
         key: "menu",

@@ -1,3 +1,5 @@
+import { splitProductionPayout } from "./load-financials";
+import { getAssignmentWorkedMinutes } from "./load-time";
 import type { Employee, Load } from "./types";
 
 export type PayPeriodStatus = "pending" | "paid" | "overdue";
@@ -17,7 +19,7 @@ export type PeriodPaymentStatus = {
 
 export function getPayPeriods(loads: Load[]): PayPeriod[] {
   const dates = loads
-    .filter((l) => l.status === "complete")
+    .filter((l) => l.status === "completed" || l.status === "closed")
     .map((l) => new Date(l.date))
     .sort((a, b) => a.getTime() - b.getTime());
   if (dates.length === 0) return [];
@@ -123,14 +125,14 @@ export type EmployeePayroll = {
   payment?: PayrollPayment | null;
 };
 
-export function calcHours(clockIn: string, clockOut: string | null): number {
-  if (!clockOut) return 0;
-  const [inH, inM] = clockIn.split(":").map(Number);
-  const [outH, outM] = clockOut.split(":").map(Number);
-  const mins = outH * 60 + outM - (inH * 60 + inM);
-  return Math.round((mins / 60) * 100) / 100;
-}
-
+/** Payroll always reads a Load's frozen paySnapshot, never the employee's
+ * general hourlyRate — different loads can carry different snapshot rates
+ * for the same person. The one deliberate exception is the overtime
+ * premium: attributing "whose rate applies to the 41st hour" across loads
+ * with different snapshot rates in the same week is a genuine open business
+ * question, so the overtime premium always uses employee.hourlyRate x 1.5
+ * as a documented baseline, regardless of which load's hours pushed the
+ * employee over the weekly threshold. */
 export function getEmployeePayroll(
   employee: Employee,
   loads: Load[],
@@ -139,15 +141,34 @@ export function getEmployeePayroll(
 ): EmployeePayroll {
   const entries: EmployeePayrollEntry[] = [];
   let totalHours = 0;
+  let regularPay = 0;
+  let overtimePay = 0;
   let totalProductionPay = 0;
+  let regularBudgetRemaining = OVERTIME_THRESHOLD;
 
-  for (const load of loads) {
-    if (load.status !== "complete") continue;
-    const a = load.assignments.find((x) => x.employeeId === employee.id);
-    if (!a) continue;
-    const crewCount = load.assignments.length || 1;
-    const hours = calcHours(a.clockIn, a.clockOut);
-    const productionPay = load.payoutAmount / crewCount;
+  const orderedLoads = [...loads].sort((a, b) => a.date.localeCompare(b.date));
+
+  for (const load of orderedLoads) {
+    if (load.status !== "completed" && load.status !== "closed") continue;
+    const a = load.assignments.find(
+      (x) => x.employeeId === employee.id && x.clockIn !== null,
+    );
+    if (!a || !a.clockIn) continue;
+
+    const hours = Math.round((getAssignmentWorkedMinutes(a) / 60) * 100) / 100;
+    let productionPay = 0;
+
+    if (load.paySnapshot.employeePayType === "hourly") {
+      totalHours += hours;
+      const regularHoursHere = Math.min(hours, regularBudgetRemaining);
+      const overtimeHoursHere = hours - regularHoursHere;
+      regularBudgetRemaining -= regularHoursHere;
+      regularPay += regularHoursHere * load.paySnapshot.employeePayRate;
+      overtimePay += overtimeHoursHere * employee.hourlyRate * 1.5;
+    } else {
+      productionPay = splitProductionPayout(load).get(a.id) ?? 0;
+    }
+
     entries.push({
       loadId: load.id,
       ticketNumber: load.ticketNumber,
@@ -159,14 +180,12 @@ export function getEmployeePayroll(
       hours,
       productionPay: Math.round(productionPay * 100) / 100,
     });
-    totalHours += hours;
     totalProductionPay += productionPay;
   }
 
   const { regular, overtime } = calcOvertimeHours(totalHours);
-  const regularPay = Math.round(regular * employee.hourlyRate * 100) / 100;
-  const overtimePay =
-    Math.round(overtime * employee.hourlyRate * 1.5 * 100) / 100;
+  regularPay = Math.round(regularPay * 100) / 100;
+  overtimePay = Math.round(overtimePay * 100) / 100;
 
   return {
     employee,
