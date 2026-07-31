@@ -195,7 +195,7 @@ export function getAllPayroll(
   getProductTypeName: (id: string) => string,
 ): EmployeePayroll[] {
   return employees
-    .filter((e) => e.status === "active")
+    .filter((e) => e.employmentStatus === "active")
     .map((e) =>
       getEmployeePayroll(e, loads, getCustomerName, getProductTypeName),
     )

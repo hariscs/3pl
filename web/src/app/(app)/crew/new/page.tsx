@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AdminOnly } from "@/components/AdminOnly";
-import { EmployeeForm } from "@/components/forms/EmployeeForm";
+import { CrewMemberForm } from "@/components/forms/CrewMemberForm";
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
 import { useAppData } from "@/lib/store";
@@ -15,15 +15,16 @@ export default function NewEmployeePage() {
     <>
       <TopBar
         title="New crew member"
-        description="Crew members only appear in load pickers for the location they're assigned to."
+        description="Add a crew member's profile, employment, pay, skills, certifications, and training records."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
           <Card title="Crew details">
-            <EmployeeForm
+            <CrewMemberForm
+              mode="create"
               submitLabel="Create crew member"
-              onSubmit={(values) => {
-                addEmployee(values);
+              onSubmit={async (values) => {
+                await addEmployee(values);
                 router.push("/crew");
               }}
             />

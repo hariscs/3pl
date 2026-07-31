@@ -3,12 +3,13 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
-import { EmployeeForm } from "@/components/forms/EmployeeForm";
+import { CrewMemberForm } from "@/components/forms/CrewMemberForm";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import { useAppData } from "@/lib/store";
 
 export default function EditEmployeePage() {
@@ -32,11 +33,17 @@ export default function EditEmployeePage() {
     );
   }
 
+  const displayName = getEmployeeDisplayName(employee);
+  // Archive/Restore is a dedicated action, kept separate from ordinary field
+  // edits — it only ever moves between "active" and "archived". "inactive"
+  // is reachable solely through the form's Employment Status field.
+  const isArchived = employee.employmentStatus === "archived";
+
   return (
     <>
       <TopBar
-        title={`Edit ${employee.name}`}
-        description="Update contact info, pay rate, or reassign their home location."
+        title={`Edit ${displayName}`}
+        description="Update profile, employment, pay, skills, certifications, and training records."
       />
       <AdminOnly>
         <main className="flex-1 space-y-6 p-6">
@@ -44,31 +51,44 @@ export default function EditEmployeePage() {
             title="Crew details"
             action={
               <div className="flex items-center gap-3">
-                <StampBadge status={employee.status} />
+                <StampBadge status={employee.employmentStatus} />
                 <Button
-                  variant={
-                    employee.status === "active" ? "danger" : "secondary"
-                  }
+                  variant={isArchived ? "secondary" : "danger"}
                   onClick={() => setConfirmArchive(true)}
                 >
-                  {employee.status === "active" ? "Archive" : "Restore"}
+                  {isArchived ? "Restore" : "Archive"}
                 </Button>
               </div>
             }
           >
-            <EmployeeForm
+            <CrewMemberForm
+              mode="edit"
+              employeeRecordId={employee.id}
               initial={{
-                name: employee.name,
-                email: employee.email,
+                employeeId: employee.employeeId,
+                firstName: employee.firstName,
+                lastName: employee.lastName,
+                preferredName: employee.preferredName,
+                profilePhotoUrl: employee.profilePhotoUrl,
                 phone: employee.phone,
+                email: employee.email,
                 address: employee.address,
-                hourlyRate: employee.hourlyRate,
+                emergencyContact: employee.emergencyContact,
+                employmentStatus: employee.employmentStatus,
+                hireDate: employee.hireDate,
+                employmentType: employee.employmentType,
                 category: employee.category,
-                locationId: employee.locationId,
+                notes: employee.notes,
+                payType: employee.payType,
+                hourlyRate: employee.hourlyRate,
+                productionPayEligible: employee.productionPayEligible,
+                skillIds: employee.skillIds,
+                certifications: employee.certifications,
+                trainingRecords: employee.trainingRecords,
               }}
               submitLabel="Save changes"
-              onSubmit={(values) => {
-                updateEmployee(employee.id, values);
+              onSubmit={async (values) => {
+                await updateEmployee(employee.id, values);
                 router.push("/crew");
               }}
             />
@@ -79,18 +99,14 @@ export default function EditEmployeePage() {
       <ConfirmDialog
         open={confirmArchive}
         onClose={() => setConfirmArchive(false)}
-        title={
-          employee.status === "active"
-            ? "Archive crew member"
-            : "Restore crew member"
-        }
+        title={isArchived ? "Restore crew member" : "Archive crew member"}
         body={
-          employee.status === "active"
-            ? `${employee.name} will drop out of the load crew picker, but past payout records stay intact.`
-            : `${employee.name} will reappear in the load crew picker.`
+          isArchived
+            ? `${displayName} will reappear in the load crew picker.`
+            : `${displayName} will drop out of the load crew picker, but past payout records stay intact.`
         }
-        confirmLabel={employee.status === "active" ? "Archive" : "Restore"}
-        variant={employee.status === "active" ? "danger" : "primary"}
+        confirmLabel={isArchived ? "Restore" : "Archive"}
+        variant={isArchived ? "primary" : "danger"}
         onConfirm={() => toggleEmployeeArchive(employee.id)}
       />
     </>

@@ -24,6 +24,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ApiError, api } from "@/lib/api/client";
 import { formatMoney } from "@/lib/billing";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import {
   type EmployeePayrollStatus,
   filterLoadsByPeriod,
@@ -71,12 +72,9 @@ function fmtDateTime(iso: string | null) {
 
 export default function EmployeePayrollPage() {
   const { id } = useParams<{ id: string }>();
-  const { employees, loads, customers, productTypes, locations, isLoading } =
-    useAppData();
+  const { employees, loads, customers, productTypes, isLoading } = useAppData();
 
   const employee = employees.find((e) => e.id === id);
-  const locationName =
-    locations.find((l) => l.id === employee?.locationId)?.name ?? "—";
 
   const periods = useMemo(() => getPayPeriods(loads), [loads]);
   const latestPeriod = periods[periods.length - 1] ?? null;
@@ -229,8 +227,8 @@ export default function EmployeePayrollPage() {
   return (
     <>
       <TopBar
-        title={employee.name}
-        description={`${employee.category ? CREW_CATEGORY_LABELS[employee.category] : "Uncategorized"} · ${locationName} · ${formatMoney(employee.hourlyRate)}/hr`}
+        title={getEmployeeDisplayName(employee)}
+        description={`${employee.category ? CREW_CATEGORY_LABELS[employee.category] : "Uncategorized"} · ${employee.employeeId} · ${formatMoney(employee.hourlyRate)}/hr`}
       />
       <main className="flex-1 space-y-4 p-6">
         <Link
@@ -497,7 +495,7 @@ export default function EmployeePayrollPage() {
           open={confirmApprove}
           onClose={() => setConfirmApprove(false)}
           title="Approve Payroll"
-          body={`Approve ${employee.name}'s payroll${selectedPeriod ? ` for ${selectedPeriod.label}` : ""} with a total pay of ${formatMoney(payroll.totalPay)}?`}
+          body={`Approve ${getEmployeeDisplayName(employee)}'s payroll${selectedPeriod ? ` for ${selectedPeriod.label}` : ""} with a total pay of ${formatMoney(payroll.totalPay)}?`}
           confirmLabel="Approve"
           variant="primary"
           onConfirm={handleApprove}
@@ -506,7 +504,7 @@ export default function EmployeePayrollPage() {
         <RecordPaymentDialog
           open={showPaymentDialog}
           onClose={() => setShowPaymentDialog(false)}
-          employeeName={employee.name}
+          employeeName={getEmployeeDisplayName(employee)}
           periodLabel={selectedPeriod?.label ?? ""}
           totalPay={payroll.totalPay}
           periodStartDate={selectedPeriod?.startDate ?? ""}
@@ -517,14 +515,13 @@ export default function EmployeePayrollPage() {
           open={showDocument}
           onClose={() => setShowDocument(false)}
           title="Payroll Report"
-          subtitle={`${employee.name}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
-          fileName={`payroll-${employee.name.toLowerCase().replace(/\s+/g, "-")}`}
+          subtitle={`${getEmployeeDisplayName(employee)}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
+          fileName={`payroll-${getEmployeeDisplayName(employee).toLowerCase().replace(/\s+/g, "-")}`}
           documentNode={
             <PayrollPdfDocument
               title="Payroll Report"
-              subtitle={`${employee.name}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
+              subtitle={`${getEmployeeDisplayName(employee)}${selectedPeriod ? ` · ${selectedPeriod.label}` : ""}`}
               rows={[payroll]}
-              locationName={() => locationName}
             />
           }
         />

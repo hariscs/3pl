@@ -13,6 +13,7 @@ import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { formatMoney } from "@/lib/billing";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import { downloadCsv } from "@/lib/csv";
 import {
   type EmployeePayroll,
@@ -22,11 +23,11 @@ import {
   getPayPeriods,
 } from "@/lib/payroll";
 import { useAppData } from "@/lib/store";
+import { CREW_CATEGORY_KEYS, CREW_CATEGORY_LABELS } from "@/lib/types";
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { employees, loads, customers, productTypes, locations, isLoading } =
-    useAppData();
+  const { employees, loads, customers, productTypes, isLoading } = useAppData();
   const [showDocument, setShowDocument] = useState(false);
   const [printRows, setPrintRows] = useState<EmployeePayroll[]>([]);
 
@@ -37,10 +38,6 @@ export default function PayrollPage() {
   const productTypeName = useCallback(
     (id: string) => productTypes.find((p) => p.id === id)?.name ?? "—",
     [productTypes],
-  );
-  const locationName = useCallback(
-    (id: string) => locations.find((l) => l.id === id)?.name ?? "—",
-    [locations],
   );
 
   const periods = useMemo(() => getPayPeriods(loads), [loads]);
@@ -89,45 +86,37 @@ export default function PayrollPage() {
       {
         key: "name",
         header: "Employee",
-        accessor: (p) => p.employee.name,
+        accessor: (p) => getEmployeeDisplayName(p.employee),
         render: (p) => (
           <Link
             href={`/finance/payroll/${p.employee.id}`}
             className="font-medium text-ink hover:text-rust"
             onClick={(e) => e.stopPropagation()}
           >
-            {p.employee.name}
+            {getEmployeeDisplayName(p.employee)}
           </Link>
         ),
       },
       {
         key: "category",
         header: "Category",
-        accessor: (p) => p.employee.category ?? "—",
+        accessor: (p) =>
+          p.employee.category ? CREW_CATEGORY_LABELS[p.employee.category] : "—",
         filter: "select",
-        filterOptions: [
-          ...new Set(
-            employees
-              .filter((e) => e.category)
-              .map((e) => e.category as string),
-          ),
-        ],
+        filterOptions: CREW_CATEGORY_KEYS.map((k) => CREW_CATEGORY_LABELS[k]),
         render: (p) =>
           p.employee.category ? (
             <StatusPill tone="muted">
-              {p.employee.category.charAt(0).toUpperCase() +
-                p.employee.category.slice(1)}
+              {CREW_CATEGORY_LABELS[p.employee.category]}
             </StatusPill>
           ) : (
             <span className="text-steel-light">—</span>
           ),
       },
       {
-        key: "location",
-        header: "Location",
-        accessor: (p) => locationName(p.employee.locationId),
-        filter: "select",
-        filterOptions: locations.map((l) => l.name),
+        key: "employeeId",
+        header: "Employee ID",
+        accessor: (p) => p.employee.employeeId,
       },
       {
         key: "loads",
@@ -178,7 +167,7 @@ export default function PayrollPage() {
         ),
       },
     ],
-    [employees, locations, locationName],
+    [],
   );
 
   if (isLoading) {
@@ -305,7 +294,6 @@ export default function PayrollPage() {
             title="Payroll Report"
             subtitle={selectedPeriod?.label}
             rows={printRows.length > 0 ? printRows : payroll}
-            locationName={locationName}
           />
         }
       />

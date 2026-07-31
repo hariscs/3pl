@@ -1,4 +1,15 @@
-export type Role = "admin" | "lead" | "customer";
+// Admin/Finance: unrestricted (all locations, no selection needed).
+// Manager/Lead: scoped to one or more selected locations.
+// Customer: scoped via `customerId`, not location.
+// Employee: no permanent location at all — that comes from Clock-In/Shift
+// data later, not from the User account.
+export type Role =
+  | "admin"
+  | "manager"
+  | "lead"
+  | "finance"
+  | "customer"
+  | "employee";
 
 export type RecordStatus = "active" | "archived";
 
@@ -18,13 +29,28 @@ export type Location = {
   shiftEnd: string;
 };
 
+// A User Account represents system access (authentication/authorization)
+// only — it is a separate entity from a Crew Member (the worker record).
+// A Crew Member may exist with no User Account, and a User Account may
+// exist with no linked Crew Member. Only "employee"-role accounts link to
+// one, via `linkedCrewMemberId`. Do not duplicate Crew fields here (skills,
+// certifications, pay, photo, etc. all live on Employee, not SystemUser).
 export type SystemUser = {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: Role;
-  locationId: string;
   status: RecordStatus;
+  /** Meaningful only for "manager"/"lead" — ignored (and should be empty)
+   * for every other role. Empty for "admin"/"finance" means unrestricted,
+   * not "no access". */
+  locationIds: string[];
+  /** Meaningful only for "customer" — optional even then. */
+  customerId?: string;
+  /** Meaningful only for "employee" — required for that role. References
+   * Employee.id (the Crew Member's internal id, not its employeeId code). */
+  linkedCrewMemberId?: string;
 };
 
 export type Customer = {
@@ -38,8 +64,8 @@ export type Customer = {
   status: RecordStatus;
 };
 
-// Crew (Employee) category — fixed set. Mirrors api/src/schemas/domain.ts
-// (CREW_CATEGORY_KEYS). Stored as the key; labelled here for the UI.
+// Crew (Employee) primary job category — fixed set. Distinct from Skills:
+// a crew member has exactly one primary category but any number of skills.
 export const CREW_CATEGORY_LABELS = {
   labour: "Labour",
   operator: "Operator",
@@ -55,16 +81,98 @@ export const CREW_CATEGORY_KEYS = Object.keys(
   CREW_CATEGORY_LABELS,
 ) as CrewCategory[];
 
+// Employment status is its own type (not the shared RecordStatus) because it
+// has a third value, "inactive", reachable only through ordinary editing —
+// never through the Archive/Restore action, which only ever toggles between
+// "active" and "archived".
+export type EmploymentStatus = "active" | "inactive" | "archived";
+
+export const EMPLOYMENT_TYPE_LABELS = {
+  full_time: "Full Time",
+  part_time: "Part Time",
+  temporary: "Temporary",
+  contract: "Contract",
+} as const;
+export type EmploymentType = keyof typeof EMPLOYMENT_TYPE_LABELS;
+export const EMPLOYMENT_TYPE_KEYS = Object.keys(
+  EMPLOYMENT_TYPE_LABELS,
+) as EmploymentType[];
+
+export const PAY_TYPE_LABELS = {
+  hourly: "Hourly",
+  production: "Production",
+  hybrid: "Hybrid",
+} as const;
+export type PayType = keyof typeof PAY_TYPE_LABELS;
+export const PAY_TYPE_KEYS = Object.keys(PAY_TYPE_LABELS) as PayType[];
+
+export type EmployeeAddress = {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+};
+
+export type EmergencyContact = {
+  name?: string;
+  phone?: string;
+  relationship?: string;
+};
+
+/** A crew member's certification record. Status is always derived from
+ * `expiresAt` (see getCertificationStatus in lib/crew.ts) — never stored. */
+export type CrewCertification = {
+  id: string;
+  certificationTypeId: string;
+  certificateNumber?: string;
+  issuingAuthority?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  notes?: string;
+};
+
+export type CrewTrainingRecord = {
+  id: string;
+  trainingTypeId: string;
+  completedAt: string;
+  expiresAt?: string;
+  provider?: string;
+  notes?: string;
+};
+
 export type Employee = {
   id: string;
-  name: string;
-  email: string;
+  /** Human-facing code (e.g. "EMP-1024"), distinct from the internal `id`. */
+  employeeId: string;
+
+  firstName: string;
+  lastName: string;
+  preferredName?: string;
+
+  profilePhotoUrl?: string;
+
   phone: string;
-  address: string;
-  hourlyRate: number;
+  email?: string;
+
+  address?: EmployeeAddress;
+  emergencyContact?: EmergencyContact;
+
+  employmentStatus: EmploymentStatus;
+  hireDate?: string;
+  employmentType?: EmploymentType;
+  /** Primary job category on the floor — one value. See skillIds for the
+   * (separate) set of a crew member's capabilities. */
   category: CrewCategory | null;
-  locationId: string;
-  status: RecordStatus;
+  notes?: string;
+
+  payType: PayType;
+  hourlyRate: number;
+  productionPayEligible: boolean;
+
+  skillIds: string[];
+  certifications: CrewCertification[];
+  trainingRecords: CrewTrainingRecord[];
 };
 
 /** One configurable unit of measure inside a product type's rate card. */

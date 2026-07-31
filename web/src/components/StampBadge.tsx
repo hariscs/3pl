@@ -1,9 +1,10 @@
-import type { LoadStatus, RecordStatus } from "@/lib/types";
+import type { EmploymentStatus, LoadStatus, RecordStatus } from "@/lib/types";
 
-type Stampable = RecordStatus | LoadStatus;
+type Stampable = RecordStatus | LoadStatus | EmploymentStatus;
 
 const config: Record<Stampable, { label: string; color: string }> = {
   active: { label: "Active", color: "text-rust" },
+  inactive: { label: "Inactive", color: "text-amber" },
   archived: { label: "Archived", color: "text-steel" },
   complete: { label: "Complete", color: "text-freight" },
   void: { label: "Void", color: "text-stamp" },

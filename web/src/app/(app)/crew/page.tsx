@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { formatMoney } from "@/lib/billing";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import { useAppData } from "@/lib/store";
 import {
   CREW_CATEGORY_KEYS,
@@ -19,25 +20,31 @@ import {
 } from "@/lib/types";
 
 export default function EmployeesPage() {
-  const { employees, locations, toggleEmployeeArchive } = useAppData();
+  const { employees, toggleEmployeeArchive } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
     archiving: boolean;
   } | null>(null);
 
-  const locationName = (id: string) =>
-    locations.find((l) => l.id === id)?.name ?? "—";
-
   const columns: Column<Employee>[] = [
-    { key: "name", header: "Name", accessor: (e) => e.name },
+    {
+      key: "name",
+      header: "Name",
+      accessor: (e) => getEmployeeDisplayName(e),
+    },
+    {
+      key: "employeeId",
+      header: "Employee ID",
+      accessor: (e) => e.employeeId,
+    },
     {
       key: "contact",
       header: "Contact",
-      accessor: (e) => `${e.email} ${e.phone}`,
+      accessor: (e) => `${e.email ?? ""} ${e.phone}`,
       render: (e) => (
         <>
-          {e.email}
+          {e.email ?? <span className="text-steel-light">—</span>}
           <br />
           <span className="text-xs text-steel">{e.phone}</span>
         </>
@@ -59,13 +66,6 @@ export default function EmployeesPage() {
         ),
     },
     {
-      key: "location",
-      header: "Location",
-      accessor: (e) => locationName(e.locationId),
-      filter: "select",
-      filterOptions: locations.map((l) => l.name),
-    },
-    {
       key: "hourlyRate",
       header: "Hourly Rate",
       accessor: (e) => e.hourlyRate,
@@ -73,12 +73,12 @@ export default function EmployeesPage() {
       render: (e) => formatMoney(e.hourlyRate),
     },
     {
-      key: "status",
+      key: "employmentStatus",
       header: "Status",
-      accessor: (e) => e.status,
+      accessor: (e) => e.employmentStatus,
       filter: "select",
-      filterOptions: ["active", "archived"],
-      render: (e) => <StampBadge status={e.status} />,
+      filterOptions: ["active", "inactive", "archived"],
+      render: (e) => <StampBadge status={e.employmentStatus} />,
     },
     {
       key: "actions",
@@ -87,25 +87,28 @@ export default function EmployeesPage() {
       filterable: false,
       sortable: false,
       align: "right",
-      render: (e) => (
-        <div className="flex justify-end gap-2">
-          <Link href={`/crew/${e.id}`}>
-            <Button variant="secondary">Edit</Button>
-          </Link>
-          <Button
-            variant={e.status === "active" ? "danger" : "secondary"}
-            onClick={() =>
-              setPending({
-                id: e.id,
-                name: e.name,
-                archiving: e.status === "active",
-              })
-            }
-          >
-            {e.status === "active" ? "Archive" : "Restore"}
-          </Button>
-        </div>
-      ),
+      render: (e) => {
+        const isArchived = e.employmentStatus === "archived";
+        return (
+          <div className="flex justify-end gap-2">
+            <Link href={`/crew/${e.id}`}>
+              <Button variant="secondary">Edit</Button>
+            </Link>
+            <Button
+              variant={isArchived ? "secondary" : "danger"}
+              onClick={() =>
+                setPending({
+                  id: e.id,
+                  name: getEmployeeDisplayName(e),
+                  archiving: !isArchived,
+                })
+              }
+            >
+              {isArchived ? "Restore" : "Archive"}
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -127,7 +130,7 @@ export default function EmployeesPage() {
               columns={columns}
               rows={employees}
               getRowKey={(e) => e.id}
-              defaultFilterKeys={["status"]}
+              defaultFilterKeys={["employmentStatus"]}
             />
           </Card>
         </main>

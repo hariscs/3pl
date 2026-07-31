@@ -48,15 +48,8 @@ const QUICK_ACTIONS: Array<{
 ];
 
 export default function DashboardPage() {
-  const {
-    loads,
-    customers,
-    employees,
-    currentLocationId,
-    locations,
-    role,
-    isLoading,
-  } = useAppData();
+  const { loads, customers, currentLocationId, locations, role, isLoading } =
+    useAppData();
 
   const locationLoads = loads.filter(
     (l) =>
@@ -68,9 +61,6 @@ export default function DashboardPage() {
   const completed = locationLoads.filter((l) => l.status === "complete");
   const activeCustomers = customers.filter(
     (c) => c.status === "active" && c.locationIds.includes(currentLocationId),
-  );
-  const crew = employees.filter(
-    (e) => e.status === "active" && e.locationId === currentLocationId,
   );
   const location = locations.find((l) => l.id === currentLocationId);
   const locationName = location?.name ?? "";
@@ -102,7 +92,6 @@ export default function DashboardPage() {
   const stats = [
     { label: "Active loads", value: activeLoads.length },
     { label: "Completed", value: completed.length },
-    { label: "Crew on site", value: crew.length },
     { label: "Customers", value: activeCustomers.length },
   ];
 

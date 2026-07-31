@@ -1,10 +1,11 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/lib/store";
+import { getUserDisplayName } from "@/lib/users";
 
 const NAV = [
   {
@@ -137,7 +138,9 @@ export function Sidebar() {
           Signed in as
         </p>
         <p className="text-sm font-medium text-cream">
-          {user ? `${user.name} · ${capitalize(user.role)}` : "—"}
+          {user
+            ? `${getUserDisplayName(user)} · ${capitalize(user.role)}`
+            : "—"}
         </p>
         <button
           type="button"

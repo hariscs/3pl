@@ -186,6 +186,19 @@ body {
   background-position: center;
 }
 
+/* Hides the browser's native up/down spinner on number inputs — its styling
+   can't be themed consistently across browsers, so numeric fields render as
+   a plain text-style input instead. */
+.input-no-spinner {
+  -moz-appearance: textfield;
+}
+
+.input-no-spinner::-webkit-outer-spin-button,
+.input-no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Clean status pill (formerly a rubber-stamp box). */
 .ink-stamp {
   font-family: var(--font-display), sans-serif;

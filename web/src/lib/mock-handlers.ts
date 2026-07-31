@@ -236,10 +236,20 @@ async function toggleCustomerArchive(path: string) {
 
 async function createEmployee(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<Employee>;
+  if (
+    data.employeeId &&
+    employees.some((e) => e.employeeId === data.employeeId)
+  ) {
+    return jsonResponse(
+      { message: `Employee ID "${data.employeeId}" is already in use.` },
+      409,
+    );
+  }
   const emp = {
     ...(body as Record<string, unknown>),
     id: generateId("emp"),
-    status: "active",
+    employmentStatus: "active",
   } as unknown as Employee;
   employees.push(emp);
   return jsonResponse(emp, 201);
@@ -250,7 +260,17 @@ async function updateEmployee(path: string, body?: unknown) {
   const id = path.split("/")[2];
   const idx = employees.findIndex((e) => e.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  employees[idx] = { ...employees[idx], ...(body as Partial<Employee>) };
+  const data = body as Partial<Employee>;
+  if (
+    data.employeeId &&
+    employees.some((e) => e.employeeId === data.employeeId && e.id !== id)
+  ) {
+    return jsonResponse(
+      { message: `Employee ID "${data.employeeId}" is already in use.` },
+      409,
+    );
+  }
+  employees[idx] = { ...employees[idx], ...data };
   return jsonResponse(employees[idx]);
 }
 
@@ -259,8 +279,10 @@ async function toggleEmployeeArchive(path: string) {
   const id = path.split("/")[2];
   const idx = employees.findIndex((e) => e.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  employees[idx].status =
-    employees[idx].status === "active" ? "archived" : "active";
+  // Only ever toggles between active and archived — "inactive" is reachable
+  // only through ordinary field editing, never through this action.
+  employees[idx].employmentStatus =
+    employees[idx].employmentStatus === "archived" ? "active" : "archived";
   return jsonResponse(employees[idx]);
 }
 
@@ -351,6 +373,13 @@ async function archiveLoad(path: string) {
 
 async function createUser(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<SystemUser>;
+  if (data.email && users.some((u) => u.email === data.email)) {
+    return jsonResponse(
+      { message: `"${data.email}" is already registered.` },
+      409,
+    );
+  }
   const user = {
     ...(body as Record<string, unknown>),
     id: generateId("user"),
@@ -358,6 +387,31 @@ async function createUser(_path: string, body?: unknown) {
   } as unknown as SystemUser;
   users.push(user);
   return jsonResponse(user, 201);
+}
+
+async function updateUser(path: string, body?: unknown) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  const data = body as Partial<SystemUser>;
+  if (data.email && users.some((u) => u.email === data.email && u.id !== id)) {
+    return jsonResponse(
+      { message: `"${data.email}" is already registered.` },
+      409,
+    );
+  }
+  users[idx] = { ...users[idx], ...data };
+  return jsonResponse(users[idx]);
+}
+
+async function toggleUserArchive(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  users[idx].status = users[idx].status === "active" ? "archived" : "active";
+  return jsonResponse(users[idx]);
 }
 
 // ── Route table ───────────────────────────────────────────────────
@@ -414,6 +468,8 @@ const routes: {
   // Users
   exact("GET", "/users", listUsers),
   exact("POST", "/users", createUser),
+  pattern("PATCH", /^\/users\/[^/]+$/, updateUser),
+  pattern("POST", /^\/users\/[^/]+\/toggle-archive$/, toggleUserArchive),
 
   // Invoices
   exact("GET", "/invoices", listInvoices),

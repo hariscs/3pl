@@ -38,11 +38,12 @@ const DEV_MODE = process.env.NODE_ENV === "development";
 
 const DEV_USER: SystemUser = {
   id: "user-dev",
-  name: "David Miller",
+  firstName: "David",
+  lastName: "Miller",
   email: "dev@localhost",
   role: "admin",
-  locationId: "loc-charlotte",
   status: "active",
+  locationIds: [],
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

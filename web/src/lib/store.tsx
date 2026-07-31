@@ -25,7 +25,7 @@ import type {
 
 type NewUser = Omit<SystemUser, "id" | "status"> & { password: string };
 type NewCustomer = Omit<Customer, "id" | "status">;
-type NewEmployee = Omit<Employee, "id" | "status">;
+type NewEmployee = Omit<Employee, "id" | "employmentStatus">;
 type NewProductType = Omit<ProductType, "id" | "status">;
 type NewLoad = Omit<
   Load,
@@ -60,6 +60,8 @@ type AppData = {
   updateLocation: (id: string, input: Partial<Location>) => Promise<void>;
 
   addUser: (input: NewUser) => Promise<void>;
+  updateUser: (id: string, input: Partial<SystemUser>) => Promise<void>;
+  toggleUserArchive: (id: string) => Promise<void>;
 
   addCustomer: (input: NewCustomer) => Promise<void>;
   updateCustomer: (id: string, input: Partial<Customer>) => Promise<void>;
@@ -136,17 +138,75 @@ function customerBody(input: Partial<Customer>) {
 }
 
 function employeeBody(input: Partial<Employee>) {
-  const { name, email, phone, address, hourlyRate, category, locationId } =
-    input;
-  // The API accepts a category key or omits it; it never accepts null.
-  return {
-    name,
-    email,
+  const {
+    employeeId,
+    firstName,
+    lastName,
+    preferredName,
+    profilePhotoUrl,
     phone,
+    email,
     address,
+    emergencyContact,
+    hireDate,
+    employmentType,
+    category,
+    notes,
+    payType,
     hourlyRate,
+    productionPayEligible,
+    skillIds,
+    certifications,
+    trainingRecords,
+  } = input;
+  // The mock API accepts a category key or omits it; it never accepts null.
+  return {
+    employeeId,
+    firstName,
+    lastName,
+    preferredName,
+    profilePhotoUrl,
+    phone,
+    email,
+    address,
+    emergencyContact,
+    hireDate,
+    employmentType,
     category: category ?? undefined,
-    locationId,
+    notes,
+    payType,
+    hourlyRate,
+    productionPayEligible,
+    skillIds,
+    certifications,
+    trainingRecords,
+  };
+}
+
+function userBody(input: Partial<SystemUser> & { password?: string }) {
+  const {
+    firstName,
+    lastName,
+    email,
+    role,
+    locationIds,
+    customerId,
+    linkedCrewMemberId,
+    password,
+  } = input;
+  return {
+    firstName,
+    lastName,
+    email,
+    role,
+    // Only meaningful for the role that owns it — send an empty array/undefined
+    // for the rest rather than whatever stale value the form was last showing.
+    locationIds: locationIds ?? [],
+    customerId: customerId || undefined,
+    linkedCrewMemberId: linkedCrewMemberId || undefined,
+    // Omitted entirely on updates (undefined) so an edit never overwrites the
+    // stored password with a blank value.
+    password: password || undefined,
   };
 }
 
@@ -265,12 +325,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   // Role follows whoever is logged in — no manual switching.
   const role: Role = user?.role ?? "admin";
 
-  // Default the active location to the logged-in user's assigned location,
-  // falling back to the first one once locations load.
+  // Default the active location to the logged-in user's first assigned
+  // location (meaningful for manager/lead), falling back to the first
+  // location overall once locations load — admin/finance are unrestricted
+  // and employee/customer have no location concept, so they all land here.
   useEffect(() => {
     if (!currentLocationId) {
-      if (user?.locationId) {
-        setCurrentLocationId(user.locationId);
+      const assigned = user?.locationIds?.[0];
+      if (assigned) {
+        setCurrentLocationId(assigned);
       } else if (locations.length > 0) {
         setCurrentLocationId(locations[0].id);
       }
@@ -302,9 +365,25 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const addUser = useCallback(
     (input: NewUser) =>
       withToast(async () => {
-        await api.post("/users", input);
+        await api.post("/users", userBody(input));
         await invalidate(keys.users);
       }, "User created."),
+    [invalidate],
+  );
+  const updateUser = useCallback(
+    (id: string, input: Partial<SystemUser>) =>
+      withToast(async () => {
+        await api.patch(`/users/${id}`, userBody(input));
+        await invalidate(keys.users);
+      }, "User saved."),
+    [invalidate],
+  );
+  const toggleUserArchive = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/users/${id}/toggle-archive`);
+        await invalidate(keys.users);
+      }, "User updated."),
     [invalidate],
   );
 
@@ -440,6 +519,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addLocation,
       updateLocation,
       addUser,
+      updateUser,
+      toggleUserArchive,
       addCustomer,
       updateCustomer,
       toggleCustomerArchive,
@@ -467,6 +548,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addLocation,
       updateLocation,
       addUser,
+      updateUser,
+      toggleUserArchive,
       addCustomer,
       updateCustomer,
       toggleCustomerArchive,

@@ -1,4 +1,5 @@
-import type { Employee, Load, ProductType, RateLine } from "./types";
+import { getEmployeeDisplayName } from "./crew";
+import type { Employee, Load, ProductType } from "./types";
 
 export type ReadinessIssue = {
   label: string;
@@ -31,10 +32,10 @@ export function getLoadReadiness(
     const stillClockedIn = load.assignments.filter((a) => !a.clockOut);
     if (stillClockedIn.length > 0) {
       const names = stillClockedIn
-        .map(
-          (a) =>
-            employees.find((e) => e.id === a.employeeId)?.name ?? "Unknown",
-        )
+        .map((a) => {
+          const employee = employees.find((e) => e.id === a.employeeId);
+          return employee ? getEmployeeDisplayName(employee) : "Unknown";
+        })
         .join(", ");
       issues.push({
         label: `${stillClockedIn.length} crew member${stillClockedIn.length > 1 ? "s" : ""} still clocked in: ${names}`,

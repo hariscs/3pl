@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/lib/store";
+import { getUserDisplayName } from "@/lib/users";
 
 export function TopBar({
   title,
@@ -26,7 +27,9 @@ export function TopBar({
       <div className="flex flex-none items-center gap-2.5">
         {user && (
           <div className="flex items-center gap-2 rounded-xl border border-manila-dark bg-cream px-3 py-1.5 shadow-card">
-            <span className="text-sm font-medium text-ink">{user.name}</span>
+            <span className="text-sm font-medium text-ink">
+              {getUserDisplayName(user)}
+            </span>
             <span className="rounded-full bg-rust-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rust">
               {user.role}
             </span>

@@ -27,19 +27,37 @@ export function Field({
 }
 
 const fieldBase =
-  "w-full rounded-xl border border-manila-dark bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-steel-light transition-colors focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20 disabled:cursor-not-allowed disabled:border-manila-dark disabled:bg-paper-dim disabled:text-steel";
+  "w-full rounded-xl border px-3.5 py-2.5 text-sm text-ink placeholder:text-steel-light transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-paper-dim disabled:text-steel disabled:border-manila-dark";
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+const fieldBorder =
+  "border-manila-dark bg-cream focus:border-rust focus:ring-rust/20";
+const fieldBorderInvalid =
+  "border-stamp bg-cream focus:border-stamp focus:ring-stamp/20";
+
+type InvalidProp = { invalid?: boolean };
+
+export function Input({
+  invalid,
+  className = "",
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & InvalidProp) {
   return (
-    <input {...props} className={`${fieldBase} ${props.className ?? ""}`} />
+    <input
+      {...props}
+      className={`${fieldBase} ${invalid ? fieldBorderInvalid : fieldBorder} ${className}`}
+    />
   );
 }
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({
+  invalid,
+  className = "",
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & InvalidProp) {
   return (
     <select
       {...props}
-      className={`${fieldBase} appearance-none bg-size-4 bg-position-[right_14px_center] bg-no-repeat pr-9 ${props.className ?? ""}`}
+      className={`${fieldBase} ${invalid ? fieldBorderInvalid : fieldBorder} appearance-none bg-size-4 bg-position-[right_14px_center] bg-no-repeat pr-9 ${className}`}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
         ...(props.style ?? {}),
@@ -48,10 +66,15 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   );
 }
 
-export function Textarea(
-  props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-) {
+export function Textarea({
+  invalid,
+  className = "",
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & InvalidProp) {
   return (
-    <textarea {...props} className={`${fieldBase} ${props.className ?? ""}`} />
+    <textarea
+      {...props}
+      className={`${fieldBase} ${invalid ? fieldBorderInvalid : fieldBorder} ${className}`}
+    />
   );
 }

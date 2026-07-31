@@ -1,8 +1,10 @@
 "use client";
 
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import { COMPANY_INFO } from "@/lib/invoices";
 import type { EmployeePayroll } from "@/lib/payroll";
+import { CREW_CATEGORY_LABELS } from "@/lib/types";
 
 const styles = StyleSheet.create({
   page: {
@@ -59,7 +61,7 @@ const styles = StyleSheet.create({
   money: { fontWeight: 700 },
   colEmployee: { width: "21%" },
   colCategory: { width: "12%" },
-  colLocation: { width: "14%" },
+  colEmployeeId: { width: "14%" },
   colLoads: { width: "8%", textAlign: "right" },
   colHours: { width: "9%", textAlign: "right" },
   colBase: { width: "9%", textAlign: "right" },
@@ -84,15 +86,9 @@ type Props = {
   title: string;
   subtitle?: string;
   rows: EmployeePayroll[];
-  locationName: (id: string) => string;
 };
 
-export function PayrollPdfDocument({
-  title,
-  subtitle,
-  rows,
-  locationName,
-}: Props) {
+export function PayrollPdfDocument({ title, subtitle, rows }: Props) {
   const totalPay = rows.reduce((s, r) => s + safeNum(r.totalPay), 0);
 
   return (
@@ -118,8 +114,8 @@ export function PayrollPdfDocument({
             <Text style={[styles.tableHeaderCell, styles.colCategory]}>
               Category
             </Text>
-            <Text style={[styles.tableHeaderCell, styles.colLocation]}>
-              Location
+            <Text style={[styles.tableHeaderCell, styles.colEmployeeId]}>
+              Employee ID
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colLoads]}>Loads</Text>
             <Text style={[styles.tableHeaderCell, styles.colHours]}>Hours</Text>
@@ -135,13 +131,15 @@ export function PayrollPdfDocument({
           {rows.map((r) => (
             <View style={styles.tableRow} key={r.employee.id}>
               <Text style={[styles.tableCell, styles.colEmployee]}>
-                {r.employee.name}
+                {getEmployeeDisplayName(r.employee)}
               </Text>
               <Text style={[styles.tableCell, styles.colCategory]}>
-                {r.employee.category ?? "\u2014"}
+                {r.employee.category
+                  ? CREW_CATEGORY_LABELS[r.employee.category]
+                  : "\u2014"}
               </Text>
-              <Text style={[styles.tableCell, styles.colLocation]}>
-                {locationName(r.employee.locationId)}
+              <Text style={[styles.tableCell, styles.colEmployeeId]}>
+                {r.employee.employeeId}
               </Text>
               <Text style={[styles.tableCellRight, styles.colLoads]}>
                 {String(r.entries.length)}

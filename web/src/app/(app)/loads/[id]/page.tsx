@@ -25,7 +25,9 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { getEmployeeDisplayName } from "@/lib/crew";
 import { useAppData } from "@/lib/store";
+import { CREW_CATEGORY_LABELS } from "@/lib/types";
 
 // ── helpers ──
 
@@ -330,11 +332,11 @@ export default function LoadDetailPage() {
   const availableEmployees = useMemo(() => {
     if (!load) return [];
     const assignedIds = new Set(load.assignments.map((a) => a.employeeId));
+    // Crew members are no longer tied to a permanent location — location
+    // will later come from shift/clock-in data, so every active crew member
+    // is a candidate here rather than filtering by a home location.
     return employees.filter(
-      (e) =>
-        e.status === "active" &&
-        e.locationId === load.locationId &&
-        !assignedIds.has(e.id),
+      (e) => e.employmentStatus === "active" && !assignedIds.has(e.id),
     );
   }, [employees, load]);
 
@@ -727,17 +729,16 @@ export default function LoadDetailPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="truncate text-sm font-medium text-ink">
-                          {emp?.name ?? "Unknown"}
+                          {emp ? getEmployeeDisplayName(emp) : "Unknown"}
                         </p>
                         {emp?.category && (
                           <StatusPill tone="muted">
-                            {emp.category.charAt(0).toUpperCase() +
-                              emp.category.slice(1)}
+                            {CREW_CATEGORY_LABELS[emp.category]}
                           </StatusPill>
                         )}
                       </div>
                       <p className="mt-0.5 text-xs text-steel">
-                        ID: {emp?.id ?? "—"}
+                        ID: {emp?.employeeId ?? "—"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-xs">
@@ -777,7 +778,7 @@ export default function LoadDetailPage() {
                 </option>
                 {availableEmployees.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.name}
+                    {getEmployeeDisplayName(e)}
                   </option>
                 ))}
               </Select>
