@@ -206,7 +206,7 @@ export default function CustomerBillingPage() {
       },
       {
         key: "productTypeName",
-        header: "Product Type",
+        header: "Work Type",
         accessor: (r) => r.productTypeName,
       },
       {
@@ -408,7 +408,7 @@ export default function CustomerBillingPage() {
                 <p className="text-steel">{sidekickLocationName}</p>
               </div>
               <div>
-                <span className="text-xs text-steel">Product Type</span>
+                <span className="text-xs text-steel">Work Type</span>
                 <p className="text-steel">{sidekickProductTypeName}</p>
               </div>
               <div>
@@ -477,12 +477,21 @@ export default function CustomerBillingPage() {
           customers.find((c) => c.id === selectedRows[0]?.customerId) ?? {
             id: "",
             displayName: "",
-            contactName: "",
-            email: "",
-            phone: "",
-            legalCompanyName: "",
-            locationIds: [],
+            code: null,
+            legalCompanyName: null,
             status: "active" as const,
+            industry: null,
+            website: null,
+            taxId: null,
+            contactName: "",
+            contactTitle: null,
+            email: "",
+            phone: null,
+            billingEmail: null,
+            paymentTerms: null,
+            notes: null,
+            createdAt: "",
+            updatedAt: "",
           }
         }
         onSuccess={() => {

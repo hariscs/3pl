@@ -15,15 +15,15 @@ export default function NewCustomerPage() {
     <>
       <TopBar
         title="New customer"
-        description="Create the billing entity first — locations and product types attach to it next."
+        description="Create the billing entity first — locations and work types attach to it next."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
           <Card title="Customer details">
             <CustomerForm
               submitLabel="Create customer"
-              onSubmit={(values) => {
-                addCustomer(values);
+              onSubmit={async (values) => {
+                await addCustomer(values);
                 router.push("/customers");
               }}
             />

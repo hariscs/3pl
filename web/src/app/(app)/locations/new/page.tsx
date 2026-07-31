@@ -15,15 +15,15 @@ export default function NewLocationPage() {
     <>
       <TopBar
         title="New location"
-        description="Add a warehouse site your crews can check into."
+        description="Add an operational work site your crews can check into."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
           <Card title="Location details">
             <LocationForm
               submitLabel="Create location"
-              onSubmit={(values) => {
-                addLocation(values);
+              onSubmit={async (values) => {
+                await addLocation(values);
                 router.push("/locations");
               }}
             />

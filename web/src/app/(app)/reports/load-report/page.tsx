@@ -111,7 +111,7 @@ export default function LoadReportPage() {
       },
       {
         key: "productTypeName",
-        header: "Product Type",
+        header: "Work Type",
         accessor: (r) => r.productTypeName,
         filter: "select",
       },

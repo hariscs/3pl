@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
@@ -14,7 +15,8 @@ import { useAppData } from "@/lib/store";
 export default function EditCustomerPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { customers, updateCustomer, toggleCustomerArchive } = useAppData();
+  const { customers, locations, updateCustomer, toggleCustomerArchive } =
+    useAppData();
   const [confirmArchive, setConfirmArchive] = useState(false);
 
   const customer = customers.find((c) => c.id === id);
@@ -32,6 +34,9 @@ export default function EditCustomerPage() {
     );
   }
 
+  const archiving = customer.status !== "archived";
+  const linkedLocations = locations.filter((l) => l.customerId === customer.id);
+
   return (
     <>
       <TopBar
@@ -46,31 +51,69 @@ export default function EditCustomerPage() {
               <div className="flex items-center gap-3">
                 <StampBadge status={customer.status} />
                 <Button
-                  variant={
-                    customer.status === "active" ? "danger" : "secondary"
-                  }
+                  variant={archiving ? "danger" : "secondary"}
                   onClick={() => setConfirmArchive(true)}
                 >
-                  {customer.status === "active" ? "Archive" : "Restore"}
+                  {archiving ? "Archive" : "Restore"}
                 </Button>
               </div>
             }
           >
             <CustomerForm
+              key={customer.status}
+              customerRecordId={customer.id}
               initial={{
+                displayName: customer.displayName,
+                code: customer.code,
+                legalCompanyName: customer.legalCompanyName,
+                status: customer.status,
+                industry: customer.industry,
+                website: customer.website,
+                taxId: customer.taxId,
                 contactName: customer.contactName,
+                contactTitle: customer.contactTitle,
                 email: customer.email,
                 phone: customer.phone,
-                displayName: customer.displayName,
-                legalCompanyName: customer.legalCompanyName,
-                locationIds: customer.locationIds,
+                billingEmail: customer.billingEmail,
+                paymentTerms: customer.paymentTerms,
+                notes: customer.notes,
               }}
               submitLabel="Save changes"
-              onSubmit={(values) => {
-                updateCustomer(customer.id, values);
+              onSubmit={async (values) => {
+                await updateCustomer(customer.id, values);
                 router.push("/customers");
               }}
             />
+          </Card>
+
+          <Card title="Locations">
+            {linkedLocations.length > 0 ? (
+              <ul className="divide-y divide-manila-dark">
+                {linkedLocations.map((l) => (
+                  <li
+                    key={l.id}
+                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                  >
+                    <div className="min-w-0">
+                      <Link
+                        href={`/locations/${l.id}`}
+                        className="text-sm font-medium text-ink hover:text-rust"
+                      >
+                        {l.name}
+                      </Link>
+                      <p className="truncate text-xs text-steel">
+                        {[l.city, l.state].filter(Boolean).join(", ") || "—"}
+                      </p>
+                    </div>
+                    <StampBadge status={l.status} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-steel">
+                No locations linked to this customer yet.
+              </p>
+            )}
           </Card>
         </main>
       </AdminOnly>
@@ -78,16 +121,14 @@ export default function EditCustomerPage() {
       <ConfirmDialog
         open={confirmArchive}
         onClose={() => setConfirmArchive(false)}
-        title={
-          customer.status === "active" ? "Archive customer" : "Restore customer"
-        }
+        title={archiving ? "Archive customer" : "Restore customer"}
         body={
-          customer.status === "active"
+          archiving
             ? `${customer.displayName} will be hidden from active pickers, but every past load and invoice stays in your reports.`
             : `${customer.displayName} will reappear in customer pickers across the app.`
         }
-        confirmLabel={customer.status === "active" ? "Archive" : "Restore"}
-        variant={customer.status === "active" ? "danger" : "primary"}
+        confirmLabel={archiving ? "Archive" : "Restore"}
+        variant={archiving ? "danger" : "primary"}
         onConfirm={() => toggleCustomerArchive(customer.id)}
       />
     </>

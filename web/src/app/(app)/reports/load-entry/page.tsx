@@ -56,7 +56,7 @@ export default function LoadEntryReportPage() {
     },
     {
       key: "product",
-      header: "Product Type",
+      header: "Work Type",
       accessor: (r) => r.productTypeName,
     },
     { key: "employees", header: "Employees", accessor: (r) => r.employeeCount },

@@ -13,20 +13,46 @@ export type Role =
 
 export type RecordStatus = "active" | "archived";
 
+export type LocationStatus = "active" | "inactive" | "archived";
+
+export type LocationSiteContact = {
+  name?: string;
+  phone?: string;
+  email?: string;
+};
+
+// A Location is an operational work site (warehouse, distribution center,
+// customer facility, plant, job site) where crews check in, supervisors
+// manage crews, and loads are created — not just an address. Every Location
+// belongs to exactly one Customer via `customerId`; a Customer may have many
+// Locations. Crew Members are never permanently assigned to a Location — that
+// is resolved later, per shift, through Clock-In (not built yet). A User
+// account's location access (manager/lead) lives on SystemUser.locationIds,
+// not here.
 export type Location = {
   id: string;
   name: string;
+  customerId: string;
   region: string;
   code: string | null;
   group: string | null;
+
   addressL1: string | null;
   city: string | null;
   state: string | null;
   postalCode: string | null;
+  country: string | null;
+
   timezone: string;
-  status: string;
+  notes?: string;
+  siteContact?: LocationSiteContact;
+
+  status: LocationStatus;
   shiftStart: string;
   shiftEnd: string;
+
+  createdAt: string;
+  updatedAt: string;
 };
 
 // A User Account represents system access (authentication/authorization)
@@ -53,15 +79,48 @@ export type SystemUser = {
   linkedCrewMemberId?: string;
 };
 
+export type CustomerStatus = "active" | "inactive" | "archived";
+
+export const PAYMENT_TERMS_LABELS = {
+  due_on_receipt: "Due on Receipt",
+  net_7: "Net 7",
+  net_15: "Net 15",
+  net_30: "Net 30",
+  net_45: "Net 45",
+} as const;
+export type PaymentTerms = keyof typeof PAYMENT_TERMS_LABELS;
+export const PAYMENT_TERMS_KEYS = Object.keys(
+  PAYMENT_TERMS_LABELS,
+) as PaymentTerms[];
+
+// A Customer is the business entity that hires our staffing services (e.g.
+// Amazon, Geodis, DHL) — distinct from the operational sites it owns. One
+// Customer may have many Locations via Location.customerId; do not add a
+// locationIds array back here, or the relationship would be duplicated in
+// two directions. Billing/invoicing modules will consume billingEmail and
+// paymentTerms later — this model only stores them for now.
 export type Customer = {
   id: string;
-  contactName: string;
-  email: string;
-  phone: string;
   displayName: string;
-  legalCompanyName: string;
-  locationIds: string[];
-  status: RecordStatus;
+  code: string | null;
+  legalCompanyName: string | null;
+  status: CustomerStatus;
+
+  industry: string | null;
+  website: string | null;
+  taxId: string | null;
+
+  contactName: string;
+  contactTitle: string | null;
+  email: string;
+  phone: string | null;
+
+  billingEmail: string | null;
+  paymentTerms: PaymentTerms | null;
+  notes: string | null;
+
+  createdAt: string;
+  updatedAt: string;
 };
 
 // Crew (Employee) primary job category — fixed set. Distinct from Skills:
@@ -175,25 +234,56 @@ export type Employee = {
   trainingRecords: CrewTrainingRecord[];
 };
 
-/** One configurable unit of measure inside a product type's rate card. */
-export type RateLine = {
-  id: string;
-  unit: string;
-  billBase: number;
-  billThreshold: number;
-  billOverRate: number;
-  payThreshold: number;
-  payOverRate: number;
-  payBonus: number;
-};
+export const UNIT_OF_MEASURE_LABELS = {
+  container: "Container",
+  case: "Case",
+  piece: "Piece",
+  pallet: "Pallet",
+  pound: "Pound",
+  kilogram: "Kilogram",
+  ton: "Ton",
+  hour: "Hour",
+} as const;
+export type UnitOfMeasure = keyof typeof UNIT_OF_MEASURE_LABELS;
+export const UNIT_OF_MEASURE_KEYS = Object.keys(
+  UNIT_OF_MEASURE_LABELS,
+) as UnitOfMeasure[];
 
+export const WORK_TYPE_PAY_TYPE_LABELS = {
+  hourly: "Hourly",
+  production: "Production",
+} as const;
+export type WorkTypePayType = keyof typeof WORK_TYPE_PAY_TYPE_LABELS;
+
+export type ProductTypeStatus = "active" | "inactive" | "archived";
+
+// Internally named ProductType (and routed at /product-types) for
+// compatibility with existing code — the UI presents this domain as
+// "Work Type" throughout, since the business sells labor services, not
+// inventory. A Work Type belongs to exactly one Customer (never a global
+// catalog, never scoped to a Location — different customers may have
+// similarly-named work types with different rates). Selecting a Work Type
+// on a Load is meant to supply its Unit of Measure, Employee Pay, and
+// Customer Billing configuration automatically — this model only stores
+// that configuration; it does not calculate anything.
 export type ProductType = {
   id: string;
   customerId: string;
-  locationId: string;
   name: string;
-  rateLines: RateLine[];
-  status: RecordStatus;
+  code: string | null;
+  status: ProductTypeStatus;
+
+  unitOfMeasure: UnitOfMeasure;
+  notes: string | null;
+
+  employeePayType: WorkTypePayType;
+  employeePayRate: number;
+
+  customerBillingType: WorkTypePayType;
+  customerBillingRate: number;
+
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type LoadStatus = "active" | "complete" | "void" | "archived";

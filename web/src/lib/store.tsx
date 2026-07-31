@@ -18,15 +18,14 @@ import type {
   Load,
   Location,
   ProductType,
-  RateLine,
   Role,
   SystemUser,
 } from "./types";
 
 type NewUser = Omit<SystemUser, "id" | "status"> & { password: string };
-type NewCustomer = Omit<Customer, "id" | "status">;
+type NewCustomer = Omit<Customer, "id" | "createdAt" | "updatedAt">;
 type NewEmployee = Omit<Employee, "id" | "employmentStatus">;
-type NewProductType = Omit<ProductType, "id" | "status">;
+type NewProductType = Omit<ProductType, "id" | "createdAt" | "updatedAt">;
 type NewLoad = Omit<
   Load,
   | "id"
@@ -38,7 +37,7 @@ type NewLoad = Omit<
   | "trailerNumber"
   | "sealNumber"
 >;
-type NewLocation = Omit<Location, "id">;
+type NewLocation = Omit<Location, "id" | "createdAt" | "updatedAt">;
 
 type AppData = {
   locations: Location[];
@@ -58,6 +57,7 @@ type AppData = {
 
   addLocation: (input: NewLocation) => Promise<void>;
   updateLocation: (id: string, input: Partial<Location>) => Promise<void>;
+  toggleLocationArchive: (id: string) => Promise<void>;
 
   addUser: (input: NewUser) => Promise<void>;
   updateUser: (id: string, input: Partial<SystemUser>) => Promise<void>;
@@ -94,16 +94,13 @@ const keys = {
 
 // --- request body shaping (only send fields the API accepts) ---
 
-function stripRateLineIds(rateLines: RateLine[]): Omit<RateLine, "id">[] {
-  return rateLines.map(({ id: _id, ...rest }) => rest);
-}
-
 function locationBody(input: Partial<Location>) {
   // Empty/blank optional fields are omitted (undefined) rather than sent as ""
   // — the API's optional fields don't accept null, and code is unique.
   const clean = (v: string | null | undefined) => v || undefined;
   return {
     name: input.name,
+    customerId: input.customerId,
     region: input.region,
     code: clean(input.code),
     group: clean(input.group),
@@ -111,29 +108,35 @@ function locationBody(input: Partial<Location>) {
     city: clean(input.city),
     state: clean(input.state),
     postalCode: clean(input.postalCode),
+    country: clean(input.country),
     timezone: clean(input.timezone),
-    status: clean(input.status),
+    notes: clean(input.notes),
+    siteContact: input.siteContact,
+    status: input.status,
     shiftStart: clean(input.shiftStart),
     shiftEnd: clean(input.shiftEnd),
   };
 }
 
 function customerBody(input: Partial<Customer>) {
-  const {
-    contactName,
-    email,
-    phone,
-    displayName,
-    legalCompanyName,
-    locationIds,
-  } = input;
+  // Empty/blank optional fields are omitted (undefined) rather than sent as ""
+  // — the API's optional fields don't accept null.
+  const clean = (v: string | null | undefined) => v || undefined;
   return {
-    contactName,
-    email,
-    phone,
-    displayName,
-    legalCompanyName,
-    locationIds,
+    displayName: input.displayName,
+    code: clean(input.code),
+    legalCompanyName: clean(input.legalCompanyName),
+    status: input.status,
+    industry: clean(input.industry),
+    website: clean(input.website),
+    taxId: clean(input.taxId),
+    contactName: input.contactName,
+    contactTitle: clean(input.contactTitle),
+    email: input.email,
+    phone: clean(input.phone),
+    billingEmail: clean(input.billingEmail),
+    paymentTerms: input.paymentTerms ?? undefined,
+    notes: clean(input.notes),
   };
 }
 
@@ -211,12 +214,18 @@ function userBody(input: Partial<SystemUser> & { password?: string }) {
 }
 
 function productTypeBody(input: Partial<ProductType>) {
-  const { customerId, locationId, name, rateLines } = input;
+  const clean = (v: string | null | undefined) => v || undefined;
   return {
-    customerId,
-    locationId,
-    name,
-    rateLines: rateLines ? stripRateLineIds(rateLines) : undefined,
+    customerId: input.customerId,
+    name: input.name,
+    code: clean(input.code),
+    status: input.status,
+    unitOfMeasure: input.unitOfMeasure,
+    notes: clean(input.notes),
+    employeePayType: input.employeePayType,
+    employeePayRate: input.employeePayRate,
+    customerBillingType: input.customerBillingType,
+    customerBillingRate: input.customerBillingRate,
   };
 }
 
@@ -361,6 +370,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }, "Location saved."),
     [invalidate],
   );
+  const toggleLocationArchive = useCallback(
+    (id: string) =>
+      withToast(async () => {
+        await api.post(`/locations/${id}/toggle-archive`);
+        await invalidate(keys.locations);
+      }, "Location updated."),
+    [invalidate],
+  );
 
   const addUser = useCallback(
     (input: NewUser) =>
@@ -442,7 +459,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/product-types", productTypeBody(input));
         await invalidate(keys.productTypes);
-      }, "Product type created."),
+      }, "Work type created."),
     [invalidate],
   );
   const updateProductType = useCallback(
@@ -450,7 +467,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/product-types/${id}`, productTypeBody(input));
         await invalidate(keys.productTypes);
-      }, "Product type saved."),
+      }, "Work type saved."),
     [invalidate],
   );
   const toggleProductTypeArchive = useCallback(
@@ -458,7 +475,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post(`/product-types/${id}/toggle-archive`);
         await invalidate(keys.productTypes);
-      }, "Product type updated."),
+      }, "Work type updated."),
     [invalidate],
   );
 
@@ -518,6 +535,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       role,
       addLocation,
       updateLocation,
+      toggleLocationArchive,
       addUser,
       updateUser,
       toggleUserArchive,
@@ -547,6 +565,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       role,
       addLocation,
       updateLocation,
+      toggleLocationArchive,
       addUser,
       updateUser,
       toggleUserArchive,

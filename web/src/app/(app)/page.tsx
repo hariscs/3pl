@@ -59,10 +59,10 @@ export default function DashboardPage() {
   );
   const activeLoads = locationLoads.filter((l) => l.status === "active");
   const completed = locationLoads.filter((l) => l.status === "complete");
-  const activeCustomers = customers.filter(
-    (c) => c.status === "active" && c.locationIds.includes(currentLocationId),
-  );
   const location = locations.find((l) => l.id === currentLocationId);
+  const activeCustomers = customers.filter(
+    (c) => c.status === "active" && c.id === location?.customerId,
+  );
   const locationName = location?.name ?? "";
 
   // Bucket loads into day series (last 7 days present) for the charts.

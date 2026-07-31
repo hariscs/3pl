@@ -185,11 +185,40 @@ async function listUsers() {
 
 // ── POST / PATCH handlers ─────────────────────────────────────────
 
+/** True if another active location for the same customer already uses this name. */
+function isDuplicateActiveLocation(
+  data: Partial<Location>,
+  excludeId?: string,
+): boolean {
+  const name = data.name?.trim().toLowerCase();
+  if (!name || !data.customerId) return false;
+  return locations.some(
+    (l) =>
+      l.id !== excludeId &&
+      l.status !== "archived" &&
+      l.customerId === data.customerId &&
+      l.name.trim().toLowerCase() === name,
+  );
+}
+
 async function createLocation(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<Location>;
+  if (isDuplicateActiveLocation(data)) {
+    return jsonResponse(
+      {
+        message: `"${data.name}" already exists for this customer.`,
+        code: "DUPLICATE_LOCATION_NAME",
+      },
+      409,
+    );
+  }
+  const now = new Date().toISOString();
   const loc = {
     ...(body as Record<string, unknown>),
     id: generateId("loc"),
+    createdAt: now,
+    updatedAt: now,
   } as unknown as Location;
   locations.push(loc);
   return jsonResponse(loc, 201);
@@ -200,16 +229,70 @@ async function updateLocation(path: string, body?: unknown) {
   const id = path.split("/")[2];
   const idx = locations.findIndex((l) => l.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  locations[idx] = { ...locations[idx], ...(body as Partial<Location>) };
+  const data = body as Partial<Location>;
+  if (isDuplicateActiveLocation({ ...locations[idx], ...data }, id)) {
+    return jsonResponse(
+      {
+        message: `"${data.name ?? locations[idx].name}" already exists for this customer.`,
+        code: "DUPLICATE_LOCATION_NAME",
+      },
+      409,
+    );
+  }
+  locations[idx] = {
+    ...locations[idx],
+    ...data,
+    updatedAt: new Date().toISOString(),
+  };
   return jsonResponse(locations[idx]);
+}
+
+async function toggleLocationArchive(path: string) {
+  await delay();
+  const id = path.split("/")[2];
+  const idx = locations.findIndex((l) => l.id === id);
+  if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  // Only ever toggles between active and archived — "inactive" is reachable
+  // only through ordinary field editing, never through this action.
+  locations[idx].status =
+    locations[idx].status === "archived" ? "active" : "archived";
+  locations[idx].updatedAt = new Date().toISOString();
+  return jsonResponse(locations[idx]);
+}
+
+/** True if another active customer already uses this display name. */
+function isDuplicateActiveCustomerName(
+  data: Partial<Customer>,
+  excludeId?: string,
+): boolean {
+  const name = data.displayName?.trim().toLowerCase();
+  if (!name) return false;
+  return customers.some(
+    (c) =>
+      c.id !== excludeId &&
+      c.status !== "archived" &&
+      c.displayName.trim().toLowerCase() === name,
+  );
 }
 
 async function createCustomer(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<Customer>;
+  if (isDuplicateActiveCustomerName(data)) {
+    return jsonResponse(
+      {
+        message: `"${data.displayName}" already exists as an active customer.`,
+        code: "DUPLICATE_CUSTOMER_NAME",
+      },
+      409,
+    );
+  }
+  const now = new Date().toISOString();
   const cust = {
     ...(body as Record<string, unknown>),
     id: generateId("cust"),
-    status: "active",
+    createdAt: now,
+    updatedAt: now,
   } as unknown as Customer;
   customers.push(cust);
   return jsonResponse(cust, 201);
@@ -220,7 +303,21 @@ async function updateCustomer(path: string, body?: unknown) {
   const id = path.split("/")[2];
   const idx = customers.findIndex((c) => c.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
-  customers[idx] = { ...customers[idx], ...(body as Partial<Customer>) };
+  const data = body as Partial<Customer>;
+  if (isDuplicateActiveCustomerName(data, id)) {
+    return jsonResponse(
+      {
+        message: `"${data.displayName}" already exists as an active customer.`,
+        code: "DUPLICATE_CUSTOMER_NAME",
+      },
+      409,
+    );
+  }
+  customers[idx] = {
+    ...customers[idx],
+    ...data,
+    updatedAt: new Date().toISOString(),
+  };
   return jsonResponse(customers[idx]);
 }
 
@@ -229,8 +326,11 @@ async function toggleCustomerArchive(path: string) {
   const id = path.split("/")[2];
   const idx = customers.findIndex((c) => c.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  // Only ever toggles between active and archived — "inactive" is reachable
+  // only through ordinary field editing, never through this action.
   customers[idx].status =
-    customers[idx].status === "active" ? "archived" : "active";
+    customers[idx].status === "archived" ? "active" : "archived";
+  customers[idx].updatedAt = new Date().toISOString();
   return jsonResponse(customers[idx]);
 }
 
@@ -286,15 +386,40 @@ async function toggleEmployeeArchive(path: string) {
   return jsonResponse(employees[idx]);
 }
 
+/** True if another active work type for the same customer already uses this name. */
+function isDuplicateActiveProductTypeName(
+  data: Partial<ProductType>,
+  excludeId?: string,
+): boolean {
+  const name = data.name?.trim().toLowerCase();
+  if (!name || !data.customerId) return false;
+  return productTypes.some(
+    (p) =>
+      p.id !== excludeId &&
+      p.status !== "archived" &&
+      p.customerId === data.customerId &&
+      p.name.trim().toLowerCase() === name,
+  );
+}
+
 async function createProductType(_path: string, body?: unknown) {
   await delay();
+  const data = body as Partial<ProductType>;
+  if (isDuplicateActiveProductTypeName(data)) {
+    return jsonResponse(
+      {
+        message: `"${data.name}" already exists for this customer.`,
+        code: "DUPLICATE_WORK_TYPE_NAME",
+      },
+      409,
+    );
+  }
+  const now = new Date().toISOString();
   const pt = {
     ...(body as Record<string, unknown>),
     id: generateId("pt"),
-    status: "active",
-    rateLines: ((body as { rateLines?: unknown[] })?.rateLines ?? []).map(
-      (rl: unknown) => ({ ...(rl as object), id: generateId("rl") }),
-    ),
+    createdAt: now,
+    updatedAt: now,
   } as unknown as ProductType;
   productTypes.push(pt);
   return jsonResponse(pt, 201);
@@ -305,9 +430,20 @@ async function updateProductType(path: string, body?: unknown) {
   const id = path.split("/")[2];
   const idx = productTypes.findIndex((p) => p.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  const data = body as Partial<ProductType>;
+  if (isDuplicateActiveProductTypeName(data, id)) {
+    return jsonResponse(
+      {
+        message: `"${data.name}" already exists for this customer.`,
+        code: "DUPLICATE_WORK_TYPE_NAME",
+      },
+      409,
+    );
+  }
   productTypes[idx] = {
     ...productTypes[idx],
-    ...(body as Partial<ProductType>),
+    ...data,
+    updatedAt: new Date().toISOString(),
   };
   return jsonResponse(productTypes[idx]);
 }
@@ -317,8 +453,11 @@ async function toggleProductTypeArchive(path: string) {
   const id = path.split("/")[2];
   const idx = productTypes.findIndex((p) => p.id === id);
   if (idx === -1) return jsonResponse({ message: "Not found" }, 404);
+  // Only ever toggles between active and archived — "inactive" is reachable
+  // only through ordinary field editing, never through this action.
   productTypes[idx].status =
-    productTypes[idx].status === "active" ? "archived" : "active";
+    productTypes[idx].status === "archived" ? "active" : "archived";
+  productTypes[idx].updatedAt = new Date().toISOString();
   return jsonResponse(productTypes[idx]);
 }
 
@@ -427,6 +566,11 @@ const routes: {
   exact("GET", "/locations", listLocations),
   exact("POST", "/locations", createLocation),
   pattern("PATCH", /^\/locations\/[^/]+$/, updateLocation),
+  pattern(
+    "POST",
+    /^\/locations\/[^/]+\/toggle-archive$/,
+    toggleLocationArchive,
+  ),
 
   // Customers
   exact("GET", "/customers", listCustomers),

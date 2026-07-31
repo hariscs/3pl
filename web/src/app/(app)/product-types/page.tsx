@@ -10,11 +10,22 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppData } from "@/lib/store";
-import type { ProductType } from "@/lib/types";
+import { type ProductType, UNIT_OF_MEASURE_LABELS } from "@/lib/types";
 
-export default function ProductTypesPage() {
-  const { productTypes, customers, locations, toggleProductTypeArchive } =
-    useAppData();
+function workTypeSearch(p: ProductType, query: string): boolean {
+  return (
+    p.name.toLowerCase().includes(query) ||
+    (p.code ?? "").toLowerCase().includes(query)
+  );
+}
+
+function formatRate(type: ProductType["employeePayType"], rate: number) {
+  const suffix = type === "hourly" ? "/hr" : "/unit";
+  return `$${rate.toFixed(2)}${suffix}`;
+}
+
+export default function WorkTypesPage() {
+  const { productTypes, customers, toggleProductTypeArchive } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
@@ -23,11 +34,9 @@ export default function ProductTypesPage() {
 
   const customerName = (id: string) =>
     customers.find((c) => c.id === id)?.displayName ?? "—";
-  const locationName = (id: string) =>
-    locations.find((l) => l.id === id)?.name ?? "—";
 
   const columns: Column<ProductType>[] = [
-    { key: "name", header: "Name", accessor: (p) => p.name },
+    { key: "name", header: "Work Type", accessor: (p) => p.name },
     {
       key: "customer",
       header: "Customer",
@@ -36,28 +45,28 @@ export default function ProductTypesPage() {
       filterOptions: customers.map((c) => c.displayName),
     },
     {
-      key: "location",
-      header: "Location",
-      accessor: (p) => locationName(p.locationId),
+      key: "unit",
+      header: "Unit",
+      accessor: (p) => UNIT_OF_MEASURE_LABELS[p.unitOfMeasure],
       filter: "select",
-      filterOptions: locations.map((l) => l.name),
+      filterOptions: Object.values(UNIT_OF_MEASURE_LABELS),
     },
     {
-      key: "units",
-      header: "Units Billed",
-      accessor: (p) => p.rateLines.map((l) => l.unit).join(", "),
-      render: (p) => (
-        <span className="block max-w-64 truncate">
-          {p.rateLines.map((l) => l.unit).join(", ")}
-        </span>
-      ),
+      key: "employeePay",
+      header: "Employee Pay",
+      accessor: (p) => formatRate(p.employeePayType, p.employeePayRate),
+    },
+    {
+      key: "billingRate",
+      header: "Billing Rate",
+      accessor: (p) => formatRate(p.customerBillingType, p.customerBillingRate),
     },
     {
       key: "status",
       header: "Status",
       accessor: (p) => p.status,
       filter: "select",
-      filterOptions: ["active", "archived"],
+      filterOptions: ["active", "inactive", "archived"],
       render: (p) => <StampBadge status={p.status} />,
     },
     {
@@ -73,16 +82,16 @@ export default function ProductTypesPage() {
             <Button variant="secondary">Edit</Button>
           </Link>
           <Button
-            variant={p.status === "active" ? "danger" : "secondary"}
+            variant={p.status !== "archived" ? "danger" : "secondary"}
             onClick={() =>
               setPending({
                 id: p.id,
                 name: p.name,
-                archiving: p.status === "active",
+                archiving: p.status !== "archived",
               })
             }
           >
-            {p.status === "active" ? "Archive" : "Restore"}
+            {p.status !== "archived" ? "Archive" : "Restore"}
           </Button>
         </div>
       ),
@@ -92,14 +101,14 @@ export default function ProductTypesPage() {
   return (
     <>
       <TopBar
-        title="Product Types"
-        description="Each product type belongs to one customer and one location, so load entry only shows what's relevant."
+        title="Work Types"
+        description="Each work type belongs to one customer and drives the pay and billing rates used on its loads."
       />
       <AdminOnly>
         <main className="flex-1 space-y-4 p-6">
           <div className="flex justify-end">
             <Link href="/product-types/new">
-              <Button>New product type</Button>
+              <Button>New work type</Button>
             </Link>
           </div>
           <Card>
@@ -108,6 +117,7 @@ export default function ProductTypesPage() {
               rows={productTypes}
               getRowKey={(p) => p.id}
               defaultFilterKeys={["customer"]}
+              searchFn={workTypeSearch}
             />
           </Card>
         </main>
@@ -116,12 +126,10 @@ export default function ProductTypesPage() {
       <ConfirmDialog
         open={pending !== null}
         onClose={() => setPending(null)}
-        title={
-          pending?.archiving ? "Archive product type" : "Restore product type"
-        }
+        title={pending?.archiving ? "Archive work type" : "Restore work type"}
         body={
           pending?.archiving
-            ? `${pending?.name} will drop off the load entry picker immediately.`
+            ? `${pending?.name} will drop off the load entry picker immediately, but past loads keep their billing and pay history.`
             : `${pending?.name} will reappear in the load entry picker.`
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}

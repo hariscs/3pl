@@ -79,11 +79,10 @@ export function getLoadReadiness(
     issues.push({ label: "Crew payout amount is zero.", severity: "warning" });
   }
 
-  // Product type / rate card missing
-  if (!productType || productType.rateLines.length === 0) {
+  // Work type missing
+  if (!productType) {
     issues.push({
-      label:
-        "Product type or rate card is missing — billing and payout cannot be calculated.",
+      label: "Work Type is missing — billing and payout cannot be calculated.",
       severity: "blocker",
     });
   }

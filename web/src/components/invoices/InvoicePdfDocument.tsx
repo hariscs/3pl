@@ -290,7 +290,7 @@ export function InvoicePdfDocument({ invoice }: Props) {
               Location
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colProductType]}>
-              Product Type
+              Work Type
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colContainer]}>
               Container

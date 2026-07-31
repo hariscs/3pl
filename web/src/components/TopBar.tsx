@@ -44,11 +44,13 @@ export function TopBar({
             onChange={(e) => setCurrentLocationId(e.target.value)}
             className="bg-transparent text-sm font-medium text-ink focus:outline-none"
           >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
+            {locations
+              .filter((loc) => loc.status !== "archived")
+              .map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
           </select>
         </label>
       </div>

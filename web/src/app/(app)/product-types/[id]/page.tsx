@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppData } from "@/lib/store";
 
-export default function EditProductTypePage() {
+export default function EditWorkTypePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { productTypes, updateProductType, toggleProductTypeArchive } =
@@ -23,50 +23,58 @@ export default function EditProductTypePage() {
   if (!productType) {
     return (
       <>
-        <TopBar title="Product type not found" />
+        <TopBar title="Work type not found" />
         <main className="flex-1 p-6">
           <p className="text-sm text-steel">
-            This product type doesn&apos;t exist or was removed.
+            This work type doesn&apos;t exist or was removed.
           </p>
         </main>
       </>
     );
   }
 
+  const archiving = productType.status !== "archived";
+
   return (
     <>
       <TopBar
         title={`Edit ${productType.name}`}
-        description="Adjust the rate card without touching any past loads billed under it."
+        description="Adjust the pay and billing configuration without touching any past loads billed under it."
       />
       <AdminOnly>
         <main className="flex-1 space-y-6 p-6">
           <Card
-            title="Product type details"
+            title="Work type details"
             action={
               <div className="flex items-center gap-3">
                 <StampBadge status={productType.status} />
                 <Button
-                  variant={
-                    productType.status === "active" ? "danger" : "secondary"
-                  }
+                  variant={archiving ? "danger" : "secondary"}
                   onClick={() => setConfirmArchive(true)}
                 >
-                  {productType.status === "active" ? "Archive" : "Restore"}
+                  {archiving ? "Archive" : "Restore"}
                 </Button>
               </div>
             }
           >
             <ProductTypeForm
+              key={productType.status}
+              workTypeRecordId={productType.id}
               initial={{
                 customerId: productType.customerId,
-                locationId: productType.locationId,
                 name: productType.name,
-                rateLines: productType.rateLines,
+                code: productType.code,
+                status: productType.status,
+                unitOfMeasure: productType.unitOfMeasure,
+                notes: productType.notes,
+                employeePayType: productType.employeePayType,
+                employeePayRate: productType.employeePayRate,
+                customerBillingType: productType.customerBillingType,
+                customerBillingRate: productType.customerBillingRate,
               }}
               submitLabel="Save changes"
-              onSubmit={(values) => {
-                updateProductType(productType.id, values);
+              onSubmit={async (values) => {
+                await updateProductType(productType.id, values);
                 router.push("/product-types");
               }}
             />
@@ -77,18 +85,14 @@ export default function EditProductTypePage() {
       <ConfirmDialog
         open={confirmArchive}
         onClose={() => setConfirmArchive(false)}
-        title={
-          productType.status === "active"
-            ? "Archive product type"
-            : "Restore product type"
-        }
+        title={archiving ? "Archive work type" : "Restore work type"}
         body={
-          productType.status === "active"
-            ? `${productType.name} will drop off the load entry picker immediately.`
+          archiving
+            ? `${productType.name} will drop off the load entry picker immediately, but past loads keep their billing and pay history.`
             : `${productType.name} will reappear in the load entry picker.`
         }
-        confirmLabel={productType.status === "active" ? "Archive" : "Restore"}
-        variant={productType.status === "active" ? "danger" : "primary"}
+        confirmLabel={archiving ? "Archive" : "Restore"}
+        variant={archiving ? "danger" : "primary"}
         onConfirm={() => toggleProductTypeArchive(productType.id)}
       />
     </>

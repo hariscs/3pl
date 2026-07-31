@@ -234,7 +234,7 @@ export default function InvoiceDetailPage() {
                     <th className="py-2 pr-3">Load</th>
                     <th className="py-2 pr-3">Completed</th>
                     <th className="py-2 pr-3">Location</th>
-                    <th className="py-2 pr-3">Product Type</th>
+                    <th className="py-2 pr-3">Work Type</th>
                     <th className="py-2 pr-3">Container</th>
                     <th className="py-2 pr-3 text-right">Cases</th>
                     <th className="py-2 pr-3">Description</th>

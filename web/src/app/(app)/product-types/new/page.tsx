@@ -7,23 +7,23 @@ import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/Card";
 import { useAppData } from "@/lib/store";
 
-export default function NewProductTypePage() {
+export default function NewWorkTypePage() {
   const { addProductType } = useAppData();
   const router = useRouter();
 
   return (
     <>
       <TopBar
-        title="New product type"
-        description="Choose the customer first, then the location — the product name only makes sense in that context."
+        title="New work type"
+        description="Choose the customer first — the work type's pay and billing rates only make sense in that context."
       />
       <AdminOnly>
         <main className="flex-1 p-6">
-          <Card title="Product type details">
+          <Card title="Work type details">
             <ProductTypeForm
-              submitLabel="Create product type"
-              onSubmit={(values) => {
-                addProductType(values);
+              submitLabel="Create work type"
+              onSubmit={async (values) => {
+                await addProductType(values);
                 router.push("/product-types");
               }}
             />

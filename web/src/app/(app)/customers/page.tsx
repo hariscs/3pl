@@ -12,6 +12,15 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppData } from "@/lib/store";
 import type { Customer } from "@/lib/types";
 
+function customerSearch(c: Customer, query: string): boolean {
+  return (
+    c.displayName.toLowerCase().includes(query) ||
+    (c.code ?? "").toLowerCase().includes(query) ||
+    c.contactName.toLowerCase().includes(query) ||
+    c.email.toLowerCase().includes(query)
+  );
+}
+
 export default function CustomersPage() {
   const { customers, locations, toggleCustomerArchive } = useAppData();
   const [pending, setPending] = useState<{
@@ -20,26 +29,24 @@ export default function CustomersPage() {
     archiving: boolean;
   } | null>(null);
 
-  const locationNames = (ids: string[]) =>
-    ids
-      .map((id) => locations.find((l) => l.id === id)?.name)
-      .filter(Boolean)
-      .join(", ");
+  const locationCount = (customerId: string) =>
+    locations.filter((l) => l.customerId === customerId).length;
+
+  const industryOptions = [
+    ...new Set(
+      customers.map((c) => c.industry).filter((i): i is string => !!i),
+    ),
+  ].sort();
 
   const columns: Column<Customer>[] = [
     {
       key: "displayName",
-      header: "Display Name",
+      header: "Customer Name",
       accessor: (c) => c.displayName,
     },
     {
-      key: "legalName",
-      header: "Legal Name",
-      accessor: (c) => c.legalCompanyName,
-    },
-    {
       key: "contact",
-      header: "Contact",
+      header: "Primary Contact",
       accessor: (c) => `${c.contactName} ${c.email}`,
       render: (c) => (
         <>
@@ -50,16 +57,29 @@ export default function CustomersPage() {
       ),
     },
     {
-      key: "locations",
+      key: "billingEmail",
+      header: "Billing Email",
+      accessor: (c) => c.billingEmail ?? "—",
+    },
+    {
+      key: "industry",
+      header: "Industry",
+      accessor: (c) => c.industry ?? "—",
+      filter: "select",
+      filterOptions: industryOptions,
+    },
+    {
+      key: "locationCount",
       header: "Locations",
-      accessor: (c) => locationNames(c.locationIds) || "—",
+      accessor: (c) => locationCount(c.id),
+      align: "right",
     },
     {
       key: "status",
       header: "Status",
       accessor: (c) => c.status,
       filter: "select",
-      filterOptions: ["active", "archived"],
+      filterOptions: ["active", "inactive", "archived"],
       render: (c) => <StampBadge status={c.status} />,
     },
     {
@@ -75,16 +95,16 @@ export default function CustomersPage() {
             <Button variant="secondary">Edit</Button>
           </Link>
           <Button
-            variant={c.status === "active" ? "danger" : "secondary"}
+            variant={c.status !== "archived" ? "danger" : "secondary"}
             onClick={() =>
               setPending({
                 id: c.id,
                 name: c.displayName,
-                archiving: c.status === "active",
+                archiving: c.status !== "archived",
               })
             }
           >
-            {c.status === "active" ? "Archive" : "Restore"}
+            {c.status !== "archived" ? "Archive" : "Restore"}
           </Button>
         </div>
       ),
@@ -110,6 +130,7 @@ export default function CustomersPage() {
               rows={customers}
               getRowKey={(c) => c.id}
               defaultFilterKeys={["status"]}
+              searchFn={customerSearch}
             />
           </Card>
         </main>

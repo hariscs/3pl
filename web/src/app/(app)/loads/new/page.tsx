@@ -42,24 +42,21 @@ export default function LoadEntryPage() {
   const locationName =
     locations.find((l) => l.id === currentLocationId)?.name ?? "";
 
-  const availableCustomers = useMemo(
-    () =>
-      customers.filter(
-        (c) =>
-          c.status === "active" && c.locationIds.includes(currentLocationId),
-      ),
-    [customers, currentLocationId],
-  );
+  const availableCustomers = useMemo(() => {
+    const owningCustomerId = locations.find(
+      (l) => l.id === currentLocationId,
+    )?.customerId;
+    return customers.filter(
+      (c) => c.status === "active" && c.id === owningCustomerId,
+    );
+  }, [customers, locations, currentLocationId]);
 
   const availableProductTypes = useMemo(
     () =>
       productTypes.filter(
-        (p) =>
-          p.status === "active" &&
-          p.locationId === currentLocationId &&
-          p.customerId === form.customerId,
+        (p) => p.status !== "archived" && p.customerId === form.customerId,
       ),
-    [productTypes, currentLocationId, form.customerId],
+    [productTypes, form.customerId],
   );
 
   function handlePoChange(id: string, value: string) {
@@ -158,11 +155,11 @@ export default function LoadEntryPage() {
                 </Select>
               </Field>
               <Field
-                label="Product type"
+                label="Work Type"
                 required
                 hint={
                   form.customerId && availableProductTypes.length === 0
-                    ? "No product types set up for this customer at this location yet."
+                    ? "No work types set up for this customer yet."
                     : undefined
                 }
               >
@@ -176,7 +173,7 @@ export default function LoadEntryPage() {
                 >
                   <option value="">
                     {form.customerId
-                      ? "Select a product type…"
+                      ? "Select a work type…"
                       : "Choose a customer first"}
                   </option>
                   {availableProductTypes.map((p) => (
