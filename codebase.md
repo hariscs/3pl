@@ -1,6 +1,6 @@
 # codebase.md — Dockmaster 3PL Operations Platform (Web Frontend)
 
-> **Updated:** 2026-07-27
+> **Updated:** 2026-07-31
 > **Scope:** `web/` — the Next.js dashboard frontend. The `api/` Fastify backend is referenced but not the primary subject of this document.
 
 ---
@@ -25,7 +25,7 @@
 - Invoice List → View/Preview/Download/Print Invoice PDF
 - Payroll → Period-based crew pay reports → PDF Export
 - Load Report → Historical operational view
-- Master data CRUD (customers, crew, locations, product types, users)
+- Master data CRUD (customers, crew, locations, work types, users)
 
 ---
 
@@ -67,7 +67,7 @@ web/
 │   │   │   │   └── payroll/        # Payroll list + detail
 │   │   │   ├── loads/              # Load list, new, detail
 │   │   │   ├── locations/          # Locations
-│   │   │   ├── product-types/       # Product types
+│   │   │   ├── product-types/       # Work Types (route/internal name kept as "product-types")
 │   │   │   ├── register/           # User registration
 │   │   │   └── reports/
 │   │   │       ├── load-entry/     # Load entry report
@@ -119,10 +119,10 @@ web/
 - **Components:** `TicketStub`, `StampBadge`
 
 ### Master Data
-- **Customers:** CRUD + archive/restore, location assignment
-- **Crew (Employees):** CRUD + archive/restore, category selection
-- **Locations:** CRUD, card-based list
-- **Product Types:** CRUD with rate cards (multi-line bill/pay table)
+- **Customers:** CRUD + archive/restore, `FilterableTable` list (search by name/code/contact/email + Status/Industry filters). A business entity (e.g. Amazon, Geodis, DHL), not an operational site — owns zero or more Locations (`Location.customerId` is the source of truth; Customer carries no `locationIds` array). Model: Basic Info (name, code, legal name, status: active/inactive/archived), Business Info (industry, website, tax ID), Primary Contact (name, title, email, phone), Billing (billing email, payment terms, notes), `createdAt`/`updatedAt`. Payment terms is a stored enum (`due_on_receipt`/`net_7`/`net_15`/`net_30`/`net_45`) with no billing logic attached yet. Only Active customers are selectable when creating a Location; the Customer edit page lists its linked Locations read-only.
+- **Crew (Employees):** CRUD + archive/restore, category selection. Not permanently assigned to a Location — that's resolved later per shift via Clock-In (not built yet).
+- **Locations:** CRUD + archive/restore, `FilterableTable` list (search + Customer/State/Status filters). An operational work site (warehouse, DC, customer facility, plant, job site), not just an address — every Location belongs to exactly one required Customer. Model: Basic Info (name, customer, code, region, group, status: active/inactive/archived), Address (street/city/state/zip/country), Site Contact (name/phone/email), Operational (timezone, shift window, notes), `createdAt`/`updatedAt`. Archived Locations are excluded from the TopBar's operational location switcher; archiving never hard-deletes. User location access (manager/lead scoping) lives on `SystemUser.locationIds`, independent of this domain.
+- **Work Types** (internally `ProductType`, routed at `/product-types` — kept for compatibility; the UI says "Work Type" throughout): CRUD + archive/restore, `FilterableTable` list (search by name/code + Customer/Status/Unit filters). Represents the type of labor performed for a Customer (e.g. Floor Loaded Containers, Palletized Freight), not inventory — belongs to exactly one Customer, never scoped to a Location and never a global catalog (two customers may have similarly-named work types with different rates). Model: Basic Info (name, code, status: active/inactive/archived), Payroll (employee pay type hourly/production + rate), Billing (customer billing type hourly/production + rate), Operational Settings (unit of measure — a controlled list, not free text — + notes), `createdAt`/`updatedAt`. Replaced the old multi-line tiered rate-card (`RateLine[]`, base/threshold/overRate/bonus) with this flatter config — that engine (`calculateLoadAmounts` in `lib/billing.ts`) had zero live callers, so removing it was a safe cleanup, not a functional regression. Stores pay/billing configuration only; no calculation logic exists yet — that's for the future Load module, which is expected to auto-populate a Load's pay/billing/unit from the selected Work Type instead of letting a Lead enter rates manually.
 
 ### Payroll
 - **Routes:** `/finance/payroll` (list), `/finance/payroll/[id]` (employee detail)
@@ -181,7 +181,7 @@ web/
 ## 7. Mock APIs
 
 When using the dev-bypass token (no backend), `lib/mock-handlers.ts` intercepts all API calls:
-- GET/POST/PATCH for all entities (locations, customers, employees, product types, loads, users)
+- GET/POST/PATCH for all entities (locations, customers, employees, product types, loads, users), plus POST toggle-archive for locations/customers/employees/product-types/users
 - GET/POST for invoices (in-memory store)
 - GET/POST for payroll records (status overrides)
 - Mutations update in-memory cloned arrays
