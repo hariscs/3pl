@@ -1,7 +1,7 @@
 # codebase.md — Dockmaster 3PL Operations Platform (Web Frontend)
 
 > **Updated:** 2026-07-31
-> **Scope:** `web/` — the Next.js dashboard frontend. The `api/` Fastify backend is referenced but not the primary subject of this document.
+> **Scope:** `web/` — the Next.js dashboard frontend, a frontend-only app against an in-memory mock API layer. The `api/` Fastify backend is referenced but not touched by this app's mock layer.
 
 ---
 
@@ -9,21 +9,24 @@
 
 **Application name:** Dockmaster (package name `3plwork`, public-facing "3PL Work").
 
-**Business purpose:** A 3PL dock-operations platform for warehouse staffing companies. Captures operational work once (loads, crew assignments, quantities), then powers payroll, customer billing, invoicing, and operational reports.
+**Business purpose:** A 3PL dock-operations admin portal for warehouse staffing companies. `Load` is the central operational record connecting Customer → Location → Work Type → Crew Assignments → Time/Breaks → Payroll/Billing/Invoices. A separate native mobile app (outside this repo) is the field/check-in client — this repo's Load domain model (stable IDs, shared attachment repository, crew clock-in/break states) is built to be that mobile app's eventual data contract, but no mobile UI is built here.
 
-**Users and roles:**
+**Users and roles** (`Role` in `lib/types.ts`):
 | Role       | Access |
 | ---------- | ------ |
-| `admin`    | Full access — Setup, Load Entry, Loads, Reports, Finance |
-| `lead`     | Load Entry + Loads only |
-| `customer` | Defined in types but not yet wired into the UI |
+| `admin`    | Full access — Setup, Loads, Reports, Finance |
+| `manager`  | Location-scoped (via `SystemUser.locationIds`) — Loads only |
+| `lead`     | Location-scoped — Loads only, can be a Load supervisor |
+| `finance`  | Location-unrestricted — intended for Finance/Payroll/Billing surfaces |
+| `customer` | Scoped via `customerId`, not yet wired into the UI |
+| `employee` | Linked to a Crew Member via `linkedCrewMemberId`; no desktop access is built for this role in this repo (handled by the separate mobile app) |
 
 **Major workflows:**
 - Login → Dashboard
-- Load entry → Crew assignment → Complete load → Billing/payout
-- Customer Billing → Select completed loads → Create Invoice
+- Load creation (draft) → Crew assignment → Clock-in/break/clock-out → Complete → Close → Payroll/Billing/Invoices
+- Customer Billing → Select completed/closed loads → Create Invoice
 - Invoice List → View/Preview/Download/Print Invoice PDF
-- Payroll → Period-based crew pay reports → PDF Export
+- Payroll → Period-based crew pay reports, computed from each Load's frozen pay snapshot → PDF Export
 - Load Report → Historical operational view
 - Master data CRUD (customers, crew, locations, work types, users)
 
@@ -81,11 +84,16 @@ web/
 │   │   ├── DashboardCharts.tsx
 │   │   ├── FilterableTable.tsx
 │   │   ├── FilterChip.tsx
-│   │   ├── StampBadge.tsx
-│   │   ├── TicketStub.tsx
+│   │   ├── StampBadge.tsx          # Legacy 2-tone badge; Load status uses LoadStatusPill instead (7 states don't fit its fixed config)
 │   │   ├── AdminOnly.tsx
 │   │   ├── PayrollPdfDocument.tsx
-│   │   ├── forms/                  # Customer/Crew/Location/ProductType forms
+│   │   ├── forms/                  # Customer/Crew/Location/ProductType/Load forms
+│   │   │   └── LoadForm.tsx        # Shared create+edit form, mounted on both /loads/new and /loads/[id]
+│   │   ├── loads/
+│   │   │   ├── CustomerLocationWorkTypeFields.tsx  # Cascading Customer→Location→WorkType trio, shared by LoadForm
+│   │   │   ├── LoadCrewPanel.tsx   # Assign/clock-in/break/clock-out/remove crew, live elapsed time
+│   │   │   ├── LoadAttachmentsPanel.tsx # Upload/preview/archive photos, video, documents
+│   │   │   └── LoadStatusPill.tsx  # StatusPill wrapper for the 7-state LoadStatus
 │   │   ├── invoices/
 │   │   │   ├── CreateInvoiceDialog.tsx
 │   │   │   └── InvoicePdfDocument.tsx
@@ -100,11 +108,16 @@ web/
 │       ├── providers.tsx           # Root providers
 │       ├── billing.ts             # Billing calculations + formatMoney
 │       ├── invoices.ts            # Invoice types + store + company info
-│       ├── payroll.ts             # Payroll calculations + types
+│       ├── payroll.ts             # Payroll calculations (reads each Load's frozen pay snapshot)
 │       ├── csv.ts                 # CSV export utility
-│       ├── mock-data.ts           # Static seed data (unused at runtime)
-│       ├── mock-handlers.ts       # Dev-bypass mock API handlers
-│       ├── load-readiness.ts      # Load readiness checks
+│       ├── mock-data.ts           # Static seed data
+│       ├── mock-handlers.ts       # Dev-bypass mock API handlers (intercepts fetch)
+│       ├── loads.ts               # formatLoadNumber, getBillingQuantity, supervisor-eligibility helpers
+│       ├── load-time.ts           # Worked-minutes derivation from clock/break events, clock sequence guards
+│       ├── load-financials.ts     # computeLoadFinancials / splitProductionPayout — the billed/payout engine
+│       ├── load-readiness.ts      # Blocker/warning checks gating "Complete"
+│       ├── load-attachments.ts    # In-memory attachment repository (mirrors invoices.ts's store pattern)
+│       ├── use-load-attachments.ts # Per-load attachment query hook (not part of the app-boot fetch)
 │       └── api/
 │           └── client.ts          # Typed fetch wrapper
 ```
@@ -114,9 +127,14 @@ web/
 ## 4. Major Modules
 
 ### Loads
-- **Routes:** `/loads` (list), `/loads/new` (entry), `/loads/[id]` (detail)
-- **Features:** Create load with customer/product-type cascading, assign crew, clock-in/out, billing/payout preview, void/archive
-- **Components:** `TicketStub`, `StampBadge`
+- **Routes:** `/loads` (list, `FilterableTable` with a Customer picker that cascades the Location/Work Type filter options), `/loads/new` (thin `LoadForm` wrapper, always creates status `draft`), `/loads/[id]` (detail — the operational hub for a Load's entire lifecycle)
+- **Status lifecycle** (`LoadStatus`, 7 states): `draft → scheduled → in_progress → paused → completed → closed | cancelled`. `draft/scheduled/in_progress/paused/completed` are editable (`EDITABLE_LOAD_STATUSES`); `closed` and `cancelled` are read-only and are what Payroll/Billing/Invoices consume. There is no separate Load "archive" — `closed` already serves as the protected terminal state. Status transitions are enforced server-side by the mock handler (409 `LOAD_NOT_EDITABLE` on a locked load) and driven client-side by an explicit per-status allow-list (`HEADER_ACTIONS` in `loads/[id]/page.tsx`) rather than a ternary, since a 7-state machine makes a 2-way ternary silently wrong for most states.
+- **Load Number:** users never see the raw `id`/`ticketNumber` — `formatLoadNumber(ticketNumber)` (`lib/loads.ts`) renders it as `LD-1###` everywhere a load is referenced (list, detail, reports, invoices).
+- **Crew assignments:** `LoadCrewAssignment` has its own 5-state lifecycle distinct from the Load's own status — `assigned → clocked_in → on_break → clocked_out`, or `removed` (never hard-deleted; removal auto-closes any open break and clocks the person out first, preserving worked-time history). The first clock-in on a `draft`/`scheduled` load flips it to `in_progress` automatically. Breaks nest inside their owning assignment (`LoadCrewAssignment.breaks[]`) rather than a flat top-level collection. `lib/load-time.ts` derives worked minutes (clock-out minus clock-in minus completed breaks) and guards the sequence (no clock-out while on an open break, no double breaks, etc.), enforced identically client-side and in the mock handler.
+- **Financial snapshots:** selecting a Work Type on an editable Load freezes its pay/billing configuration onto `Load.paySnapshot`/`Load.billingSnapshot` — Payroll and Billing always read these, never the live Work Type, so changing a Work Type's rate later never touches historical Loads. `lib/load-financials.ts`'s `computeLoadFinancials` recomputes `billedAmount`/`payoutAmount` from the snapshot × quantity (production types) or × worked hours (hourly types) on every quantity/assignment change pre-closure, then freezes forever once `closed`. Production-type payout is split evenly across every assignment that logged worked time (`splitProductionPayout`) — a documented simplification, since there's no per-worker unit-attribution mechanism.
+- **Attachments:** a shared `LoadAttachment[]` repository (`lib/load-attachments.ts`), independent of `Load` itself, with its own mock routes (list/create/toggle-archive) and its own query hook (`use-load-attachments.ts`) fetched per-load rather than joined into the app-boot parallel fetch. Photos/videos/documents are stored as `URL.createObjectURL(file)` object URLs — session-only, a known mock-layer limitation, not real cloud storage. Size limits (15MB photo / 25MB document / 100MB video) are enforced in `lib/attachments.ts`.
+- **Notes & Activity Timeline:** `Load.notes[]` is a real persisted field (survives a page reload, unlike the old hardcoded per-loadId demo notes it replaced). The Activity Timeline on the detail page is derived live from real assignment/break/status timestamps (`buildLoadActivity` in `loads/[id]/page.tsx`), not hardcoded per-load demo data — it works for every Load, not just a handful of seeded examples.
+- **Components:** `LoadStatusPill`, `LoadCrewPanel`, `LoadAttachmentsPanel`, `CustomerLocationWorkTypeFields`, `LoadForm`
 
 ### Master Data
 - **Customers:** CRUD + archive/restore, `FilterableTable` list (search by name/code/contact/email + Status/Industry filters). A business entity (e.g. Amazon, Geodis, DHL), not an operational site — owns zero or more Locations (`Location.customerId` is the source of truth; Customer carries no `locationIds` array). Model: Basic Info (name, code, legal name, status: active/inactive/archived), Business Info (industry, website, tax ID), Primary Contact (name, title, email, phone), Billing (billing email, payment terms, notes), `createdAt`/`updatedAt`. Payment terms is a stored enum (`due_on_receipt`/`net_7`/`net_15`/`net_30`/`net_45`) with no billing logic attached yet. Only Active customers are selectable when creating a Location; the Customer edit page lists its linked Locations read-only.
@@ -127,12 +145,13 @@ web/
 ### Payroll
 - **Routes:** `/finance/payroll` (list), `/finance/payroll/[id]` (employee detail)
 - **Features:** Pay period selector, crew pay aggregation, approve/pay workflow, PDF export via `DocumentViewer`
+- **Calculation:** `getEmployeePayroll` (`lib/payroll.ts`) reads each contributing Load's frozen `paySnapshot` rather than the employee's general `hourlyRate` — hourly-type loads pay worked-minutes × that load's own snapshot rate; production-type loads use `splitProductionPayout`. The one deliberate exception: the overtime premium always uses `employee.hourlyRate × 1.5` as a documented baseline, since attributing which load's rate "owns" the 41st hour of a week spanning multiple snapshot rates is a genuine open business question, not solved here.
 - **PDF:** `PayrollPdfDocument` using `@react-pdf/renderer`
 
 ### Customer Billing
 - **Route:** `/finance/customer-billing`
-- **Features:** Completed load selection, billing status (unbilled/invoiced), Create Invoice dialog
-- **Flow:** Select loads → `CreateInvoiceDialog` → POST /invoices → loads marked invoiced
+- **Features:** Completed/closed load selection, billing status (unbilled/invoiced), Create Invoice dialog
+- **Flow:** Select loads (`status === "completed" || status === "closed"`, `billedAmount > 0`) → `CreateInvoiceDialog` → POST /invoices → loads marked invoiced
 
 ### Invoices
 - **Routes:** `/finance/invoices` (list), `/finance/invoices/[id]` (detail)
@@ -155,7 +174,8 @@ web/
 | `FilterableTable` | `components/FilterableTable.tsx` | Generic filterable/sortable data table with search, filter chips, CSV export. Extended with `searchFn` and `defaultSort` props |
 | `ActionsMenu` | `components/ui/ActionsMenu.tsx` | Three-dot kebab dropdown menu |
 | `StatusPill` | `components/ui/StatusPill.tsx` | Colored pill with dot (5 tones) |
-| `StampBadge` | `components/StampBadge.tsx` | Outlined status badge (legacy pattern) |
+| `StampBadge` | `components/StampBadge.tsx` | Outlined status badge (legacy pattern; no longer used for Load status) |
+| `LoadStatusPill` | `components/loads/LoadStatusPill.tsx` | `StatusPill` wrapper mapping all 7 `LoadStatus` values to tones |
 | `DocumentViewer` | `components/ui/DocumentViewer.tsx` | Full-screen PDF preview modal with Download + Print (uses `@react-pdf/renderer`) |
 | `TopBar` | `components/TopBar.tsx` | Page header with title + location selector |
 | `AdminOnly` | `components/AdminOnly.tsx` | Role gate wrapper |
@@ -182,6 +202,9 @@ web/
 
 When using the dev-bypass token (no backend), `lib/mock-handlers.ts` intercepts all API calls:
 - GET/POST/PATCH for all entities (locations, customers, employees, product types, loads, users), plus POST toggle-archive for locations/customers/employees/product-types/users
+- Load lifecycle: `POST /loads` (create, always `draft`), `PATCH /loads/:id` (409 if closed/cancelled; re-snapshots on Work Type change; recomputes financials), `POST /loads/:id/{pause,resume,complete,reopen,close,cancel}` (each enforces its own valid source status — `complete` is readiness-gated and rejects with 409 `LOAD_NOT_READY` + an `issues[]` list if a blocker is unresolved)
+- Load crew: `POST /loads/:id/assignments` (assign), `POST /loads/:id/assignments/:aid/{clock-in,break-start,break-end,clock-out,remove}`
+- Load attachments: `GET/POST /loads/:id/attachments`, `POST /loads/:id/attachments/:aid/toggle-archive`
 - GET/POST for invoices (in-memory store)
 - GET/POST for payroll records (status overrides)
 - Mutations update in-memory cloned arrays
@@ -221,8 +244,12 @@ When using the dev-bypass token (no backend), `lib/mock-handlers.ts` intercepts 
 - **Customer address** — not yet available; invoices show "Address not available"
 - **Company info** — hardcoded constant in `lib/invoices.ts`
 - **Invoice status** — only "draft" supported
-- **Dual status components** — `StampBadge` (legacy) and `StatusPill` (newer) coexist
+- **Dual status components** — `StampBadge` (legacy, still used elsewhere) and `StatusPill`/`LoadStatusPill` (newer) coexist
 - **Some lint warnings remain** — pre-existing a11y, CSS `!important`, and dependency array issues requiring deeper refactoring
+- **Load attachments are session-only** — stored as `URL.createObjectURL(file)` object URLs, not uploaded anywhere; they vanish on a full page reload/browser restart, same limitation class as the rest of this app's in-memory mock data
+- **Production-type payout split is an even split** across every assignment with worked time on the load — there's no per-worker unit-attribution mechanism (no "who packed which case")
+- **Overtime premium uses a flat baseline rate** (`employee.hourlyRate × 1.5`), not each contributing load's own snapshot rate — attributing OT across loads with different rates in the same week is an open business question
+- **No mobile UI in this repo** — the Load domain model (stable IDs, shared attachment repository, crew clock-in/break states) is designed to be consumed by a separate native mobile app, but that app is a separate codebase and out of scope here
 
 ---
 
