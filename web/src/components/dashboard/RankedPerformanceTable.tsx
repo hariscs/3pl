@@ -19,7 +19,9 @@ export function RankedPerformanceTable({
   emptyMessage: string;
 }) {
   if (rows.length === 0) {
-    return <p className="py-6 text-center text-sm text-steel">{emptyMessage}</p>;
+    return (
+      <p className="py-6 text-center text-sm text-steel">{emptyMessage}</p>
+    );
   }
 
   return (
@@ -36,11 +38,13 @@ export function RankedPerformanceTable({
               <p className="truncate text-xs text-steel">{row.subtitle}</p>
             )}
           </div>
-          <div className="flex flex-none items-center gap-4">
+          <div className="flex flex-none items-start gap-4">
             {row.stats.map((s) => (
-              <div key={s.label} className="text-right">
-                <p className="font-tick text-sm font-semibold text-ink">{s.value}</p>
-                <p className="text-[10px] uppercase tracking-wide text-steel-light">
+              <div key={s.label} className="w-18 flex-none text-center">
+                <p className="truncate font-tick text-sm font-semibold text-ink">
+                  {s.value}
+                </p>
+                <p className="truncate text-[10px] uppercase tracking-wide text-steel-light">
                   {s.label}
                 </p>
               </div>

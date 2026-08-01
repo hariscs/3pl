@@ -1,5 +1,6 @@
 "use client";
 
+import { SelectMenu } from "@/components/ui/SelectMenu";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/lib/store";
 import { getUserDisplayName } from "@/lib/users";
@@ -26,7 +27,7 @@ export function TopBar({
       </div>
       <div className="flex flex-none items-center gap-2.5">
         {user && (
-          <div className="flex items-center gap-2 rounded-xl border border-manila-dark bg-cream px-3 py-1.5 shadow-card">
+          <div className="flex items-center gap-2 rounded-xl border border-manila-dark bg-cream px-3.5 py-2.5 shadow-card">
             <span className="text-sm font-medium text-ink">
               {getUserDisplayName(user)}
             </span>
@@ -35,24 +36,19 @@ export function TopBar({
             </span>
           </div>
         )}
-        <label className="flex items-center gap-2 rounded-xl border border-manila-dark bg-cream px-3 py-1.5 shadow-card">
+        <div className="flex items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-steel">
             Location
           </span>
-          <select
+          <SelectMenu
+            className="w-44"
             value={currentLocationId}
-            onChange={(e) => setCurrentLocationId(e.target.value)}
-            className="bg-transparent text-sm font-medium text-ink focus:outline-none"
-          >
-            {locations
+            onChange={setCurrentLocationId}
+            options={locations
               .filter((loc) => loc.status !== "archived")
-              .map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-          </select>
-        </label>
+              .map((loc) => ({ value: loc.id, label: loc.name }))}
+          />
+        </div>
       </div>
     </header>
   );

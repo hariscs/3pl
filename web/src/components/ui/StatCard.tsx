@@ -30,7 +30,7 @@ export function StatCard({
   tone?: Tone;
 }) {
   const content = Icon ? (
-    <div className="flex items-start gap-3 rounded-2xl border border-manila-dark bg-cream p-4 shadow-card transition-colors">
+    <div className="flex h-full items-start gap-3 rounded-2xl border border-manila-dark bg-cream p-4 shadow-card transition-colors">
       <div
         className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${TONE_ICON_CLASSES[tone]}`}
       >
@@ -45,7 +45,7 @@ export function StatCard({
       </div>
     </div>
   ) : (
-    <div className="flex flex-col items-center rounded-2xl border border-manila-dark bg-cream p-5 text-center shadow-card">
+    <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-manila-dark bg-cream p-5 text-center shadow-card">
       <p className="text-3xl font-bold tracking-tight text-ink">{value}</p>
       <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-steel">
         {label}
@@ -56,7 +56,10 @@ export function StatCard({
 
   if (!href) return content;
   return (
-    <Link href={href} className="block transition-transform hover:-translate-y-0.5">
+    <Link
+      href={href}
+      className="block h-full transition-transform hover:-translate-y-0.5"
+    >
       {content}
     </Link>
   );

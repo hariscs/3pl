@@ -1,6 +1,30 @@
+import { ChevronDown } from "lucide-react";
 import { StatusPill } from "@/components/ui/StatusPill";
 import type { CertificationAlert, WorkforceRow } from "@/lib/dashboard";
 import { formatDuration } from "@/lib/load-time";
+
+const VISIBLE_COUNT = 5;
+
+function WorkforceRowItem({ row: r }: { row: WorkforceRow }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-ink">{r.name}</p>
+        <p className="truncate text-xs text-steel">
+          {r.employeeCode} · {r.loadNumber} · {r.locationName}
+        </p>
+      </div>
+      <div className="flex flex-none items-center gap-3">
+        <span className="font-tick text-xs text-steel">
+          {formatDuration(r.elapsedMinutes)}
+        </span>
+        <StatusPill tone={r.status === "clocked_in" ? "success" : "warning"}>
+          {r.status === "clocked_in" ? "Working" : "On Break"}
+        </StatusPill>
+      </div>
+    </div>
+  );
+}
 
 export function WorkforceOverview({
   workingNow,
@@ -14,8 +38,8 @@ export function WorkforceOverview({
   const combined = [...workingNow, ...onBreak].sort(
     (a, b) => b.elapsedMinutes - a.elapsedMinutes,
   );
-  const rows = combined.slice(0, 10);
-  const hiddenCount = combined.length - rows.length;
+  const visibleRows = combined.slice(0, VISIBLE_COUNT);
+  const restRows = combined.slice(VISIBLE_COUNT);
 
   return (
     <div className="space-y-3">
@@ -26,30 +50,22 @@ export function WorkforceOverview({
       ) : (
         <>
           <div className="divide-y divide-manila-dark/60">
-            {rows.map((r) => (
-              <div
-                key={r.assignmentId}
-                className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">{r.name}</p>
-                  <p className="truncate text-xs text-steel">
-                    {r.employeeCode} · {r.loadNumber} · {r.locationName}
-                  </p>
-                </div>
-                <div className="flex flex-none items-center gap-3">
-                  <span className="font-tick text-xs text-steel">
-                    {formatDuration(r.elapsedMinutes)}
-                  </span>
-                  <StatusPill tone={r.status === "clocked_in" ? "success" : "warning"}>
-                    {r.status === "clocked_in" ? "Working" : "On Break"}
-                  </StatusPill>
-                </div>
-              </div>
+            {visibleRows.map((r) => (
+              <WorkforceRowItem key={r.assignmentId} row={r} />
             ))}
           </div>
-          {hiddenCount > 0 && (
-            <p className="text-xs text-steel-light">+{hiddenCount} more</p>
+          {restRows.length > 0 && (
+            <details className="group rounded-lg border border-manila-dark">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-steel">
+                <span>{restRows.length} more</span>
+                <ChevronDown className="h-3.5 w-3.5 text-steel-light transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="divide-y divide-manila-dark/60 border-t border-manila-dark px-3">
+                {restRows.map((r) => (
+                  <WorkforceRowItem key={r.assignmentId} row={r} />
+                ))}
+              </div>
+            </details>
           )}
         </>
       )}
@@ -63,7 +79,8 @@ export function WorkforceOverview({
             {certificationAlerts.slice(0, 4).map((a) => (
               <li key={`${a.employeeId}-${a.certificationTypeId}`}>
                 {a.employeeName}'s {a.certificationTypeId.replace(/_/g, " ")}{" "}
-                certification {a.status === "expired" ? "has expired" : "expires soon"}.
+                certification{" "}
+                {a.status === "expired" ? "has expired" : "expires soon"}.
               </li>
             ))}
           </ul>

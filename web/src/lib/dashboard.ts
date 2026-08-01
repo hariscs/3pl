@@ -5,8 +5,13 @@
 // scoping happens once (buildScope + selectScopedLoads) before any other
 // aggregation runs, since the mock API itself applies no scoping.
 
-import { calculateMargin, calculateMarginPercent, getBillingStatus } from "./billing";
-import { getEmployeeDisplayName, getCertificationStatus } from "./crew";
+import {
+  calculateMargin,
+  calculateMarginPercent,
+  formatMoney,
+  getBillingStatus,
+} from "./billing";
+import { getCertificationStatus, getEmployeeDisplayName } from "./crew";
 import type { Invoice } from "./invoices";
 import { getLoadReadiness } from "./load-readiness";
 import {
@@ -16,10 +21,7 @@ import {
   nowHHMM,
 } from "./load-time";
 import { formatLoadNumber } from "./loads";
-import { formatMoney } from "./billing";
 import type { EmployeePayroll } from "./payroll";
-import type { PayrollRecord } from "./use-payroll-records";
-import { getUserDisplayName, roleIsLocationUnrestricted, roleRequiresLocations } from "./users";
 import type {
   Customer,
   Employee,
@@ -31,6 +33,12 @@ import type {
   SystemUser,
 } from "./types";
 import { LOAD_STATUS_LABELS } from "./types";
+import type { PayrollRecord } from "./use-payroll-records";
+import {
+  getUserDisplayName,
+  roleIsLocationUnrestricted,
+  roleRequiresLocations,
+} from "./users";
 
 // ── Scope & filters ──────────────────────────────────────────────
 
@@ -201,6 +209,7 @@ export type OperationalLoadRow = {
   workTypeName: string;
   containerNumber: string;
   status: LoadStatus;
+  startedAt: string | null;
   elapsedMinutes: number | null;
   crewWorking: number;
   crewOnBreak: number;
@@ -243,8 +252,11 @@ export function getOperationsNow(
         workTypeName: productType?.name ?? "—",
         containerNumber: load.containerNumber,
         status: load.status,
+        startedAt: load.startedAt,
         elapsedMinutes: load.startedAt
-          ? Math.floor((Date.now() - new Date(load.startedAt).getTime()) / 60000)
+          ? Math.floor(
+              (Date.now() - new Date(load.startedAt).getTime()) / 60000,
+            )
           : null,
         crewWorking,
         crewOnBreak,
@@ -288,7 +300,9 @@ export type CertificationAlert = {
   expiresAt?: string;
 };
 
-export function getCertificationAlerts(employees: Employee[]): CertificationAlert[] {
+export function getCertificationAlerts(
+  employees: Employee[],
+): CertificationAlert[] {
   const alerts: CertificationAlert[] = [];
   for (const employee of employees) {
     for (const cert of employee.certifications) {
@@ -401,7 +415,9 @@ export function getAttentionItems(
   }
 
   const pendingReview = livePayroll.filter(
-    (p) => (payrollRecords[p.employee.id]?.status ?? "pending_review") === "pending_review",
+    (p) =>
+      (payrollRecords[p.employee.id]?.status ?? "pending_review") ===
+      "pending_review",
   );
   if (pendingReview.length > 0) {
     const amount = pendingReview.reduce((s, p) => s + p.totalPay, 0);
@@ -428,9 +444,12 @@ export function getAttentionItems(
   }
 
   const billable = scopedLoads.filter(
-    (l) => (l.status === "completed" || l.status === "closed") && l.billedAmount > 0,
+    (l) =>
+      (l.status === "completed" || l.status === "closed") && l.billedAmount > 0,
   );
-  const unbilled = billable.filter((l) => getBillingStatus(l.id).status === "unbilled");
+  const unbilled = billable.filter(
+    (l) => getBillingStatus(l.id).status === "unbilled",
+  );
   if (unbilled.length > 0) {
     const amount = unbilled.reduce((s, l) => s + l.billedAmount, 0);
     items.push({
@@ -438,7 +457,7 @@ export function getAttentionItems(
       category: "billing",
       severity: "warning",
       message: `${unbilled.length} completed load${unbilled.length === 1 ? " is" : "s are"} ready to bill (${formatMoney(amount)}).`,
-      href: "/finance/customer-billing",
+      href: "/finance/customer-billing?billingStatus=unbilled",
     });
   }
 
@@ -496,7 +515,8 @@ export function getFinancialWorkflow(
   }
 
   const billable = periodLoads.filter(
-    (l) => (l.status === "completed" || l.status === "closed") && l.billedAmount > 0,
+    (l) =>
+      (l.status === "completed" || l.status === "closed") && l.billedAmount > 0,
   );
   const unbilledLoads = billable.filter(
     (l) => getBillingStatus(l.id).status === "unbilled",
@@ -523,7 +543,9 @@ export function getFinancialWorkflow(
     billableAmount,
     payrollCostAmount,
     grossMarginAmount:
-      billableAmount > 0 ? calculateMargin(billableAmount, payrollCostAmount) : null,
+      billableAmount > 0
+        ? calculateMargin(billableAmount, payrollCostAmount)
+        : null,
     grossMarginPercent:
       billableAmount > 0
         ? calculateMarginPercent(billableAmount, payrollCostAmount)
@@ -554,7 +576,9 @@ export type BillingPayoutPoint = {
   payout: number;
 };
 
-export function getBillingVsPayrollTrend(periodLoads: Load[]): BillingPayoutPoint[] {
+export function getBillingVsPayrollTrend(
+  periodLoads: Load[],
+): BillingPayoutPoint[] {
   const byDay = new Map<string, { billed: number; payout: number }>();
   for (const l of periodLoads) {
     if (l.status !== "completed" && l.status !== "closed") continue;
@@ -569,13 +593,18 @@ export function getBillingVsPayrollTrend(periodLoads: Load[]): BillingPayoutPoin
     .map(([date, v]) => ({ date, label: date.slice(5), ...v }));
 }
 
-export type StatusDistributionSlice = { status: LoadStatus; label: string; count: number };
+export type StatusDistributionSlice = {
+  status: LoadStatus;
+  label: string;
+  count: number;
+};
 
 export function getLoadStatusDistribution(
   periodLoads: Load[],
 ): StatusDistributionSlice[] {
   const counts = new Map<LoadStatus, number>();
-  for (const l of periodLoads) counts.set(l.status, (counts.get(l.status) ?? 0) + 1);
+  for (const l of periodLoads)
+    counts.set(l.status, (counts.get(l.status) ?? 0) + 1);
   return (Object.keys(LOAD_STATUS_LABELS) as LoadStatus[])
     .map((status) => ({
       status,
@@ -615,13 +644,22 @@ export function getCustomerPerformance(
   for (const l of periodLoads) {
     if (l.status !== "completed" && l.status !== "closed") continue;
     completedById.set(l.customerId, (completedById.get(l.customerId) ?? 0) + 1);
-    billableById.set(l.customerId, (billableById.get(l.customerId) ?? 0) + l.billedAmount);
-    payoutById.set(l.customerId, (payoutById.get(l.customerId) ?? 0) + l.payoutAmount);
+    billableById.set(
+      l.customerId,
+      (billableById.get(l.customerId) ?? 0) + l.billedAmount,
+    );
+    payoutById.set(
+      l.customerId,
+      (payoutById.get(l.customerId) ?? 0) + l.payoutAmount,
+    );
   }
   const invoicedById = new Map<string, number>();
   for (const inv of invoices) {
     if (!inv.lineItems.some((li) => periodLoadIds.has(li.loadId))) continue;
-    invoicedById.set(inv.customerId, (invoicedById.get(inv.customerId) ?? 0) + inv.total);
+    invoicedById.set(
+      inv.customerId,
+      (invoicedById.get(inv.customerId) ?? 0) + inv.total,
+    );
   }
 
   const customerIds = new Set([...activeById.keys(), ...completedById.keys()]);
@@ -637,10 +675,14 @@ export function getCustomerPerformance(
         completedLoads: completedById.get(id) ?? 0,
         billableAmount: billable,
         invoicedAmount: invoicedById.get(id) ?? 0,
-        grossMarginAmount: billable > 0 ? calculateMargin(billable, payout) : null,
+        grossMarginAmount:
+          billable > 0 ? calculateMargin(billable, payout) : null,
       };
     })
-    .sort((a, b) => b.billableAmount - a.billableAmount || b.activeLoads - a.activeLoads)
+    .sort(
+      (a, b) =>
+        b.billableAmount - a.billableAmount || b.activeLoads - a.activeLoads,
+    )
     .slice(0, 8);
 }
 
@@ -669,7 +711,9 @@ export function getLocationPerformance(
     if (l.status === "in_progress") {
       activeById.set(l.locationId, (activeById.get(l.locationId) ?? 0) + 1);
     }
-    const working = l.assignments.filter((a) => a.status === "clocked_in").length;
+    const working = l.assignments.filter(
+      (a) => a.status === "clocked_in",
+    ).length;
     crewById.set(l.locationId, (crewById.get(l.locationId) ?? 0) + working);
     if (l.supervisorUserId && !supervisorById.has(l.locationId)) {
       supervisorById.set(l.locationId, l.supervisorUserId);
@@ -742,7 +786,8 @@ export function getWorkforceOverview(
         status: a.status,
         loadNumber: formatLoadNumber(load.ticketNumber),
         loadId: load.id,
-        locationName: locations.find((l) => l.id === load.locationId)?.name ?? "—",
+        locationName:
+          locations.find((l) => l.id === load.locationId)?.name ?? "—",
         elapsedMinutes: getAssignmentLiveElapsedMinutes(a, now),
       });
     }
@@ -759,12 +804,18 @@ export function getWorkforceOverview(
 
 // ── Recent activity ──────────────────────────────────────────────
 
-export type ActivityEntry = { id: string; time: string; label: string; href?: string };
+export type ActivityEntry = {
+  id: string;
+  time: string;
+  label: string;
+  href?: string;
+};
 
-/** One event per Load per lifecycle milestone (created/started/completed/
- * closed) — deliberately not every clock-in/break/note, which would be far
- * too noisy on a global feed spanning every in-scope load (unlike the
- * per-load Activity Timeline on loads/[id], which does show that detail). */
+/** One entry per Load, reflecting only its single most recent lifecycle
+ * milestone (closed > completed > started > created) — not every milestone
+ * it's passed through, which would repeat the same load 2-4 times back to
+ * back on a global feed (the per-load Activity Timeline on loads/[id]
+ * already shows that full history one click away). */
 export function getRecentActivity(
   scopedLoads: Load[],
   employees: Employee[],
@@ -778,15 +829,34 @@ export function getRecentActivity(
   for (const load of scopedLoads) {
     const loadNumber = formatLoadNumber(load.ticketNumber);
     const href = `/loads/${load.id}`;
-    entries.push({ id: `${load.id}-created`, time: load.createdAt, label: `${loadNumber} created`, href });
-    if (load.startedAt) {
-      entries.push({ id: `${load.id}-started`, time: load.startedAt, label: `${loadNumber} started`, href });
-    }
-    if (load.completedAt) {
-      entries.push({ id: `${load.id}-completed`, time: load.completedAt, label: `${loadNumber} completed`, href });
-    }
     if (load.closedAt) {
-      entries.push({ id: `${load.id}-closed`, time: load.closedAt, label: `${loadNumber} closed`, href });
+      entries.push({
+        id: `${load.id}-closed`,
+        time: load.closedAt,
+        label: `${loadNumber} closed`,
+        href,
+      });
+    } else if (load.completedAt) {
+      entries.push({
+        id: `${load.id}-completed`,
+        time: load.completedAt,
+        label: `${loadNumber} completed`,
+        href,
+      });
+    } else if (load.startedAt) {
+      entries.push({
+        id: `${load.id}-started`,
+        time: load.startedAt,
+        label: `${loadNumber} started`,
+        href,
+      });
+    } else {
+      entries.push({
+        id: `${load.id}-created`,
+        time: load.createdAt,
+        label: `${loadNumber} created`,
+        href,
+      });
     }
   }
 

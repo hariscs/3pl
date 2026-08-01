@@ -23,7 +23,11 @@ export function usePayrollRecords(employeeIds: string[]) {
     queryFn: async () => {
       const entries = await Promise.all(
         employeeIds.map(
-          async (id) => [id, await api.get<PayrollRecord>(`/payroll/records/${id}`)] as const,
+          async (id) =>
+            [
+              id,
+              await api.get<PayrollRecord>(`/payroll/records/${id}`),
+            ] as const,
         ),
       );
       return Object.fromEntries(entries) as Record<string, PayrollRecord>;

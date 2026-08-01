@@ -20,7 +20,11 @@ const SECONDARY_ACTIONS: { label: string; href: string; roles: Role[] }[] = [
   { label: "Add Customer", href: "/customers/new", roles: ["admin"] },
   { label: "Add Location", href: "/locations/new", roles: ["admin"] },
   { label: "Add Work Type", href: "/product-types/new", roles: ["admin"] },
-  { label: "Review Payroll", href: "/finance/payroll", roles: ["admin", "finance"] },
+  {
+    label: "Review Payroll",
+    href: "/finance/payroll",
+    roles: ["admin", "finance"],
+  },
   {
     label: "Open Customer Billing",
     href: "/finance/customer-billing",
@@ -47,13 +51,17 @@ export function DashboardHeader({
   role: Role;
 }) {
   const router = useRouter();
-  const secondaryActions = SECONDARY_ACTIONS.filter((a) => a.roles.includes(role));
+  const secondaryActions = SECONDARY_ACTIONS.filter((a) =>
+    a.roles.includes(role),
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
+            Dashboard
+          </h1>
           <p className="mt-1 text-sm text-steel">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { LoadStatusPill } from "@/components/loads/LoadStatusPill";
@@ -18,9 +19,19 @@ import {
 import { getUserDisplayName } from "@/lib/users";
 
 export default function LoadsPage() {
+  const router = useRouter();
   const { loads, customers, productTypes, locations, users, isLoading } =
     useAppData();
   const [customerFilter, setCustomerFilter] = useState("");
+
+  // Deep-linked from Dashboard tiles, e.g. /loads?status=In%20Progress —
+  // captured once on mount, matching the value format FilterableTable's
+  // own status column already renders (LOAD_STATUS_LABELS), not the raw key.
+  const searchParams = useSearchParams();
+  const [initialStatus] = useState(() => searchParams.get("status"));
+  const initialFilterValues = initialStatus
+    ? { status: initialStatus }
+    : undefined;
 
   const rows = customerFilter
     ? loads.filter((l) => l.customerId === customerFilter)
@@ -92,6 +103,14 @@ export default function LoadsPage() {
       accessor: (l) => locationName(l.locationId),
       filter: "select",
       filterOptions: locationOptions,
+      render: (l) => {
+        const name = locationName(l.locationId);
+        return (
+          <span className="block max-w-40 truncate" title={name}>
+            {name}
+          </span>
+        );
+      },
     },
     {
       key: "workType",
@@ -99,11 +118,6 @@ export default function LoadsPage() {
       accessor: (l) => workTypeName(l.productTypeId),
       filter: "select",
       filterOptions: workTypeOptions,
-    },
-    {
-      key: "container",
-      header: "Container",
-      accessor: (l) => l.containerNumber || "—",
     },
     {
       key: "date",
@@ -139,19 +153,6 @@ export default function LoadsPage() {
       filter: "select",
       filterOptions: Object.values(LOAD_STATUS_LABELS),
       render: (l) => <LoadStatusPill status={l.status} />,
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      accessor: () => "",
-      filterable: false,
-      sortable: false,
-      align: "right",
-      render: (l) => (
-        <Link href={`/loads/${l.id}`}>
-          <Button variant="secondary">Open</Button>
-        </Link>
-      ),
     },
   ];
 
@@ -190,7 +191,9 @@ export default function LoadsPage() {
             columns={columns}
             rows={rows}
             getRowKey={(l) => l.id}
+            onRowClick={(l) => router.push(`/loads/${l.id}`)}
             defaultFilterKeys={["status"]}
+            initialFilterValues={initialFilterValues}
             searchFn={searchLoad}
             emptyMessage={
               isLoading ? "Loading…" : "No loads yet. Create your first one."

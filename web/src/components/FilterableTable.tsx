@@ -62,15 +62,21 @@ export function FilterableTable<T>({
       ...(defaultFilterKeys ?? []),
       ...Object.keys(initialFilterValues ?? {}),
     ]);
-    return [...keys].map((key) => ({ id: `initial-${key}`, key, openOnMount: false }));
+    return [...keys].map((key) => ({
+      id: `initial-${key}`,
+      key,
+      openOnMount: false,
+    }));
   });
-  const [filterValues, setFilterValues] = useState<Record<string, string>>(() => {
-    const values: Record<string, string> = {};
-    for (const [key, value] of Object.entries(initialFilterValues ?? {})) {
-      values[`initial-${key}`] = value;
-    }
-    return values;
-  });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>(
+    () => {
+      const values: Record<string, string> = {};
+      for (const [key, value] of Object.entries(initialFilterValues ?? {})) {
+        values[`initial-${key}`] = value;
+      }
+      return values;
+    },
+  );
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     defaultSort ?? null,
   );

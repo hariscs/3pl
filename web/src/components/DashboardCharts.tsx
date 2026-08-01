@@ -54,16 +54,42 @@ export function LoadsCompletedTrendChart({ data }: { data: TrendPoint[] }) {
       role="img"
       aria-label="Line chart of loads completed per day"
     >
-      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
+      <AreaChart
+        data={data}
+        margin={{ top: 8, right: 8, bottom: 0, left: -14 }}
+      >
         <defs>
           <linearGradient id="loadsCompletedFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.25} />
-            <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
+            <stop
+              offset="0%"
+              stopColor="var(--color-chart-1)"
+              stopOpacity={0.25}
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--color-chart-1)"
+              stopOpacity={0}
+            />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: gridStroke }} />
-        <YAxis allowDecimals={false} tick={axisTick} tickLine={false} axisLine={false} width={32} />
+        <CartesianGrid
+          stroke={gridStroke}
+          strokeDasharray="3 3"
+          vertical={false}
+        />
+        <XAxis
+          dataKey="label"
+          tick={axisTick}
+          tickLine={false}
+          axisLine={{ stroke: gridStroke }}
+        />
+        <YAxis
+          allowDecimals={false}
+          tick={axisTick}
+          tickLine={false}
+          axisLine={false}
+          width={32}
+        />
         <Tooltip
           cursor={{ stroke: "var(--color-chart-1)", strokeWidth: 1 }}
           contentStyle={tooltipStyle}
@@ -94,18 +120,48 @@ export function BillingPayoutChart({ data }: { data: BillingPayoutPoint[] }) {
       aria-label="Bar chart comparing billed and payroll cost amounts per day"
     >
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -4 }}>
-        <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: gridStroke }} />
-        <YAxis tickFormatter={money} tick={axisTick} tickLine={false} axisLine={false} width={56} />
+        <CartesianGrid
+          stroke={gridStroke}
+          strokeDasharray="3 3"
+          vertical={false}
+        />
+        <XAxis
+          dataKey="label"
+          tick={axisTick}
+          tickLine={false}
+          axisLine={{ stroke: gridStroke }}
+        />
+        <YAxis
+          tickFormatter={money}
+          tick={axisTick}
+          tickLine={false}
+          axisLine={false}
+          width={56}
+        />
         <Tooltip
           cursor={{ fill: "var(--color-rust-soft)" }}
           contentStyle={tooltipStyle}
           labelStyle={tooltipLabelStyle}
           formatter={(value) => money(Number(value))}
         />
-        <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-        <Bar dataKey="billed" name="Billed" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} maxBarSize={18} />
-        <Bar dataKey="payout" name="Payroll Cost" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} maxBarSize={18} />
+        <Legend
+          iconType="circle"
+          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+        />
+        <Bar
+          dataKey="billed"
+          name="Billed"
+          fill="var(--color-chart-1)"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={18}
+        />
+        <Bar
+          dataKey="payout"
+          name="Payroll Cost"
+          fill="var(--color-chart-2)"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={18}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -123,7 +179,11 @@ const STATUS_DONUT_COLORS: Record<LoadStatus, string> = {
 
 /** Load Status Distribution — compact donut over loads within the selected
  * period/scope. Only statuses with at least one load render a slice. */
-export function LoadStatusDonutChart({ data }: { data: StatusDistributionSlice[] }) {
+export function LoadStatusDonutChart({
+  data,
+}: {
+  data: StatusDistributionSlice[];
+}) {
   const total = data.reduce((s, d) => s + d.count, 0);
   return (
     <div className="flex items-center gap-4">
@@ -144,13 +204,19 @@ export function LoadStatusDonutChart({ data }: { data: StatusDistributionSlice[]
             stroke="none"
           >
             {data.map((slice) => (
-              <Cell key={slice.status} fill={STATUS_DONUT_COLORS[slice.status]} />
+              <Cell
+                key={slice.status}
+                fill={STATUS_DONUT_COLORS[slice.status]}
+              />
             ))}
           </Pie>
           <Tooltip
             contentStyle={tooltipStyle}
             labelStyle={tooltipLabelStyle}
-            formatter={(value, _name, item) => [value, item?.payload?.label ?? ""]}
+            formatter={(value, _name, item) => [
+              value,
+              item?.payload?.label ?? "",
+            ]}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -162,7 +228,9 @@ export function LoadStatusDonutChart({ data }: { data: StatusDistributionSlice[]
               style={{ backgroundColor: STATUS_DONUT_COLORS[slice.status] }}
             />
             <span className="flex-1 truncate text-steel">{slice.label}</span>
-            <span className="font-tick font-medium text-ink">{slice.count}</span>
+            <span className="font-tick font-medium text-ink">
+              {slice.count}
+            </span>
             <span className="w-9 flex-none text-right text-steel-light">
               {total > 0 ? `${Math.round((slice.count / total) * 100)}%` : "—"}
             </span>

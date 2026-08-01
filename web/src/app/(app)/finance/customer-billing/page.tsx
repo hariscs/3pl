@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
@@ -40,6 +41,15 @@ export default function CustomerBillingPage() {
   const [visibleRows, setVisibleRows] = useState<CustomerBillingRow[]>([]);
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Deep-linked from Dashboard tiles, e.g. /finance/customer-billing?billingStatus=unbilled.
+  const searchParams = useSearchParams();
+  const [initialBillingStatus] = useState(() =>
+    searchParams.get("billingStatus"),
+  );
+  const initialFilterValues = initialBillingStatus
+    ? { billingStatus: initialBillingStatus }
+    : undefined;
 
   const sidekickLoad = useMemo(
     () =>
@@ -368,6 +378,7 @@ export default function CustomerBillingPage() {
               rows={billingRows}
               getRowKey={(r) => r.loadId}
               defaultFilterKeys={["customerName", "billingStatus"]}
+              initialFilterValues={initialFilterValues}
               onFilteredRowsChange={setVisibleRows}
             />
           )}

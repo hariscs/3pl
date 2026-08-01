@@ -22,7 +22,9 @@ function FunnelStage({
   tone: Tone;
 }) {
   return (
-    <div className={`flex-1 rounded-xl border p-3 text-center ${TONE_CLASSES[tone]}`}>
+    <div
+      className={`flex-1 rounded-xl border p-3 text-center ${TONE_CLASSES[tone]}`}
+    >
       <p className="text-lg font-bold text-ink">{formatMoney(amount)}</p>
       <p className="text-xs font-medium text-ink">{label}</p>
       <p className="text-[11px] text-steel">
@@ -93,25 +95,28 @@ export function FinancialWorkflowPanel({
         </div>
       </div>
 
-      {summary.grossMarginAmount != null && summary.grossMarginPercent != null && (
-        <div className="flex items-center justify-between rounded-xl border border-manila-dark bg-paper-dim px-4 py-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-steel">
-              Gross Margin
-            </p>
-            <p className="text-xs text-steel-light">
-              Billed {formatMoney(summary.billableAmount)} minus payroll cost{" "}
-              {formatMoney(summary.payrollCostAmount)}
-            </p>
+      {summary.grossMarginAmount != null &&
+        summary.grossMarginPercent != null && (
+          <div className="flex items-center justify-between rounded-xl border border-manila-dark bg-paper-dim px-4 py-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-steel">
+                Gross Margin
+              </p>
+              <p className="text-xs text-steel-light">
+                Billed {formatMoney(summary.billableAmount)} minus payroll cost{" "}
+                {formatMoney(summary.payrollCostAmount)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-ink">
+                {formatMoney(summary.grossMarginAmount)}
+              </p>
+              <p className="text-xs text-steel">
+                {summary.grossMarginPercent.toFixed(1)}%
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xl font-bold text-ink">
-              {formatMoney(summary.grossMarginAmount)}
-            </p>
-            <p className="text-xs text-steel">{summary.grossMarginPercent.toFixed(1)}%</p>
-          </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
