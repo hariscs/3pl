@@ -1,6 +1,6 @@
 # codebase.md — Dockmaster 3PL Operations Platform (Web Frontend)
 
-> **Updated:** 2026-07-31
+> **Updated:** 2026-08-01
 > **Scope:** `web/` — the Next.js dashboard frontend, a frontend-only app against an in-memory mock API layer. The `api/` Fastify backend is referenced but not touched by this app's mock layer.
 
 ---
@@ -94,6 +94,14 @@ web/
 │   │   │   ├── LoadCrewPanel.tsx   # Assign/clock-in/break/clock-out/remove crew, live elapsed time
 │   │   │   ├── LoadAttachmentsPanel.tsx # Upload/preview/archive photos, video, documents
 │   │   │   └── LoadStatusPill.tsx  # StatusPill wrapper for the 7-state LoadStatus
+│   │   ├── dashboard/
+│   │   │   ├── DashboardHeader.tsx        # Title, date-range presets, Customer/Location filters, Create Load + actions menu
+│   │   │   ├── OperationsNowTable.tsx     # Compact live table of in-progress/paused loads, clickable rows
+│   │   │   ├── AttentionRequiredList.tsx  # Categorized, collapsible exception list
+│   │   │   ├── FinancialWorkflowPanel.tsx # Payroll + Billing funnels, Gross Margin
+│   │   │   ├── RankedPerformanceTable.tsx # Shared by Customer & Location Performance
+│   │   │   ├── WorkforceOverview.tsx      # Who's working/on break now, capped + collapsible
+│   │   │   └── RecentActivityFeed.tsx     # Deduped, capped + collapsible activity feed
 │   │   ├── invoices/
 │   │   │   ├── CreateInvoiceDialog.tsx
 │   │   │   └── InvoicePdfDocument.tsx
@@ -118,6 +126,9 @@ web/
 │       ├── load-readiness.ts      # Blocker/warning checks gating "Complete"
 │       ├── load-attachments.ts    # In-memory attachment repository (mirrors invoices.ts's store pattern)
 │       ├── use-load-attachments.ts # Per-load attachment query hook (not part of the app-boot fetch)
+│       ├── dashboard.ts           # Dashboard aggregation layer — every metric/row/chart-point, scope-aware
+│       ├── use-invoices.ts        # Per-need invoices query hook (Dashboard-only consumer today)
+│       ├── use-payroll-records.ts # Per-need payroll-status query hook (no bulk endpoint exists, fetches in parallel)
 │       └── api/
 │           └── client.ts          # Typed fetch wrapper
 ```
@@ -125,6 +136,17 @@ web/
 ---
 
 ## 4. Major Modules
+
+### Dashboard
+- **Route:** `/` (`app/(app)/page.tsx`) — a role-aware operational command center, not a static analytics page. Rebuilt from a 3-stat-tile summary into a full aggregation layer plus 9 sections; every number is derived from the same shared `loads`/`employees`/`customers`/`locations`/`productTypes`/`users` arrays the rest of the app reads (via `useAppData()`), plus `invoices` and per-employee payroll status fetched on demand — no dashboard-only hardcoded data.
+- **Aggregation layer (`lib/dashboard.ts`):** the single place every metric/row/chart-point is computed. `buildScope(role, user)` produces `{ allowedLocationIds: string[] | null }` (`null` = unrestricted for admin/finance; a location list for manager/lead) — applied once via `selectScopedLoads` before anything else runs, since the mock API itself does no server-side scoping. `selectPeriodLoads` further narrows by the header's date-range preset. Every other `get*` function (`getOperationalSummary`, `getOperationsNow`, `getAttentionItems`, `getFinancialWorkflow`, `getLoadsCompletedTrend`, `getBillingVsPayrollTrend`, `getLoadStatusDistribution`, `getCustomerPerformance`, `getLocationPerformance`, `getWorkforceOverview`, `getCertificationAlerts`, `getRecentActivity`) takes already-scoped arrays and returns a typed row/summary shape consumed directly by a presentational component.
+- **"Live" vs "period" sections:** Top Operational Summary, Operations Now, Attention Required, and Workforce Overview always reflect *now* and ignore the date-range filter (labeled `Live`); Financial Workflow, Performance Trends, and Customer/Location Performance respect the selected range (labeled with the range name, e.g. `Last 7 Days`). Every section carries a small badge making this explicit.
+- **New data hooks:** `use-invoices.ts` and `use-payroll-records.ts` — per-need TanStack Query hooks (mirroring the existing `use-load-attachments.ts` pattern) rather than widening `AppDataProvider`'s app-boot fetch, since the Dashboard is currently the only consumer of "all invoices" and "all payroll statuses" together.
+- **Role-aware sections:** `admin`/`manager`/`finance` see Financial Workflow (`lead` does not — no sensitive financial figures for that role); `finance` hides Operations Now and Workforce Overview (de-emphasizing live crew ops); `customer`/`employee` are blocked from the page entirely with a simple message (not a second dashboard app).
+- **Deep-linking:** stat tiles and Attention items link into pre-filtered views of other pages — `FilterableTable` gained an optional `initialFilterValues` prop (seeds a filter chip's value on mount, additive/backward-compatible) so `/loads?status=...` and `/finance/customer-billing?billingStatus=...` land already filtered; `loads/page.tsx` and `customer-billing/page.tsx` read that query param once via `useSearchParams()`.
+- **Collapsible density controls:** `Attention Required` groups each category in a native `<details>` (categories over 5 items start collapsed — a 30+ item Operations group was forcing excessive scrolling); `Workforce Overview` and `Recent Activity` show a small visible slice with the rest behind a `<details>` "N more" disclosure. `Recent Activity` also collapses each Load's lifecycle history to just its single most recent milestone (closed > completed > started > created) instead of listing every milestone as a separate row — the full history is one click away on `loads/[id]`.
+- **Charts (`DashboardCharts.tsx`):** `LoadsCompletedTrendChart` (area/line), `BillingPayoutChart` (grouped bar, evolved from the old loads-per-day chart), `LoadStatusDonutChart` (new) — three total, chosen over the spec's full chart menu to stay information-dense rather than cluttered; a "Cases/Production over time" chart was deliberately not built since summing across mixed Units of Measure (case/pallet/piece/weight/container) would be misleading. `globals.css` gained `--color-chart-3`/`--color-chart-4` for the donut's extra slices.
+- **`StatCard`** gained optional `icon`/`href`/`tone` props (all backward-compatible — existing plain-label callers on Payroll/Invoices pages are unaffected) and now always fills its grid cell (`h-full`) so a 5-tile row stays even height even when one tile's hint text wraps to two lines.
 
 ### Loads
 - **Routes:** `/loads` (list, `FilterableTable` with a Customer picker that cascades the Location/Work Type filter options), `/loads/new` (thin `LoadForm` wrapper, always creates status `draft`), `/loads/[id]` (detail — the operational hub for a Load's entire lifecycle)
@@ -171,7 +193,7 @@ web/
 
 | Component | Path | Purpose |
 | --------- | ---- | ------- |
-| `FilterableTable` | `components/FilterableTable.tsx` | Generic filterable/sortable data table with search, filter chips, CSV export. Extended with `searchFn` and `defaultSort` props |
+| `FilterableTable` | `components/FilterableTable.tsx` | Generic filterable/sortable data table with search, filter chips, CSV export. Extended with `searchFn`, `defaultSort`, and `initialFilterValues` (pre-seeds a filter chip's value, e.g. for Dashboard deep-links) props |
 | `ActionsMenu` | `components/ui/ActionsMenu.tsx` | Three-dot kebab dropdown menu |
 | `StatusPill` | `components/ui/StatusPill.tsx` | Colored pill with dot (5 tones) |
 | `StampBadge` | `components/StampBadge.tsx` | Outlined status badge (legacy pattern; no longer used for Load status) |
@@ -195,6 +217,8 @@ web/
 5. All filtering/sorting is client-side in `FilterableTable`
 6. Invoices use a separate in-memory store (`lib/invoices.ts`) with mock API handlers
 7. PDF generation uses `@react-pdf/renderer` → `pdf().toBlob()` for download/print
+8. Data too specific/heavy to join into the app-boot fetch (Load attachments, Invoices, per-employee Payroll status) uses its own small `use-*.ts` TanStack Query hook, fetched on demand by the page/section that needs it
+9. The Dashboard never computes metrics inline in JSX — every page-level `useMemo` calls straight into `lib/dashboard.ts`, which is the single source of truth for how each number/row is defined
 
 ---
 
@@ -250,6 +274,8 @@ When using the dev-bypass token (no backend), `lib/mock-handlers.ts` intercepts 
 - **Production-type payout split is an even split** across every assignment with worked time on the load — there's no per-worker unit-attribution mechanism (no "who packed which case")
 - **Overtime premium uses a flat baseline rate** (`employee.hourlyRate × 1.5`), not each contributing load's own snapshot rate — attributing OT across loads with different rates in the same week is an open business question
 - **No mobile UI in this repo** — the Load domain model (stable IDs, shared attachment repository, crew clock-in/break states) is designed to be consumed by a separate native mobile app, but that app is a separate codebase and out of scope here
+- **Most seed Load dates are fixed, not relative to "today"** — the bulk of `mock-data.ts`'s Loads carry hardcoded 2026-06/07 dates, so the Dashboard's "Today" date-range preset will look sparse the further real time drifts from when the data was seeded (a small number of loads — `load-250`/`load-251` — were deliberately dated to the day this Dashboard task shipped so "Today"/"Last 7 Days" have something real to show; this doesn't self-maintain going forward)
+- **`getOperationsNow`'s "Elapsed" column falls back to a plain date once a load's live elapsed time exceeds 24h** (`OperationsNowTable.tsx`) rather than showing an absurd hour count — a direct consequence of the fixed-seed-date limitation above, not a bug in the elapsed-time math itself
 
 ---
 
