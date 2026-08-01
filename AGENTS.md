@@ -2,6 +2,30 @@
 
 Guidance for anyone (human or AI) working in this repo. This is the **canonical conventions file**; `.claude/CLAUDE.md` just imports it. Setup and structure live in [`README.md`](README.md).
 
+## Start here (session entry point)
+
+This repo has a maintained `docs/` set specifically so you don't have to re-derive architecture from scratch every session. Read in this order, stopping as soon as you have enough to act safely:
+
+1. **[`docs/memory.md`](docs/memory.md)** — current state, recent work, open gaps/questions. Always read this first; it's short by design.
+2. **[`docs/map.md`](docs/map.md)** — find the section for the domain you're touching (Loads, Crew, Payroll, etc.) and open only the files it points you to.
+3. Only the source files `map.md` names for that domain. Don't read sibling files "just in case."
+4. **[`docs/codebase.md`](docs/codebase.md)** — architecture reference — only when you need broader context than the map gives (auth model, data flow, how a whole layer fits together).
+5. **[`docs/api-map.md`](docs/api-map.md)** — read before wiring *any* `web/` feature to the real API, or before touching `api/src/routes/`. It's a verified, endpoint-by-endpoint inventory of what actually exists vs. what `web/` calls. **Never assume a route exists because a similarly-named one does** — this repo's single biggest gotcha (below) means that assumption is wrong more often than not.
+6. **[`docs/business-rules.md`](docs/business-rules.md)** — read before changing Load/payroll/billing logic. Every rule is labeled `[mock]` (frontend-only) or `[real API]` (backend-implemented) — they frequently disagree with each other.
+
+**Don't recursively scan the repo by default.** Search for the exact symbol/route/component/table you need, or use `docs/map.md`, before falling back to a broad `find`/`grep` sweep. Broad exploration is justified when the docs genuinely don't cover the area — if so, update the relevant doc afterward so the next session doesn't have to repeat the sweep. Don't reread a file already opened this task unless it changed or you need to verify one more specific detail. Follow imports/types/schemas selectively rather than every caller. Stop expanding context once you can implement safely, and summarize what you found before opening a large next batch of files.
+
+**The single most important fact about this repo**, worth internalizing before touching either app: `web/` implements a materially richer domain model than `api/` actually serves (different `Load` status lifecycle, different `Role` enum, different `Employee`/`ProductType` shapes, and Invoices/Payroll have no backend at all). See `docs/codebase.md` § 2 for why, and why it's invisible in normal dev use (an automatic mock-layer bypass). Treat "connect X to the real API" as new backend work until `docs/api-map.md` says otherwise.
+
+### Keeping the docs in sync
+
+- After meaningful implementation, debugging, or an architectural/product decision → update `docs/memory.md`. Trim resolved issues and merge repeated info instead of appending forever.
+- After a permanent architecture or structural change → update `docs/codebase.md`.
+- After adding, moving, renaming, or repurposing an important file → update `docs/map.md`.
+- After a business-rule, API-surface, or workflow change → update `docs/business-rules.md` and/or `docs/api-map.md`.
+- Don't document trivial formatting/lint changes. Don't turn `memory.md` into a session transcript.
+- Prefer editing an existing pattern (component, hook, serializer, schema) over introducing a duplicate one — search `docs/map.md` and the relevant directory first. Never touch code outside the assigned task; report unrelated issues found along the way instead of fixing them inline (see "Forbidden Actions" below).
+
 ## The one thing to get right
 
 This is **two independent apps, not a monorepo** — there is no root `package.json` and no pnpm workspace:
