@@ -88,7 +88,8 @@ export default function EditEmployeePage() {
               }}
               submitLabel="Save changes"
               onSubmit={async (values) => {
-                await updateEmployee(employee.id, values);
+                const ok = await updateEmployee(employee.id, values);
+                if (!ok) return;
                 router.push("/crew");
               }}
             />

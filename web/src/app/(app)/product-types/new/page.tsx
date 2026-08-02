@@ -23,7 +23,8 @@ export default function NewWorkTypePage() {
             <ProductTypeForm
               submitLabel="Create work type"
               onSubmit={async (values) => {
-                await addProductType(values);
+                const ok = await addProductType(values);
+                if (!ok) return;
                 router.push("/product-types");
               }}
             />

@@ -23,7 +23,8 @@ export default function NewLocationPage() {
             <LocationForm
               submitLabel="Create location"
               onSubmit={async (values) => {
-                await addLocation(values);
+                const ok = await addLocation(values);
+                if (!ok) return;
                 router.push("/locations");
               }}
             />

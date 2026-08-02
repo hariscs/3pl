@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
@@ -47,7 +48,15 @@ const CSV_COLUMNS = (columns: Column<Row>[]) =>
 // ── Page ─────────────────────────────────────────────────────────
 
 export default function LoadReportPage() {
-  const { loads, customers, locations, productTypes } = useAppData();
+  const {
+    loads,
+    customers,
+    locations,
+    productTypes,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
 
   const rows: Row[] = useMemo(
     () =>
@@ -212,30 +221,25 @@ export default function LoadReportPage() {
 
           {/* Table */}
           <Card>
-            {rows.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center">
-                <p className="text-sm font-medium text-ink">
-                  No completed loads found.
-                </p>
-                <p className="text-sm text-steel">
-                  Completed warehouse loads will appear here.
-                </p>
-              </div>
-            ) : (
-              <FilterableTable
-                columns={columns}
-                rows={rows}
-                getRowKey={(r) => r.load.id}
-                defaultFilterKeys={["customerName", "status"]}
-                onExport={(filteredRows) =>
-                  downloadCsv(
-                    "load-report.csv",
-                    CSV_COLUMNS(columns),
-                    filteredRows,
-                  )
-                }
-              />
-            )}
+            <FilterableTable
+              columns={columns}
+              rows={rows}
+              getRowKey={(r) => r.load.id}
+              defaultFilterKeys={["customerName", "status"]}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={ClipboardCheck}
+              emptyTitle="No completed loads found"
+              emptyDescription="Completed warehouse loads will appear here."
+              onExport={(filteredRows) =>
+                downloadCsv(
+                  "load-report.csv",
+                  CSV_COLUMNS(columns),
+                  filteredRows,
+                )
+              }
+            />
           </Card>
         </main>
       </AdminOnly>

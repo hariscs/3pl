@@ -54,28 +54,48 @@ type AppData = {
 
   /** True until the initial datasets have loaded. */
   isLoading: boolean;
+  /** True if any core dataset failed to load. */
+  isError: boolean;
+  /** Re-fetches every core dataset — for an error state's Retry action. */
+  retry: () => void;
 
   /** The authenticated user's role (read-only — derived from login). */
   role: Role;
 
-  addLocation: (input: NewLocation) => Promise<void>;
-  updateLocation: (id: string, input: Partial<Location>) => Promise<void>;
+  /** Resolves `true` on success, `undefined` on failure (error already toasted). */
+  addLocation: (input: NewLocation) => Promise<boolean | undefined>;
+  updateLocation: (
+    id: string,
+    input: Partial<Location>,
+  ) => Promise<boolean | undefined>;
   toggleLocationArchive: (id: string) => Promise<void>;
 
-  addUser: (input: NewUser) => Promise<void>;
-  updateUser: (id: string, input: Partial<SystemUser>) => Promise<void>;
+  addUser: (input: NewUser) => Promise<boolean | undefined>;
+  updateUser: (
+    id: string,
+    input: Partial<SystemUser>,
+  ) => Promise<boolean | undefined>;
   toggleUserArchive: (id: string) => Promise<void>;
 
-  addCustomer: (input: NewCustomer) => Promise<void>;
-  updateCustomer: (id: string, input: Partial<Customer>) => Promise<void>;
+  addCustomer: (input: NewCustomer) => Promise<boolean | undefined>;
+  updateCustomer: (
+    id: string,
+    input: Partial<Customer>,
+  ) => Promise<boolean | undefined>;
   toggleCustomerArchive: (id: string) => Promise<void>;
 
-  addEmployee: (input: NewEmployee) => Promise<void>;
-  updateEmployee: (id: string, input: Partial<Employee>) => Promise<void>;
+  addEmployee: (input: NewEmployee) => Promise<boolean | undefined>;
+  updateEmployee: (
+    id: string,
+    input: Partial<Employee>,
+  ) => Promise<boolean | undefined>;
   toggleEmployeeArchive: (id: string) => Promise<void>;
 
-  addProductType: (input: NewProductType) => Promise<void>;
-  updateProductType: (id: string, input: Partial<ProductType>) => Promise<void>;
+  addProductType: (input: NewProductType) => Promise<boolean | undefined>;
+  updateProductType: (
+    id: string,
+    input: Partial<ProductType>,
+  ) => Promise<boolean | undefined>;
   toggleProductTypeArchive: (id: string) => Promise<void>;
 
   addLoad: (input: NewLoad) => Promise<Load | undefined>;
@@ -379,6 +399,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/locations", locationBody(input));
         await invalidate(keys.locations);
+        return true;
       }, "Location created."),
     [invalidate],
   );
@@ -387,6 +408,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/locations/${id}`, locationBody(input));
         await invalidate(keys.locations);
+        return true;
       }, "Location saved."),
     [invalidate],
   );
@@ -404,6 +426,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/users", userBody(input));
         await invalidate(keys.users);
+        return true;
       }, "User created."),
     [invalidate],
   );
@@ -412,6 +435,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/users/${id}`, userBody(input));
         await invalidate(keys.users);
+        return true;
       }, "User saved."),
     [invalidate],
   );
@@ -429,6 +453,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/customers", customerBody(input));
         await invalidate(keys.customers);
+        return true;
       }, "Customer created."),
     [invalidate],
   );
@@ -437,6 +462,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/customers/${id}`, customerBody(input));
         await invalidate(keys.customers);
+        return true;
       }, "Customer saved."),
     [invalidate],
   );
@@ -454,6 +480,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/employees", employeeBody(input));
         await invalidate(keys.employees);
+        return true;
       }, "Employee created."),
     [invalidate],
   );
@@ -462,6 +489,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/employees/${id}`, employeeBody(input));
         await invalidate(keys.employees);
+        return true;
       }, "Employee saved."),
     [invalidate],
   );
@@ -479,6 +507,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.post("/product-types", productTypeBody(input));
         await invalidate(keys.productTypes);
+        return true;
       }, "Work type created."),
     [invalidate],
   );
@@ -487,6 +516,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       withToast(async () => {
         await api.patch(`/product-types/${id}`, productTypeBody(input));
         await invalidate(keys.productTypes);
+        return true;
       }, "Work type saved."),
     [invalidate],
   );
@@ -642,6 +672,30 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     loadsQuery.isLoading ||
     usersQuery.isLoading;
 
+  const isError =
+    locationsQuery.isError ||
+    customersQuery.isError ||
+    employeesQuery.isError ||
+    productTypesQuery.isError ||
+    loadsQuery.isError ||
+    usersQuery.isError;
+
+  const retry = useCallback(() => {
+    locationsQuery.refetch();
+    customersQuery.refetch();
+    employeesQuery.refetch();
+    productTypesQuery.refetch();
+    loadsQuery.refetch();
+    usersQuery.refetch();
+  }, [
+    locationsQuery.refetch,
+    customersQuery.refetch,
+    employeesQuery.refetch,
+    productTypesQuery.refetch,
+    loadsQuery.refetch,
+    usersQuery.refetch,
+  ]);
+
   const value = useMemo<AppData>(
     () => ({
       locations,
@@ -651,6 +705,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       loads,
       users,
       isLoading,
+      isError,
+      retry,
       role,
       addLocation,
       updateLocation,
@@ -690,6 +746,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       loads,
       users,
       isLoading,
+      isError,
+      retry,
       role,
       addLocation,
       updateLocation,

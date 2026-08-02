@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle, Clock, Truck, Users } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   BillingPayoutChart,
@@ -19,7 +20,12 @@ import {
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { WorkforceOverview } from "@/components/dashboard/WorkforceOverview";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { PermissionDenied } from "@/components/ui/PermissionDenied";
+import { SkeletonStatCards } from "@/components/ui/SkeletonCard";
+import { SkeletonTable } from "@/components/ui/SkeletonTable";
 import { StatCard } from "@/components/ui/StatCard";
+import { Tabs } from "@/components/ui/Tabs";
 import { useAuth } from "@/lib/auth";
 import { formatMoney } from "@/lib/billing";
 import {
@@ -74,6 +80,15 @@ function SectionLabel({
   );
 }
 
+type DashboardTab = "overview" | "operations" | "financials" | "performance";
+
+const DASHBOARD_TAB_LABELS: Record<DashboardTab, string> = {
+  overview: "Overview",
+  operations: "Operations",
+  financials: "Financials",
+  performance: "Performance",
+};
+
 export default function DashboardPage() {
   const {
     loads,
@@ -84,9 +99,14 @@ export default function DashboardPage() {
     users,
     role,
     isLoading,
+    isError,
+    retry,
   } = useAppData();
   const { user } = useAuth();
   const { invoices } = useInvoices();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<DashboardFilters>({
     dateRange: "last_7_days",
@@ -310,14 +330,44 @@ export default function DashboardPage() {
   const showOperationsAndWorkforce = role !== "finance";
   const periodLabel = DATE_RANGE_LABELS[filters.dateRange];
 
+  const visibleTabs: DashboardTab[] = [
+    "overview",
+    ...(showOperationsAndWorkforce ? (["operations"] as const) : []),
+    ...(showFinancials ? (["financials"] as const) : []),
+    "performance",
+  ];
+  const requestedTab = searchParams.get("tab");
+  const activeTab: DashboardTab = visibleTabs.includes(
+    requestedTab as DashboardTab,
+  )
+    ? (requestedTab as DashboardTab)
+    : visibleTabs[0];
+
+  function setActiveTab(tab: DashboardTab) {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   if (role === "customer" || role === "employee") {
     return (
-      <main className="flex flex-1 items-center justify-center p-6">
+      <PermissionDenied
+        title="This dashboard isn't available for your role"
+        description="Contact your administrator if you believe you should have access."
+        backHref="/loads"
+        backLabel="Go to Loads"
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="flex-1 p-6">
         <Card>
-          <p className="text-sm text-steel">
-            This dashboard isn't available for your role. Contact your
-            administrator.
-          </p>
+          <ErrorState
+            message="We couldn't load your dashboard data. Check your connection and try again."
+            onRetry={retry}
+          />
         </Card>
       </main>
     );
@@ -325,10 +375,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-1 items-center justify-center p-6">
-        <output aria-live="polite" className="text-sm text-steel">
-          Loading…
-        </output>
+      <main className="flex-1 space-y-6 p-6">
+        <SkeletonStatCards count={5} />
+        <Card>
+          <SkeletonTable rows={6} />
+        </Card>
       </main>
     );
   }
@@ -368,7 +419,7 @@ export default function DashboardPage() {
           label="Crew Working"
           value={summary.crewWorkingNow}
           hint="Live"
-          href="#operations-now"
+          href={showOperationsAndWorkforce ? "/?tab=operations" : undefined}
         />
         <StatCard
           icon={Clock}
@@ -376,7 +427,7 @@ export default function DashboardPage() {
           value={summary.crewOnBreak}
           hint="Live"
           tone={summary.crewOnBreak > 0 ? "warning" : "default"}
-          href="#workforce"
+          href={showOperationsAndWorkforce ? "/?tab=operations" : undefined}
         />
         <StatCard
           icon={CheckCircle}
@@ -394,23 +445,56 @@ export default function DashboardPage() {
         />
       </div>
 
-      {showOperationsAndWorkforce && (
-        <section id="operations-now">
-          <SectionLabel title="Operations Now" badge="Live" />
-          <Card>
-            <OperationsNowTable rows={operationsNow} />
-          </Card>
-        </section>
+      <Tabs
+        tabs={visibleTabs.map((tab) => ({
+          value: tab,
+          label: DASHBOARD_TAB_LABELS[tab],
+        }))}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
+
+      {activeTab === "overview" && (
+        <>
+          <section>
+            <SectionLabel title="Attention Required" badge="Live" />
+            <Card>
+              <AttentionRequiredList items={attentionItems} />
+            </Card>
+          </section>
+
+          <section>
+            <SectionLabel title="Recent Activity" badge="Live" />
+            <Card>
+              <RecentActivityFeed entries={recentActivity} />
+            </Card>
+          </section>
+        </>
       )}
 
-      <section>
-        <SectionLabel title="Attention Required" badge="Live" />
-        <Card>
-          <AttentionRequiredList items={attentionItems} />
-        </Card>
-      </section>
+      {activeTab === "operations" && showOperationsAndWorkforce && (
+        <>
+          <section>
+            <SectionLabel title="Operations Now" badge="Live" />
+            <Card>
+              <OperationsNowTable rows={operationsNow} />
+            </Card>
+          </section>
 
-      {showFinancials && (
+          <section>
+            <SectionLabel title="Workforce Overview" badge="Live" />
+            <Card>
+              <WorkforceOverview
+                workingNow={workforce.workingNow}
+                onBreak={workforce.onBreak}
+                certificationAlerts={certificationAlerts}
+              />
+            </Card>
+          </section>
+        </>
+      )}
+
+      {activeTab === "financials" && showFinancials && (
         <section>
           <SectionLabel
             title="Financial Workflow"
@@ -423,78 +507,62 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <section>
-        <SectionLabel
-          title="Performance Trends"
-          badge={periodLabel}
-          tone="period"
-        />
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card title="Loads Completed">
-            {loadsCompletedTrend.length ? (
-              <LoadsCompletedTrendChart data={loadsCompletedTrend} />
-            ) : (
-              <EmptyChart message="No completed loads in this period." />
-            )}
-          </Card>
-          <Card title="Billing vs Payroll Cost">
-            {billingVsPayrollTrend.length ? (
-              <BillingPayoutChart data={billingVsPayrollTrend} />
-            ) : (
-              <EmptyChart message="No billable activity in this period." />
-            )}
-          </Card>
-          <Card title="Load Status">
-            {statusDistribution.length ? (
-              <LoadStatusDonutChart data={statusDistribution} />
-            ) : (
-              <EmptyChart message="No loads in this period." />
-            )}
-          </Card>
-        </div>
-      </section>
+      {activeTab === "performance" && (
+        <>
+          <section>
+            <SectionLabel
+              title="Performance Trends"
+              badge={periodLabel}
+              tone="period"
+            />
+            <div className="grid gap-4 lg:grid-cols-3">
+              <Card title="Loads Completed">
+                {loadsCompletedTrend.length ? (
+                  <LoadsCompletedTrendChart data={loadsCompletedTrend} />
+                ) : (
+                  <EmptyChart message="No completed loads in this period." />
+                )}
+              </Card>
+              <Card title="Billing vs Payroll Cost">
+                {billingVsPayrollTrend.length ? (
+                  <BillingPayoutChart data={billingVsPayrollTrend} />
+                ) : (
+                  <EmptyChart message="No billable activity in this period." />
+                )}
+              </Card>
+              <Card title="Load Status">
+                {statusDistribution.length ? (
+                  <LoadStatusDonutChart data={statusDistribution} />
+                ) : (
+                  <EmptyChart message="No loads in this period." />
+                )}
+              </Card>
+            </div>
+          </section>
 
-      <section>
-        <SectionLabel
-          title="Customer & Location Performance"
-          badge={periodLabel}
-          tone="period"
-        />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card title="Top Customers">
-            <RankedPerformanceTable
-              rows={customerRows}
-              emptyMessage="No customer activity in this period."
+          <section>
+            <SectionLabel
+              title="Customer & Location Performance"
+              badge={periodLabel}
+              tone="period"
             />
-          </Card>
-          <Card title="Top Locations">
-            <RankedPerformanceTable
-              rows={locationRows}
-              emptyMessage="No location activity right now."
-            />
-          </Card>
-        </div>
-      </section>
-
-      {showOperationsAndWorkforce && (
-        <section id="workforce">
-          <SectionLabel title="Workforce Overview" badge="Live" />
-          <Card>
-            <WorkforceOverview
-              workingNow={workforce.workingNow}
-              onBreak={workforce.onBreak}
-              certificationAlerts={certificationAlerts}
-            />
-          </Card>
-        </section>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card title="Top Customers">
+                <RankedPerformanceTable
+                  rows={customerRows}
+                  emptyMessage="No customer activity in this period."
+                />
+              </Card>
+              <Card title="Top Locations">
+                <RankedPerformanceTable
+                  rows={locationRows}
+                  emptyMessage="No location activity right now."
+                />
+              </Card>
+            </div>
+          </section>
+        </>
       )}
-
-      <section>
-        <SectionLabel title="Recent Activity" badge="Live" />
-        <Card>
-          <RecentActivityFeed entries={recentActivity} />
-        </Card>
-      </section>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { CrewMemberLinkField } from "@/components/forms/CrewMemberLinkField";
 import { Button } from "@/components/ui/Button";
@@ -221,7 +222,7 @@ export function UserForm({
         </Field>
       </div>
 
-      <div className="rounded-xl border border-manila-dark bg-paper-dim p-4">
+      <div className="rounded-2xl border border-manila-dark bg-cream p-5 shadow-card">
         <p className="text-xs font-semibold uppercase tracking-wider text-steel">
           Access
         </p>
@@ -235,22 +236,25 @@ export function UserForm({
 
         {roleRequiresLocations(form.role) && (
           <>
-            <p className="mb-3 mt-2 text-xs text-steel-light">
+            <p className="mb-3.5 mt-1.5 text-sm text-steel">
               This account will only see data from the locations selected here.
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {locations.map((loc) => (
                 <label
                   key={loc.id}
-                  className="flex items-center gap-2 rounded-lg border border-manila-dark bg-cream px-3 py-1.5 text-sm text-ink transition-colors has-checked:border-rust has-checked:bg-rust-soft has-focus-visible:ring-2 has-focus-visible:ring-rust/30"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-manila-dark bg-paper px-3.5 py-2.5 text-sm text-ink transition-colors has-checked:border-rust has-checked:bg-rust-soft has-focus-visible:ring-2 has-focus-visible:ring-rust/30"
                 >
                   <input
                     type="checkbox"
                     checked={form.locationIds.includes(loc.id)}
                     onChange={() => toggleLocation(loc.id)}
-                    className="accent-rust"
+                    className="peer sr-only"
                   />
-                  {loc.name}
+                  <span className="flex h-4 w-4 flex-none items-center justify-center rounded-md border border-manila-dark bg-cream text-transparent transition-colors peer-checked:border-rust peer-checked:bg-rust peer-checked:text-cream">
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                  <span className="truncate">{loc.name}</span>
                 </label>
               ))}
             </div>

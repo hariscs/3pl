@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";
@@ -13,13 +14,32 @@ const variantClasses: Record<Variant, string> = {
 
 export const Button = forwardRef<
   HTMLButtonElement,
-  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }
->(function Button({ variant = "primary", className = "", ...props }, ref) {
+  ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: Variant;
+    /** Shows a spinner and disables the button — for an action already in flight. */
+    loading?: boolean;
+  }
+>(function Button(
+  {
+    variant = "primary",
+    loading = false,
+    disabled,
+    className = "",
+    children,
+    ...props
+  },
+  ref,
+) {
   return (
     <button
       ref={ref}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 ${variantClasses[variant]} ${className}`}
       {...props}
-    />
+    >
+      {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+      {children}
+    </button>
   );
 });

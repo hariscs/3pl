@@ -60,6 +60,17 @@ export function CreateInvoiceDialog({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Dates always have sensible defaults, so only typed notes count as "unsaved work."
+  function handleClose() {
+    if (
+      notes.trim().length > 0 &&
+      !window.confirm("Discard the notes you've entered for this invoice?")
+    ) {
+      return;
+    }
+    onClose();
+  }
+
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
     if (!invoiceDate) e.invoiceDate = "Invoice date is required.";
@@ -87,7 +98,7 @@ export function CreateInvoiceDialog({
         dueDate,
         notes: notes.trim() || null,
       });
-      toast.success("Invoice created successfully.");
+      toast.success("Invoice created.");
       onSuccess();
       onClose();
       router.push(`/finance/invoices/${created.id}`);
@@ -103,7 +114,7 @@ export function CreateInvoiceDialog({
   if (!open) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Create Invoice">
+    <Modal open={open} onClose={handleClose} title="Create Invoice">
       <div className="space-y-5">
         {/* Summary */}
         <div className="space-y-2 rounded-xl border border-manila-dark bg-cream p-3 text-sm">
@@ -191,7 +202,11 @@ export function CreateInvoiceDialog({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 pt-2">
-          <Button variant="secondary" onClick={onClose} disabled={submitting}>
+          <Button
+            variant="secondary"
+            onClick={handleClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>

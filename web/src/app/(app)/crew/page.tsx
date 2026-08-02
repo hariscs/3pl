@@ -1,5 +1,6 @@
 "use client";
 
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,7 +24,8 @@ import {
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const { employees, toggleEmployeeArchive } = useAppData();
+  const { employees, toggleEmployeeArchive, isLoading, isError, retry } =
+    useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
@@ -132,6 +134,13 @@ export default function EmployeesPage() {
               rows={employees}
               getRowKey={(e) => e.id}
               defaultFilterKeys={["employmentStatus"]}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={Users}
+              emptyTitle="No crew members yet"
+              emptyDescription="Add crew members so they can be assigned to loads and clocked in."
+              emptyAction={{ label: "New crew member", href: "/crew/new" }}
             />
           </Card>
         </main>
@@ -150,7 +159,9 @@ export default function EmployeesPage() {
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}
-        onConfirm={() => pending && toggleEmployeeArchive(pending.id)}
+        onConfirm={() =>
+          pending ? toggleEmployeeArchive(pending.id) : undefined
+        }
       />
     </>
   );

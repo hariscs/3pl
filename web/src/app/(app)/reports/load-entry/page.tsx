@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardList } from "lucide-react";
 import { useMemo } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
@@ -21,7 +22,16 @@ type Row = {
 };
 
 export default function LoadEntryReportPage() {
-  const { loads, customers, productTypes, locations, employees } = useAppData();
+  const {
+    loads,
+    customers,
+    productTypes,
+    locations,
+    employees,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
 
   const rows: Row[] = useMemo(
     () =>
@@ -130,6 +140,12 @@ export default function LoadEntryReportPage() {
               rows={rows}
               getRowKey={(r) => r.load.id}
               defaultFilterKeys={["customer", "status"]}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={ClipboardList}
+              emptyTitle="No loads to report on yet"
+              emptyDescription="Once loads are created, they'll show up here for column-by-column review."
               onExport={(filteredRows) =>
                 downloadCsv(
                   "load-entry-report.csv",

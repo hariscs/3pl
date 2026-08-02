@@ -24,13 +24,15 @@ function isDevBypass(): boolean {
   return getToken() === DEV_BYPASS_TOKEN;
 }
 
-// Drop an expired/invalid session and bounce to the login page. Guarded so we
-// don't loop when the 401 comes from the login request itself.
+// Drop an expired/invalid session and bounce to the login page, carrying a
+// reason so the login screen can explain why the user landed there instead
+// of silently discarding their session. Guarded so we don't loop when the
+// 401 comes from the login request itself.
 function handleUnauthorized(): void {
   if (isDevBypass()) return;
   clearSession();
   if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.assign("/login");
+    window.location.assign("/login?reason=session_expired");
   }
 }
 

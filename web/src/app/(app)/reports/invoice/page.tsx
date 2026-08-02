@@ -1,5 +1,6 @@
 "use client";
 
+import { Receipt } from "lucide-react";
 import { useMemo } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
@@ -18,7 +19,8 @@ type Row = {
 };
 
 export default function InvoiceReportPage() {
-  const { loads, customers, locations } = useAppData();
+  const { loads, customers, locations, isLoading, isError, retry } =
+    useAppData();
 
   const rows: Row[] = useMemo(
     () =>
@@ -102,6 +104,12 @@ export default function InvoiceReportPage() {
               rows={rows}
               getRowKey={(r) => r.load.id}
               defaultFilterKeys={["customer", "location"]}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={Receipt}
+              emptyTitle="No billable loads yet"
+              emptyDescription="Completed and closed loads ready to invoice will show up here."
               onExport={(filteredRows) =>
                 downloadCsv(
                   "invoice-report.csv",

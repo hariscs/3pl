@@ -74,7 +74,8 @@ export default function EditWorkTypePage() {
               }}
               submitLabel="Save changes"
               onSubmit={async (values) => {
-                await updateProductType(productType.id, values);
+                const ok = await updateProductType(productType.id, values);
+                if (!ok) return;
                 router.push("/product-types");
               }}
             />

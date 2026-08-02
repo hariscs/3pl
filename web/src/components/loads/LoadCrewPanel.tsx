@@ -1,8 +1,10 @@
 "use client";
 
-import { Search, User as UserIcon } from "lucide-react";
+import { Loader2, Search, User as UserIcon, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { getEmployeeDisplayName } from "@/lib/crew";
@@ -82,6 +84,25 @@ export function LoadCrewPanel({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [now, setNow] = useState(() => nowHHMM());
+  const [pendingAssignmentId, setPendingAssignmentId] = useState<string | null>(
+    null,
+  );
+  const [pendingAddId, setPendingAddId] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<LoadCrewAssignment | null>(
+    null,
+  );
+
+  async function runAssignmentAction(
+    assignmentId: string,
+    action: () => Promise<void>,
+  ) {
+    setPendingAssignmentId(assignmentId);
+    try {
+      await action();
+    } finally {
+      setPendingAssignmentId(null);
+    }
+  }
 
   // Keep "Working for Xh Ym" fresh while anyone is actively clocked in.
   useEffect(() => {
@@ -121,6 +142,11 @@ export function LoadCrewPanel({
   function employeeFor(assignment: LoadCrewAssignment) {
     return employees.find((e) => e.id === assignment.employeeId);
   }
+
+  const removeTargetEmployee = removeTarget ? employeeFor(removeTarget) : null;
+  const removeTargetName = removeTargetEmployee
+    ? getEmployeeDisplayName(removeTargetEmployee)
+    : "This crew member";
 
   function renderAssignmentRow(a: LoadCrewAssignment) {
     const employee = employeeFor(a);
@@ -166,7 +192,13 @@ export function LoadCrewPanel({
               {a.status === "assigned" && (
                 <Button
                   variant="secondary"
-                  onClick={() => clockInCrewMember(load.id, a.id)}
+                  onClick={() =>
+                    runAssignmentAction(a.id, () =>
+                      clockInCrewMember(load.id, a.id),
+                    )
+                  }
+                  loading={pendingAssignmentId === a.id}
+                  disabled={pendingAssignmentId !== null}
                 >
                   Clock In
                 </Button>
@@ -175,13 +207,25 @@ export function LoadCrewPanel({
                 <>
                   <Button
                     variant="secondary"
-                    onClick={() => startCrewBreak(load.id, a.id)}
+                    onClick={() =>
+                      runAssignmentAction(a.id, () =>
+                        startCrewBreak(load.id, a.id),
+                      )
+                    }
+                    loading={pendingAssignmentId === a.id}
+                    disabled={pendingAssignmentId !== null}
                   >
                     Start Break
                   </Button>
                   <Button
                     variant="secondary"
-                    onClick={() => clockOutCrewMember(load.id, a.id)}
+                    onClick={() =>
+                      runAssignmentAction(a.id, () =>
+                        clockOutCrewMember(load.id, a.id),
+                      )
+                    }
+                    loading={pendingAssignmentId === a.id}
+                    disabled={pendingAssignmentId !== null}
                   >
                     Clock Out
                   </Button>
@@ -190,15 +234,16 @@ export function LoadCrewPanel({
               {a.status === "on_break" && (
                 <Button
                   variant="secondary"
-                  onClick={() => endCrewBreak(load.id, a.id)}
+                  onClick={() =>
+                    runAssignmentAction(a.id, () => endCrewBreak(load.id, a.id))
+                  }
+                  loading={pendingAssignmentId === a.id}
+                  disabled={pendingAssignmentId !== null}
                 >
                   End Break
                 </Button>
               )}
-              <Button
-                variant="danger"
-                onClick={() => removeCrewMember(load.id, a.id)}
-              >
+              <Button variant="danger" onClick={() => setRemoveTarget(a)}>
                 Remove
               </Button>
             </div>
@@ -221,9 +266,18 @@ export function LoadCrewPanel({
       </div>
 
       {activeAssignments.length === 0 ? (
-        <p className="rounded-xl border border-manila-dark bg-paper-dim p-4 text-sm text-steel">
-          No crew members assigned to this load yet.
-        </p>
+        <div className="rounded-xl border border-manila-dark bg-paper-dim">
+          <EmptyState
+            icon={Users}
+            title="No crew assigned yet"
+            description="Add crew members so they can clock in and get paid for this load."
+            action={
+              editable
+                ? { label: "Add Crew", onClick: () => setPickerOpen(true) }
+                : undefined
+            }
+          />
+        </div>
       ) : (
         <div className="space-y-2">
           {activeAssignments.map(renderAssignmentRow)}
@@ -265,11 +319,17 @@ export function LoadCrewPanel({
               <button
                 key={e.id}
                 type="button"
-                onClick={() => {
-                  assignCrewMember(load.id, e.id);
-                  setSearch("");
+                disabled={pendingAddId !== null}
+                onClick={async () => {
+                  setPendingAddId(e.id);
+                  try {
+                    await assignCrewMember(load.id, e.id);
+                    setSearch("");
+                  } finally {
+                    setPendingAddId(null);
+                  }
                 }}
-                className="flex w-full items-center gap-3 rounded-xl border border-manila-dark px-3 py-2.5 text-left transition-colors hover:border-rust/30 hover:bg-rust-soft/20"
+                className="flex w-full items-center gap-3 rounded-xl border border-manila-dark px-3 py-2.5 text-left transition-colors hover:border-rust/30 hover:bg-rust-soft/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CrewAvatar photoUrl={e.profilePhotoUrl} size={36} />
                 <div className="min-w-0 flex-1">
@@ -281,6 +341,9 @@ export function LoadCrewPanel({
                     {e.category ? ` · ${CREW_CATEGORY_LABELS[e.category]}` : ""}
                   </p>
                 </div>
+                {pendingAddId === e.id && (
+                  <Loader2 className="h-4 w-4 flex-none animate-spin text-steel" />
+                )}
               </button>
             ))}
             {filtered.length === 0 && (
@@ -293,6 +356,18 @@ export function LoadCrewPanel({
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onClose={() => setRemoveTarget(null)}
+        title="Remove crew member"
+        body={`${removeTargetName} will be removed from this load. Their worked time up to now is kept for payroll.`}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() =>
+          removeTarget ? removeCrewMember(load.id, removeTarget.id) : undefined
+        }
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,7 +29,14 @@ function formatRate(type: ProductType["employeePayType"], rate: number) {
 
 export default function WorkTypesPage() {
   const router = useRouter();
-  const { productTypes, customers, toggleProductTypeArchive } = useAppData();
+  const {
+    productTypes,
+    customers,
+    toggleProductTypeArchive,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
@@ -122,6 +130,16 @@ export default function WorkTypesPage() {
               getRowKey={(p) => p.id}
               defaultFilterKeys={["customer"]}
               searchFn={workTypeSearch}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={Package}
+              emptyTitle="No work types yet"
+              emptyDescription="Work types define the pay and billing rates a customer's loads use."
+              emptyAction={{
+                label: "New work type",
+                href: "/product-types/new",
+              }}
             />
           </Card>
         </main>
@@ -138,7 +156,9 @@ export default function WorkTypesPage() {
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}
-        onConfirm={() => pending && toggleProductTypeArchive(pending.id)}
+        onConfirm={() =>
+          pending ? toggleProductTypeArchive(pending.id) : undefined
+        }
       />
     </>
   );

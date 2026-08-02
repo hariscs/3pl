@@ -40,7 +40,11 @@ const NAV = [
   {
     section: "Reports",
     adminOnly: true,
-    items: [{ href: "/reports/load-entry", label: "Load Report" }],
+    items: [
+      { href: "/reports/load-entry", label: "Load Entry Report" },
+      { href: "/reports/load-report", label: "Load Report" },
+      { href: "/reports/invoice", label: "Invoice Report" },
+    ],
   },
 ];
 

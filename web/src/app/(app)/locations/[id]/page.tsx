@@ -79,7 +79,8 @@ export default function EditLocationPage() {
               }}
               submitLabel="Save changes"
               onSubmit={async (values) => {
-                await updateLocation(location.id, values);
+                const ok = await updateLocation(location.id, values);
+                if (!ok) return;
                 router.push("/locations");
               }}
             />

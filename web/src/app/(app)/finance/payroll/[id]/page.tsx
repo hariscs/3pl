@@ -168,7 +168,7 @@ export default function EmployeePayrollPage() {
       );
       setRecord(data);
       setShowPaymentDialog(false);
-      toast.success("Payroll payment recorded successfully.");
+      toast.success("Payroll payment recorded.");
     } catch (e) {
       toast.error(
         e instanceof ApiError ? e.message : "Failed to record payment.",

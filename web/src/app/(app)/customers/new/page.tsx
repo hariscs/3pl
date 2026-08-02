@@ -23,7 +23,8 @@ export default function NewCustomerPage() {
             <CustomerForm
               submitLabel="Create customer"
               onSubmit={async (values) => {
-                await addCustomer(values);
+                const ok = await addCustomer(values);
+                if (!ok) return;
                 router.push("/customers");
               }}
             />

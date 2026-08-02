@@ -5,7 +5,9 @@ import {
   ArrowLeft,
   CheckCircle,
   Edit3,
+  History,
   Lock,
+  MessageSquare,
   Pause,
   Play,
   RotateCcw,
@@ -24,6 +26,7 @@ import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Input, Textarea } from "@/components/ui/Field";
 import { useAuth } from "@/lib/auth";
 import { getEmployeeDisplayName } from "@/lib/crew";
@@ -192,12 +195,16 @@ export default function LoadDetailPage() {
 
   const load = loads.find((l) => l.id === id);
 
+  const [pendingStatusAction, setPendingStatusAction] = useState<
+    "pause" | "resume" | "reopen" | null
+  >(null);
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState("");
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
 
   const productType = useMemo(
     () => productTypes.find((p) => p.id === load?.productTypeId),
@@ -313,6 +320,7 @@ export default function LoadDetailPage() {
   function deleteNote(noteId: string) {
     if (!load) return;
     updateLoad(load.id, { notes: load.notes.filter((n) => n.id !== noteId) });
+    setDeleteNoteId(null);
   }
 
   return (
@@ -396,12 +404,30 @@ export default function LoadDetailPage() {
 
             <div className="flex flex-none flex-wrap items-center gap-2">
               {headerActions.includes("pause") && (
-                <Button variant="secondary" onClick={() => pauseLoad(load.id)}>
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    setPendingStatusAction("pause");
+                    await pauseLoad(load.id);
+                    setPendingStatusAction(null);
+                  }}
+                  loading={pendingStatusAction === "pause"}
+                  disabled={pendingStatusAction !== null}
+                >
                   <Pause className="h-3.5 w-3.5" /> Pause
                 </Button>
               )}
               {headerActions.includes("resume") && (
-                <Button variant="secondary" onClick={() => resumeLoad(load.id)}>
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    setPendingStatusAction("resume");
+                    await resumeLoad(load.id);
+                    setPendingStatusAction(null);
+                  }}
+                  loading={pendingStatusAction === "resume"}
+                  disabled={pendingStatusAction !== null}
+                >
                   <Play className="h-3.5 w-3.5" /> Resume
                 </Button>
               )}
@@ -411,7 +437,16 @@ export default function LoadDetailPage() {
                 </Button>
               )}
               {headerActions.includes("reopen") && (
-                <Button variant="secondary" onClick={() => reopenLoad(load.id)}>
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    setPendingStatusAction("reopen");
+                    await reopenLoad(load.id);
+                    setPendingStatusAction(null);
+                  }}
+                  loading={pendingStatusAction === "reopen"}
+                  disabled={pendingStatusAction !== null}
+                >
                   <RotateCcw className="h-3.5 w-3.5" /> Reopen
                 </Button>
               )}
@@ -667,7 +702,7 @@ export default function LoadDetailPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => deleteNote(note.id)}
+                                onClick={() => setDeleteNoteId(note.id)}
                                 aria-label="Delete note"
                                 className="flex h-8 w-8 items-center justify-center rounded-lg text-steel transition-colors hover:bg-stamp-soft hover:text-stamp"
                               >
@@ -685,7 +720,11 @@ export default function LoadDetailPage() {
           )}
 
           {load.notes.length === 0 && (
-            <p className="mb-3 text-sm text-steel">No notes yet.</p>
+            <EmptyState
+              icon={MessageSquare}
+              title="No notes yet"
+              description="Add context for this load — anything the next person should know."
+            />
           )}
 
           {notesEditable && (
@@ -709,7 +748,11 @@ export default function LoadDetailPage() {
         {/* ── Activity Timeline ── */}
         <Card title="Activity Timeline">
           {activity.length === 0 ? (
-            <p className="text-sm text-steel">No activity recorded yet.</p>
+            <EmptyState
+              icon={History}
+              title="No activity recorded yet"
+              description="Status changes and crew actions on this load will show up here."
+            />
           ) : (
             <div className="space-y-2">
               {activity.map((entry) => (
@@ -780,6 +823,15 @@ export default function LoadDetailPage() {
         confirmLabel="Cancel load"
         variant="danger"
         onConfirm={() => cancelLoad(load.id)}
+      />
+      <ConfirmDialog
+        open={deleteNoteId !== null}
+        onClose={() => setDeleteNoteId(null)}
+        title="Delete note"
+        body="This note will be permanently removed from this load."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => (deleteNoteId ? deleteNote(deleteNoteId) : undefined)}
       />
     </>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -20,8 +21,16 @@ import { getUserDisplayName } from "@/lib/users";
 
 export default function LoadsPage() {
   const router = useRouter();
-  const { loads, customers, productTypes, locations, users, isLoading } =
-    useAppData();
+  const {
+    loads,
+    customers,
+    productTypes,
+    locations,
+    users,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
   const [customerFilter, setCustomerFilter] = useState("");
 
   // Deep-linked from Dashboard tiles, e.g. /loads?status=In%20Progress —
@@ -195,9 +204,13 @@ export default function LoadsPage() {
             defaultFilterKeys={["status"]}
             initialFilterValues={initialFilterValues}
             searchFn={searchLoad}
-            emptyMessage={
-              isLoading ? "Loading…" : "No loads yet. Create your first one."
-            }
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={retry}
+            emptyIcon={Truck}
+            emptyTitle="No loads yet"
+            emptyDescription="Create a load to start tracking crew time and billing."
+            emptyAction={{ label: "New load", href: "/loads/new" }}
           />
         </Card>
       </main>

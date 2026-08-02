@@ -118,15 +118,15 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
 
-  // Column widths
-  colLoad: { width: "9%" },
-  colCompleted: { width: "11%" },
-  colLocation: { width: "12%" },
-  colProductType: { width: "12%" },
-  colContainer: { width: "9%" },
-  colCases: { width: "7%", textAlign: "right" },
-  colDescription: { width: "30%" },
-  colAmount: { width: "10%", textAlign: "right" },
+  // Column widths — Description dropped: it only repeated the Load/Work
+  // Type columns, so its space was reclaimed to keep every header on one line.
+  colLoad: { width: "10%" },
+  colCompleted: { width: "13%" },
+  colLocation: { width: "19%" },
+  colProductType: { width: "18%" },
+  colContainer: { width: "14%" },
+  colCases: { width: "8%", textAlign: "right" },
+  colAmount: { width: "18%", textAlign: "right" },
 
   // Totals
   totalsContainer: {
@@ -296,9 +296,6 @@ export function InvoicePdfDocument({ invoice }: Props) {
               Container
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colCases]}>Cases</Text>
-            <Text style={[styles.tableHeaderCell, styles.colDescription]}>
-              Description
-            </Text>
             <Text style={[styles.tableHeaderCell, styles.colAmount]}>
               Amount
             </Text>
@@ -322,9 +319,6 @@ export function InvoicePdfDocument({ invoice }: Props) {
               </Text>
               <Text style={[styles.tableCellRight, styles.colCases]}>
                 {item.caseCount ?? "\u2014"}
-              </Text>
-              <Text style={[styles.tableCell, styles.colDescription]}>
-                {item.description}
               </Text>
               <Text style={[styles.tableCellRightMoney, styles.colAmount]}>
                 {money(item.amount)}

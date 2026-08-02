@@ -80,7 +80,8 @@ export default function EditCustomerPage() {
               }}
               submitLabel="Save changes"
               onSubmit={async (values) => {
-                await updateCustomer(customer.id, values);
+                const ok = await updateCustomer(customer.id, values);
+                if (!ok) return;
                 router.push("/customers");
               }}
             />

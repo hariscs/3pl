@@ -10,6 +10,9 @@ import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { SkeletonStatCards } from "@/components/ui/SkeletonCard";
+import { SkeletonTable } from "@/components/ui/SkeletonTable";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { formatMoney } from "@/lib/billing";
@@ -27,7 +30,15 @@ import { CREW_CATEGORY_KEYS, CREW_CATEGORY_LABELS } from "@/lib/types";
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { employees, loads, customers, productTypes, isLoading } = useAppData();
+  const {
+    employees,
+    loads,
+    customers,
+    productTypes,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
   const [showDocument, setShowDocument] = useState(false);
   const [printRows, setPrintRows] = useState<EmployeePayroll[]>([]);
 
@@ -170,6 +181,25 @@ export default function PayrollPage() {
     [],
   );
 
+  if (isError) {
+    return (
+      <>
+        <TopBar
+          title="Payroll"
+          description="Hourly and production pay for all active crew members across completed loads."
+        />
+        <main className="flex-1 p-6">
+          <Card>
+            <ErrorState
+              message="We couldn't load payroll data. Check your connection and try again."
+              onRetry={retry}
+            />
+          </Card>
+        </main>
+      </>
+    );
+  }
+
   if (isLoading) {
     return (
       <>
@@ -177,10 +207,11 @@ export default function PayrollPage() {
           title="Payroll"
           description="Hourly and production pay for all active crew members across completed loads."
         />
-        <main className="flex flex-1 items-center justify-center p-6">
-          <output aria-live="polite" className="text-sm text-steel">
-            Loading…
-          </output>
+        <main className="flex-1 space-y-4 p-6">
+          <SkeletonStatCards />
+          <Card>
+            <SkeletonTable />
+          </Card>
         </main>
       </>
     );

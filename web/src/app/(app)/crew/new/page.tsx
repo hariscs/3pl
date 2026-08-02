@@ -24,7 +24,8 @@ export default function NewEmployeePage() {
               mode="create"
               submitLabel="Create crew member"
               onSubmit={async (values) => {
-                await addEmployee(values);
+                const ok = await addEmployee(values);
+                if (!ok) return;
                 router.push("/crew");
               }}
             />

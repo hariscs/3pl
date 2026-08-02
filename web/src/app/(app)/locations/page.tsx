@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,7 +17,14 @@ import type { Location } from "@/lib/types";
 
 export default function LocationsPage() {
   const router = useRouter();
-  const { locations, customers, toggleLocationArchive } = useAppData();
+  const {
+    locations,
+    customers,
+    toggleLocationArchive,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
@@ -125,7 +133,13 @@ export default function LocationsPage() {
               rows={locations}
               getRowKey={(l) => l.id}
               defaultFilterKeys={["status"]}
-              emptyMessage="No locations yet. Create your first one."
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={MapPin}
+              emptyTitle="No locations yet"
+              emptyDescription="Add the sites your crews check into — loads and clock-ins are tied to a location."
+              emptyAction={{ label: "New location", href: "/locations/new" }}
             />
           </Card>
         </main>
@@ -142,7 +156,9 @@ export default function LocationsPage() {
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}
-        onConfirm={() => pending && toggleLocationArchive(pending.id)}
+        onConfirm={() =>
+          pending ? toggleLocationArchive(pending.id) : undefined
+        }
       />
     </>
   );

@@ -12,7 +12,10 @@ import { TopBar } from "@/components/TopBar";
 import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { SidekickPanel } from "@/components/ui/SidekickPanel";
+import { SkeletonStatCards } from "@/components/ui/SkeletonCard";
+import { SkeletonTable } from "@/components/ui/SkeletonTable";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import {
@@ -34,7 +37,15 @@ const BILLING_STATUS_TONES: Record<BillingStatus, "warning" | "success"> = {
 };
 
 export default function CustomerBillingPage() {
-  const { loads, customers, productTypes, locations, isLoading } = useAppData();
+  const {
+    loads,
+    customers,
+    productTypes,
+    locations,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sidekickLoadId, setSidekickLoadId] = useState<string | null>(null);
@@ -276,6 +287,25 @@ export default function CustomerBillingPage() {
     [selectedIds],
   );
 
+  if (isError) {
+    return (
+      <>
+        <TopBar
+          title="Customer Billing"
+          description="Review completed loads that are ready to be invoiced."
+        />
+        <main className="flex-1 p-6">
+          <Card>
+            <ErrorState
+              message="We couldn't load billing data. Check your connection and try again."
+              onRetry={retry}
+            />
+          </Card>
+        </main>
+      </>
+    );
+  }
+
   if (isLoading) {
     return (
       <>
@@ -283,8 +313,11 @@ export default function CustomerBillingPage() {
           title="Customer Billing"
           description="Review completed loads that are ready to be invoiced."
         />
-        <main className="flex flex-1 items-center justify-center p-6">
-          <p className="text-sm text-steel">Loading…</p>
+        <main className="flex-1 space-y-4 p-6">
+          <SkeletonStatCards />
+          <Card>
+            <SkeletonTable />
+          </Card>
         </main>
       </>
     );
@@ -363,20 +396,16 @@ export default function CustomerBillingPage() {
                 </label>
               );
             })()}
-          {billingRows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-steel">
-              No completed loads are ready for billing.
-            </p>
-          ) : (
-            <FilterableTable
-              columns={columns}
-              rows={billingRows}
-              getRowKey={(r) => r.loadId}
-              defaultFilterKeys={["customerName", "billingStatus"]}
-              initialFilterValues={initialFilterValues}
-              onFilteredRowsChange={setVisibleRows}
-            />
-          )}
+          <FilterableTable
+            columns={columns}
+            rows={billingRows}
+            getRowKey={(r) => r.loadId}
+            defaultFilterKeys={["customerName", "billingStatus"]}
+            initialFilterValues={initialFilterValues}
+            onFilteredRowsChange={setVisibleRows}
+            emptyTitle="No completed loads are ready for billing"
+            emptyDescription="Loads show up here once they're completed or closed."
+          />
         </Card>
       </main>
 

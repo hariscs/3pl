@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { ApiError } from "@/lib/api/client";
@@ -32,7 +32,17 @@ const CAPABILITIES = [
 ];
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "session_expired";
   const { status, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -157,6 +167,12 @@ export default function LoginPage() {
                 Sign in to your account to continue.
               </p>
             </div>
+
+            {sessionExpired && (
+              <div className="mb-5 rounded-lg bg-amber-soft px-3 py-2.5 text-xs text-amber">
+                Your session expired. Sign in again to continue.
+              </div>
+            )}
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <Field label="Email address" required>

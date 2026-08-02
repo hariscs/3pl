@@ -1,10 +1,12 @@
 "use client";
 
-import { FileText, Upload } from "lucide-react";
+import { FileText, Paperclip, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useGlobalFileDrop } from "@/components/intelligence/useGlobalFileDrop";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import {
   categorizeAttachmentFile,
@@ -52,6 +54,9 @@ export function LoadAttachmentsPanel({
   const [showArchived, setShowArchived] = useState(false);
   const [preview, setPreview] = useState<LoadAttachment | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<LoadAttachment | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleFiles(files: File[]) {
@@ -62,6 +67,13 @@ export function LoadAttachmentsPanel({
         const error = validateLoadAttachmentFile(file);
         if (error) {
           toast.error(error);
+          continue;
+        }
+        const isDuplicate = attachments.some(
+          (a) => a.status === "active" && a.fileName === file.name,
+        );
+        if (isDuplicate) {
+          toast.error(`"${file.name}" is already attached to this load.`);
           continue;
         }
         const category = categorizeAttachmentFile(
@@ -152,11 +164,25 @@ export function LoadAttachmentsPanel({
         }`}
       >
         {filtered.length === 0 ? (
-          <p className="py-6 text-center text-sm text-steel">
-            {attachments.length === 0
-              ? "No attachments available. Photos, documents, and signed paperwork will appear here."
-              : "No attachments match this filter."}
-          </p>
+          attachments.length === 0 ? (
+            <EmptyState
+              icon={Paperclip}
+              title="No attachments yet"
+              description="Photos, documents, and signed paperwork will appear here."
+              action={
+                editable
+                  ? {
+                      label: "Upload",
+                      onClick: () => fileInputRef.current?.click(),
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <p className="py-6 text-center text-sm text-steel">
+              No attachments match this filter.
+            </p>
+          )
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((a) => {
@@ -165,11 +191,18 @@ export function LoadAttachmentsPanel({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() =>
-                    a.category === "document"
-                      ? window.open(a.fileUrl, "_blank")
-                      : setPreview(a)
-                  }
+                  onClick={() => {
+                    if (a.category !== "document") {
+                      setPreview(a);
+                      return;
+                    }
+                    const win = window.open(a.fileUrl, "_blank");
+                    if (!win) {
+                      toast.error(
+                        "Pop-up blocked. Allow pop-ups to view this document.",
+                      );
+                    }
+                  }}
                   className="flex flex-col gap-2 rounded-xl border border-manila-dark bg-cream p-3 text-left transition-colors hover:border-rust/30"
                 >
                   {a.category === "document" ? (
@@ -199,7 +232,11 @@ export function LoadAttachmentsPanel({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleAttachmentArchive(a.id);
+                        if (a.status === "active") {
+                          setArchiveTarget(a);
+                        } else {
+                          toggleAttachmentArchive(a.id);
+                        }
                       }}
                       className="self-start text-xs font-medium text-steel underline hover:text-rust"
                     >
@@ -247,6 +284,18 @@ export function LoadAttachmentsPanel({
           />
         ) : null}
       </Modal>
+
+      <ConfirmDialog
+        open={archiveTarget !== null}
+        onClose={() => setArchiveTarget(null)}
+        title="Archive attachment"
+        body={`"${archiveTarget?.title || archiveTarget?.fileName}" will be hidden from the active list. You can restore it later.`}
+        confirmLabel="Archive"
+        variant="danger"
+        onConfirm={() =>
+          archiveTarget ? toggleAttachmentArchive(archiveTarget.id) : undefined
+        }
+      />
     </div>
   );
 }

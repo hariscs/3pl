@@ -1,5 +1,6 @@
 "use client";
 
+import { Building2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -25,7 +26,14 @@ function customerSearch(c: Customer, query: string): boolean {
 
 export default function CustomersPage() {
   const router = useRouter();
-  const { customers, locations, toggleCustomerArchive } = useAppData();
+  const {
+    customers,
+    locations,
+    toggleCustomerArchive,
+    isLoading,
+    isError,
+    retry,
+  } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
     name: string;
@@ -135,6 +143,13 @@ export default function CustomersPage() {
               getRowKey={(c) => c.id}
               defaultFilterKeys={["status"]}
               searchFn={customerSearch}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={Building2}
+              emptyTitle="No customers yet"
+              emptyDescription="Add your first customer to start creating locations, work types, and loads for them."
+              emptyAction={{ label: "New customer", href: "/customers/new" }}
             />
           </Card>
         </main>
@@ -151,7 +166,9 @@ export default function CustomersPage() {
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}
-        onConfirm={() => pending && toggleCustomerArchive(pending.id)}
+        onConfirm={() =>
+          pending ? toggleCustomerArchive(pending.id) : undefined
+        }
       />
     </>
   );

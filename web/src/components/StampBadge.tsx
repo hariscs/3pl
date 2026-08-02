@@ -23,7 +23,7 @@ export function StampBadge({ status }: { status: Stampable }) {
   const { label, color } = config[status];
   return (
     <span
-      className={`ink-stamp inline-block px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${color}`}
+      className={`ink-stamp inline-block whitespace-nowrap px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${color}`}
     >
       {label}
     </span>

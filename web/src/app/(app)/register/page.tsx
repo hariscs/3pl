@@ -1,5 +1,6 @@
 "use client";
 
+import { UserCog } from "lucide-react";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
@@ -41,6 +42,9 @@ export default function RegisterUserPage() {
     addUser,
     updateUser,
     toggleUserArchive,
+    isLoading,
+    isError,
+    retry,
   } = useAppData();
   const [editingUser, setEditingUser] = useState<SystemUser | null>(null);
   const [justSaved, setJustSaved] = useState<string | null>(null);
@@ -56,11 +60,10 @@ export default function RegisterUserPage() {
 
   async function handleSubmit(values: UserFormValues) {
     const displayName = `${values.firstName} ${values.lastName}`.trim();
-    if (editingUser) {
-      await updateUser(editingUser.id, values);
-    } else {
-      await addUser(values);
-    }
+    const ok = editingUser
+      ? await updateUser(editingUser.id, values)
+      : await addUser(values);
+    if (!ok) return;
     setJustSaved(displayName);
     setEditingUser(null);
   }
@@ -80,6 +83,11 @@ export default function RegisterUserPage() {
       header: "Access",
       accessor: (u) =>
         describeUserAccess(u, locations, customerName(u.customerId ?? "")),
+      render: (u) => (
+        <span className="block max-w-72">
+          {describeUserAccess(u, locations, customerName(u.customerId ?? ""))}
+        </span>
+      ),
     },
     {
       key: "status",
@@ -163,6 +171,12 @@ export default function RegisterUserPage() {
               rows={users}
               getRowKey={(u) => u.id}
               defaultFilterKeys={["role"]}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={retry}
+              emptyIcon={UserCog}
+              emptyTitle="No users yet"
+              emptyDescription="Use the form above to register the first dashboard login."
             />
           </Card>
         </main>
@@ -179,7 +193,7 @@ export default function RegisterUserPage() {
         }
         confirmLabel={pending?.archiving ? "Archive" : "Restore"}
         variant={pending?.archiving ? "danger" : "primary"}
-        onConfirm={() => pending && toggleUserArchive(pending.id)}
+        onConfirm={() => (pending ? toggleUserArchive(pending.id) : undefined)}
       />
     </>
   );

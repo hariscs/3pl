@@ -1,9 +1,19 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Inbox,
+  type LucideIcon,
+  Search,
+  SearchX,
+} from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AddFilterChip, type FilterableColumn, FilterChip } from "./FilterChip";
 import { Button } from "./ui/Button";
+import { EmptyState } from "./ui/EmptyState";
+import { ErrorState } from "./ui/ErrorState";
+import { SkeletonTable } from "./ui/SkeletonTable";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -38,6 +48,13 @@ export function FilterableTable<T>({
   defaultSort,
   emptyMessage = "No records yet.",
   pageSize = DEFAULT_PAGE_SIZE,
+  isLoading = false,
+  isError = false,
+  onRetry,
+  emptyIcon: EmptyIcon = Inbox,
+  emptyTitle,
+  emptyDescription,
+  emptyAction,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -57,10 +74,19 @@ export function FilterableTable<T>({
   searchFn?: (row: T, query: string) => boolean;
   /** Initial sort configuration. */
   defaultSort?: { key: string; dir: "asc" | "desc" };
-  /** Message shown when `rows` itself is empty (no filters applied). */
+  /** Title shown when `rows` itself is empty (no filters applied). Superseded by `emptyTitle` when set. */
   emptyMessage?: string;
   /** Rows rendered per page. Defaults to 10. */
   pageSize?: number;
+  /** Shows a skeleton instead of the table while the underlying data is still loading. */
+  isLoading?: boolean;
+  /** Shows an error state with a Retry action instead of the table. */
+  isError?: boolean;
+  onRetry?: () => void;
+  emptyIcon?: LucideIcon;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyAction?: { label: string; href?: string; onClick?: () => void };
 }) {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() => {
@@ -199,6 +225,22 @@ export function FilterableTable<T>({
     [filtered, currentPage, pageSize],
   );
 
+  if (isLoading) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-manila-dark">
+        <SkeletonTable />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-manila-dark">
+        <ErrorState onRetry={onRetry} />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-3">
@@ -269,53 +311,56 @@ export function FilterableTable<T>({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-manila-dark">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-manila">
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    className={`border-b border-manila-dark px-3 py-2.5 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
-                      col.align === "right" ? "text-right" : ""
-                    }`}
-                  >
-                    {col.sortable === false ? (
-                      col.header
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(col.key)}
-                        className="inline-flex items-center gap-1 transition-colors hover:text-rust"
-                      >
-                        {col.header}
-                        <span className="text-[10px] text-steel-light">
-                          {sort?.key === col.key
-                            ? sort.dir === "asc"
-                              ? "▲"
-                              : "▼"
-                            : "↕"}
-                        </span>
-                      </button>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-3 py-10 text-center text-sm text-steel"
-                  >
-                    {rows.length === 0
-                      ? emptyMessage
-                      : "No rows match these filters."}
-                  </td>
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={EmptyIcon}
+            title={emptyTitle ?? emptyMessage}
+            description={emptyDescription}
+            action={emptyAction}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={SearchX}
+            title="No results match your search."
+            description="Try a different search term or clear your filters."
+            action={{ label: "Clear filters", onClick: resetFilters }}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-manila">
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      className={`border-b border-manila-dark px-3 py-2.5 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
+                        col.align === "right" ? "text-right" : ""
+                      }`}
+                    >
+                      {col.sortable === false ? (
+                        col.header
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(col.key)}
+                          className="inline-flex items-center gap-1 transition-colors hover:text-rust"
+                        >
+                          {col.header}
+                          <span className="text-[10px] text-steel-light">
+                            {sort?.key === col.key
+                              ? sort.dir === "asc"
+                                ? "▲"
+                                : "▼"
+                              : "↕"}
+                          </span>
+                        </button>
+                      )}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                paginated.map((row) => (
+              </thead>
+              <tbody>
+                {paginated.map((row) => (
                   <tr
                     key={getRowKey(row)}
                     className={`odd:bg-paper even:bg-paper-dim/40 transition-colors ${onRowClick ? "cursor-pointer hover:bg-manila/40" : ""}`}
@@ -332,13 +377,13 @@ export function FilterableTable<T>({
                       </td>
                     ))}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {totalPages > 1 && (
+        {totalPages > 1 && filtered.length > 0 && (
           <div className="flex items-center justify-between border-t border-manila-dark bg-paper px-3 py-2.5">
             <p className="text-xs text-steel">
               Showing{" "}
