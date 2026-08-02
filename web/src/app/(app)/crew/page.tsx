@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -20,6 +22,7 @@ import {
 } from "@/lib/types";
 
 export default function EmployeesPage() {
+  const router = useRouter();
   const { employees, toggleEmployeeArchive } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
@@ -82,31 +85,29 @@ export default function EmployeesPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       accessor: () => "",
       filterable: false,
       sortable: false,
-      align: "right",
       render: (e) => {
         const isArchived = e.employmentStatus === "archived";
         return (
-          <div className="flex justify-end gap-2">
-            <Link href={`/crew/${e.id}`}>
-              <Button variant="secondary">Edit</Button>
-            </Link>
-            <Button
-              variant={isArchived ? "secondary" : "danger"}
-              onClick={() =>
-                setPending({
-                  id: e.id,
-                  name: getEmployeeDisplayName(e),
-                  archiving: !isArchived,
-                })
-              }
-            >
-              {isArchived ? "Restore" : "Archive"}
-            </Button>
-          </div>
+          <ActionsMenu
+            label={`${getEmployeeDisplayName(e)} actions`}
+            actions={[
+              { label: "Edit", onSelect: () => router.push(`/crew/${e.id}`) },
+              {
+                label: isArchived ? "Restore" : "Archive",
+                danger: !isArchived,
+                onSelect: () =>
+                  setPending({
+                    id: e.id,
+                    name: getEmployeeDisplayName(e),
+                    archiving: !isArchived,
+                  }),
+              },
+            ]}
+          />
         );
       },
     },

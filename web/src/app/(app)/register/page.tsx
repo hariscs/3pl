@@ -6,6 +6,7 @@ import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { UserForm, type UserFormValues } from "@/components/forms/UserForm";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -90,29 +91,27 @@ export default function RegisterUserPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       accessor: () => "",
       filterable: false,
       sortable: false,
-      align: "right",
       render: (u) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setEditingUser(u)}>
-            Edit
-          </Button>
-          <Button
-            variant={u.status === "active" ? "danger" : "secondary"}
-            onClick={() =>
-              setPending({
-                id: u.id,
-                name: getUserDisplayName(u),
-                archiving: u.status === "active",
-              })
-            }
-          >
-            {u.status === "active" ? "Archive" : "Restore"}
-          </Button>
-        </div>
+        <ActionsMenu
+          label={`${getUserDisplayName(u)} actions`}
+          actions={[
+            { label: "Edit", onSelect: () => setEditingUser(u) },
+            {
+              label: u.status === "active" ? "Archive" : "Restore",
+              danger: u.status === "active",
+              onSelect: () =>
+                setPending({
+                  id: u.id,
+                  name: getUserDisplayName(u),
+                  archiving: u.status === "active",
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];

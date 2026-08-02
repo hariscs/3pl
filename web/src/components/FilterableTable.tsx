@@ -1,8 +1,11 @@
 "use client";
 
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AddFilterChip, type FilterableColumn, FilterChip } from "./FilterChip";
 import { Button } from "./ui/Button";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export type Column<T> = {
   key: string;
@@ -34,6 +37,7 @@ export function FilterableTable<T>({
   searchFn,
   defaultSort,
   emptyMessage = "No records yet.",
+  pageSize = DEFAULT_PAGE_SIZE,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -47,7 +51,7 @@ export function FilterableTable<T>({
   initialFilterValues?: Record<string, string>;
   /** Called when a row is clicked. The row data is passed. */
   onRowClick?: (row: T) => void;
-  /** Called with the currently filtered/sorted rows whenever they change. */
+  /** Called with the currently filtered/sorted rows (across all pages) whenever they change. */
   onFilteredRowsChange?: (rows: T[]) => void;
   /** Custom search predicate. When provided, replaces the default column-accessor search. */
   searchFn?: (row: T, query: string) => boolean;
@@ -55,6 +59,8 @@ export function FilterableTable<T>({
   defaultSort?: { key: string; dir: "asc" | "desc" };
   /** Message shown when `rows` itself is empty (no filters applied). */
   emptyMessage?: string;
+  /** Rows rendered per page. Defaults to 10. */
+  pageSize?: number;
 }) {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>(() => {
@@ -177,19 +183,33 @@ export function FilterableTable<T>({
     onFilteredRowsChange?.(filtered);
   }, [filtered, onFilteredRowsChange]);
 
+  const [page, setPage] = useState(1);
+
+  // A new search/filter/sort can shrink the result set out from under the
+  // page the user was on — always land back on page 1 when any of them change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally keyed off these inputs to reset pagination, not to read their values.
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeFilters, filterValues, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize],
+  );
+
   return (
     <div>
       <div className="mb-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-steel-light">
-              ⌕
-            </span>
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-steel-light" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search everything…"
-              className="w-56 rounded-full border border-manila-dark bg-cream py-1.5 pl-7 pr-3 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
+              className="w-56 rounded-full border border-manila-dark bg-cream py-1.5 pl-8 pr-3 text-sm text-ink placeholder:text-steel-light focus:border-rust focus:outline-none focus:ring-2 focus:ring-rust/20"
             />
           </div>
 
@@ -248,73 +268,113 @@ export function FilterableTable<T>({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-manila-dark">
-        <table className="w-full min-w-max border-collapse text-sm">
-          <thead>
-            <tr className="bg-manila">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`border-b border-manila-dark px-3 py-2.5 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
-                    col.align === "right" ? "text-right" : ""
-                  }`}
-                >
-                  {col.sortable === false ? (
-                    col.header
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => toggleSort(col.key)}
-                      className="inline-flex items-center gap-1 transition-colors hover:text-rust"
-                    >
-                      {col.header}
-                      <span className="text-[10px] text-steel-light">
-                        {sort?.key === col.key
-                          ? sort.dir === "asc"
-                            ? "▲"
-                            : "▼"
-                          : "↕"}
-                      </span>
-                    </button>
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-3 py-10 text-center text-sm text-steel"
-                >
-                  {rows.length === 0
-                    ? emptyMessage
-                    : "No rows match these filters."}
-                </td>
+      <div className="overflow-hidden rounded-xl border border-manila-dark">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-manila">
+                {columns.map((col) => (
+                  <th
+                    key={col.key}
+                    className={`border-b border-manila-dark px-3 py-2.5 text-left font-display text-xs font-semibold uppercase tracking-wide text-ink ${
+                      col.align === "right" ? "text-right" : ""
+                    }`}
+                  >
+                    {col.sortable === false ? (
+                      col.header
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key)}
+                        className="inline-flex items-center gap-1 transition-colors hover:text-rust"
+                      >
+                        {col.header}
+                        <span className="text-[10px] text-steel-light">
+                          {sort?.key === col.key
+                            ? sort.dir === "asc"
+                              ? "▲"
+                              : "▼"
+                            : "↕"}
+                        </span>
+                      </button>
+                    )}
+                  </th>
+                ))}
               </tr>
-            ) : (
-              filtered.map((row) => (
-                <tr
-                  key={getRowKey(row)}
-                  className={`odd:bg-paper even:bg-paper-dim/40 transition-colors ${onRowClick ? "cursor-pointer hover:bg-manila/40" : ""}`}
-                  onClick={() => onRowClick?.(row)}
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`border-b border-manila-dark/60 px-3 py-2.5 text-ink ${
-                        col.align === "right" ? "text-right font-tick" : ""
-                      }`}
-                    >
-                      {col.render ? col.render(row) : col.accessor(row)}
-                    </td>
-                  ))}
+            </thead>
+            <tbody>
+              {paginated.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-3 py-10 text-center text-sm text-steel"
+                  >
+                    {rows.length === 0
+                      ? emptyMessage
+                      : "No rows match these filters."}
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paginated.map((row) => (
+                  <tr
+                    key={getRowKey(row)}
+                    className={`odd:bg-paper even:bg-paper-dim/40 transition-colors ${onRowClick ? "cursor-pointer hover:bg-manila/40" : ""}`}
+                    onClick={() => onRowClick?.(row)}
+                  >
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={`break-words border-b border-manila-dark/60 px-3 py-2.5 text-ink ${
+                          col.align === "right" ? "text-right font-tick" : ""
+                        }`}
+                      >
+                        {col.render ? col.render(row) : col.accessor(row)}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-manila-dark bg-paper px-3 py-2.5">
+            <p className="text-xs text-steel">
+              Showing{" "}
+              <span className="font-medium text-ink">
+                {(currentPage - 1) * pageSize + 1}
+              </span>
+              –
+              <span className="font-medium text-ink">
+                {Math.min(currentPage * pageSize, filtered.length)}
+              </span>{" "}
+              of <span className="font-medium text-ink">{filtered.length}</span>
+            </p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                aria-label="Previous page"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-steel">
+                Page <span className="font-medium text-ink">{currentPage}</span>{" "}
+                of {totalPages}
+              </span>
+              <Button
+                variant="secondary"
+                aria-label="Next page"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

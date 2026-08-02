@@ -117,10 +117,7 @@ export default function LoginPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-ink-line pt-6">
               {CAPABILITIES.map((capability) => (
-                <div
-                  key={capability.label}
-                  className="flex items-center gap-2"
-                >
+                <div key={capability.label} className="flex items-center gap-2">
                   <capability.icon className="h-4 w-4 text-steel-light" />
                   <span className="font-tick text-[11px] font-medium uppercase tracking-[0.12em] text-steel-light">
                     {capability.label}

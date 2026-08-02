@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 type Tone = "default" | "warning" | "danger";
 
 const TONE_ICON_CLASSES: Record<Tone, string> = {
-  default: "bg-rust-soft text-rust",
+  default: "bg-paper-dim text-steel",
   warning: "bg-amber-soft text-amber",
   danger: "bg-stamp-soft text-stamp",
 };

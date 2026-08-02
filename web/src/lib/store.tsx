@@ -1,14 +1,7 @@
 "use client";
 
 import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import { toast } from "sonner";
 import { ApiError, api } from "./api/client";
 import { useAuth } from "./auth";
@@ -62,8 +55,6 @@ type AppData = {
   /** True until the initial datasets have loaded. */
   isLoading: boolean;
 
-  currentLocationId: string;
-  setCurrentLocationId: (id: string) => void;
   /** The authenticated user's role (read-only — derived from login). */
   role: Role;
 
@@ -375,24 +366,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const loads = useMemo(() => loadsQuery.data ?? [], [loadsQuery.data]);
   const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
 
-  const [currentLocationId, setCurrentLocationId] = useState<string>("");
   // Role follows whoever is logged in — no manual switching.
   const role: Role = user?.role ?? "admin";
-
-  // Default the active location to the logged-in user's first assigned
-  // location (meaningful for manager/lead), falling back to the first
-  // location overall once locations load — admin/finance are unrestricted
-  // and employee/customer have no location concept, so they all land here.
-  useEffect(() => {
-    if (!currentLocationId) {
-      const assigned = user?.locationIds?.[0];
-      if (assigned) {
-        setCurrentLocationId(assigned);
-      } else if (locations.length > 0) {
-        setCurrentLocationId(locations[0].id);
-      }
-    }
-  }, [locations, currentLocationId, user]);
 
   const invalidate = useCallback(
     (key: QueryKey) => queryClient.invalidateQueries({ queryKey: key }),
@@ -676,8 +651,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       loads,
       users,
       isLoading,
-      currentLocationId,
-      setCurrentLocationId,
       role,
       addLocation,
       updateLocation,
@@ -717,7 +690,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       loads,
       users,
       isLoading,
-      currentLocationId,
       role,
       addLocation,
       updateLocation,

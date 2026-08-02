@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -25,6 +27,7 @@ function formatRate(type: ProductType["employeePayType"], rate: number) {
 }
 
 export default function WorkTypesPage() {
+  const router = useRouter();
   const { productTypes, customers, toggleProductTypeArchive } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
@@ -71,29 +74,30 @@ export default function WorkTypesPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       accessor: () => "",
       filterable: false,
       sortable: false,
-      align: "right",
       render: (p) => (
-        <div className="flex justify-end gap-2">
-          <Link href={`/product-types/${p.id}`}>
-            <Button variant="secondary">Edit</Button>
-          </Link>
-          <Button
-            variant={p.status !== "archived" ? "danger" : "secondary"}
-            onClick={() =>
-              setPending({
-                id: p.id,
-                name: p.name,
-                archiving: p.status !== "archived",
-              })
-            }
-          >
-            {p.status !== "archived" ? "Archive" : "Restore"}
-          </Button>
-        </div>
+        <ActionsMenu
+          label={`${p.name} actions`}
+          actions={[
+            {
+              label: "Edit",
+              onSelect: () => router.push(`/product-types/${p.id}`),
+            },
+            {
+              label: p.status !== "archived" ? "Archive" : "Restore",
+              danger: p.status !== "archived",
+              onSelect: () =>
+                setPending({
+                  id: p.id,
+                  name: p.name,
+                  archiving: p.status !== "archived",
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];

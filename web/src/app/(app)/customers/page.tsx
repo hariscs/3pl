@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminOnly } from "@/components/AdminOnly";
 import { type Column, FilterableTable } from "@/components/FilterableTable";
 import { StampBadge } from "@/components/StampBadge";
 import { TopBar } from "@/components/TopBar";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -22,6 +24,7 @@ function customerSearch(c: Customer, query: string): boolean {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const { customers, locations, toggleCustomerArchive } = useAppData();
   const [pending, setPending] = useState<{
     id: string;
@@ -84,29 +87,30 @@ export default function CustomersPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
       accessor: () => "",
       filterable: false,
       sortable: false,
-      align: "right",
       render: (c) => (
-        <div className="flex justify-end gap-2">
-          <Link href={`/customers/${c.id}`}>
-            <Button variant="secondary">Edit</Button>
-          </Link>
-          <Button
-            variant={c.status !== "archived" ? "danger" : "secondary"}
-            onClick={() =>
-              setPending({
-                id: c.id,
-                name: c.displayName,
-                archiving: c.status !== "archived",
-              })
-            }
-          >
-            {c.status !== "archived" ? "Archive" : "Restore"}
-          </Button>
-        </div>
+        <ActionsMenu
+          label={`${c.displayName} actions`}
+          actions={[
+            {
+              label: "Edit",
+              onSelect: () => router.push(`/customers/${c.id}`),
+            },
+            {
+              label: c.status !== "archived" ? "Archive" : "Restore",
+              danger: c.status !== "archived",
+              onSelect: () =>
+                setPending({
+                  id: c.id,
+                  name: c.displayName,
+                  archiving: c.status !== "archived",
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];

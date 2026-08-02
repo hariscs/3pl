@@ -225,11 +225,6 @@ export default function CustomerBillingPage() {
         accessor: (r) => r.productTypeName,
       },
       {
-        key: "containerNumber",
-        header: "Container",
-        accessor: (r) => r.containerNumber ?? "—",
-      },
-      {
         key: "caseCount",
         header: "Cases",
         accessor: (r) => r.caseCount,
